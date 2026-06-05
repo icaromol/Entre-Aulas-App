@@ -11,15 +11,15 @@ interface CyclePreset {
   emoji: string
   hint: string
   workMinutes: number
-  shortBreakMinutes: number
+  breakMinutes: number
   totalCycles: number
 }
 
 const PRESETS: CyclePreset[] = [
-  { key: 'beginner', name: 'Iniciante',    emoji: '🌱', hint: '20 min · pausa 5 min · 3 ciclos',  workMinutes: 20, shortBreakMinutes: 5,  totalCycles: 3 },
-  { key: 'classic',  name: 'Clássico',     emoji: '🍅', hint: '25 min · pausa 5 min · 4 ciclos',  workMinutes: 25, shortBreakMinutes: 5,  totalCycles: 4 },
-  { key: 'focused',  name: 'Focado',       emoji: '🎯', hint: '50 min · pausa 10 min · 2 ciclos', workMinutes: 50, shortBreakMinutes: 10, totalCycles: 2 },
-  { key: 'custom',   name: 'Personalizado', emoji: '⚙️', hint: 'Defina seu ritmo',               workMinutes: 0,  shortBreakMinutes: 0,  totalCycles: 0 },
+  { key: 'beginner', name: 'Iniciante',     emoji: '🌱', hint: '2 ciclos de 15 min + 5 pausa',  workMinutes: 15, breakMinutes: 5, totalCycles: 2 },
+  { key: 'classic',  name: 'Clássico',      emoji: '🍅', hint: '1 ciclo de 20 min + 5 pausa',   workMinutes: 20, breakMinutes: 5, totalCycles: 1 },
+  { key: 'advanced', name: 'Avançado',      emoji: '🎯', hint: '4 ciclos de 25 min + 5 pausa',  workMinutes: 25, breakMinutes: 5, totalCycles: 4 },
+  { key: 'custom',   name: 'Personalizado', emoji: '⚙️', hint: 'Defina seu ritmo',              workMinutes: 0,  breakMinutes: 0, totalCycles: 0 },
 ]
 
 type Phase = 'idle' | 'work' | 'break' | 'finished'
@@ -37,6 +37,13 @@ function fmt(s: number) {
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 }
 
+function fmtStudied(secs: number): string {
+  if (secs < 60) return `${secs}s de estudo`
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return s > 0 ? `${m} min ${s}s de estudo` : `${m} min de estudo`
+}
+
 export default function PomodoroPage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -46,33 +53,35 @@ export default function PomodoroPage() {
 
   // ── Cycle selection ──
   const [selectedKey, setSelectedKey] = useState('classic')
-  const [customWork, setCustomWork]   = useState(25)
-  const [customBreak, setCustomBreak] = useState(5)
+  const [customWork,   setCustomWork]   = useState(25)
+  const [customBreak,  setCustomBreak]  = useState(5)
   const [customCycles, setCustomCycles] = useState(4)
 
   // ── Timer ──
-  const [phase, setPhase]           = useState<Phase>('idle')
+  const [phase, setPhase]               = useState<Phase>('idle')
   const [currentCycle, setCurrentCycle] = useState(1)
-  const [isPaused, setIsPaused]     = useState(false)
-  const [timeLeft, setTimeLeft]     = useState(0)
-  const [totalSecs, setTotalSecs]   = useState(0)
+  const [completedCycles, setCompletedCycles] = useState(0)
+  const [isPaused, setIsPaused]         = useState(false)
+  const [timeLeft, setTimeLeft]         = useState(0)
+  const [totalSecs, setTotalSecs]       = useState(0)
+  const [showEarlyDialog, setShowEarlyDialog] = useState(false)
   const activeCycle = useRef<CyclePreset | null>(null)
   const startedAt   = useRef<string | null>(null)
   const workSecs    = useRef(0)
 
-  // ── Finish modal ──
-  const [dayItems, setDayItems]     = useState<DayItem[]>([])
-  const [workedIds, setWorkedIds]   = useState<Set<string>>(new Set())
-  const [difficulty, setDifficulty] = useState<'easy' | 'ok' | 'hard' | ''>('')
-  const [comment, setComment]       = useState('')
-  const [saving, setSaving]         = useState(false)
+  // ── Finish screen ──
+  const [dayItems, setDayItems]         = useState<DayItem[]>([])
+  const [workedIds, setWorkedIds]       = useState<Set<string>>(new Set())
+  const [difficulty, setDifficulty]     = useState<'easy' | 'ok' | 'hard' | ''>('')
+  const [comment, setComment]           = useState('')
+  const [saving, setSaving]             = useState(false)
   const [loadingItems, setLoadingItems] = useState(false)
 
   // ── Helpers ──
   function buildCycle(): CyclePreset {
     if (selectedKey === 'custom') {
       return { key: 'custom', name: 'Personalizado', emoji: '⚙️', hint: '',
-        workMinutes: customWork, shortBreakMinutes: customBreak, totalCycles: customCycles }
+        workMinutes: customWork, breakMinutes: customBreak, totalCycles: customCycles }
     }
     return PRESETS.find(p => p.key === selectedKey)!
   }
@@ -87,7 +96,7 @@ export default function PomodoroPage() {
     return () => clearInterval(id)
   }, [phase, isPaused])
 
-  // ── Phase transition when timeLeft reaches 0 ──
+  // ── Phase transitions ──
   useEffect(() => {
     if (timeLeft !== 0) return
     if (phase !== 'work' && phase !== 'break') return
@@ -95,16 +104,22 @@ export default function PomodoroPage() {
     if (!c) return
 
     if (phase === 'work') {
+      const newCompleted = completedCycles + 1
+      setCompletedCycles(newCompleted)
+
       if (currentCycle < c.totalCycles) {
-        const secs = c.shortBreakMinutes * 60
+        // Há mais ciclos — vai para pausa
+        const secs = c.breakMinutes * 60
         setPhase('break')
         setTimeLeft(secs)
         setTotalSecs(secs)
       } else {
+        // Todos os ciclos completos — pré-marca o item da sessão
         setPhase('finished')
-        openFinishModal()
+        openFinishModal(true)
       }
     } else {
+      // Pausa acabou — próximo ciclo de trabalho
       const next = currentCycle + 1
       setCurrentCycle(next)
       const secs = c.workMinutes * 60
@@ -113,9 +128,9 @@ export default function PomodoroPage() {
       setTotalSecs(secs)
       setIsPaused(false)
     }
-  }, [timeLeft, phase, currentCycle])
+  }, [timeLeft, phase, currentCycle, completedCycles])
 
-  // ── Actions ──
+  // ── Start ──
   function startSession() {
     const c = buildCycle()
     activeCycle.current = c
@@ -123,18 +138,27 @@ export default function PomodoroPage() {
     workSecs.current = 0
     const secs = c.workMinutes * 60
     setCurrentCycle(1)
+    setCompletedCycles(0)
     setPhase('work')
     setTimeLeft(secs)
     setTotalSecs(secs)
     setIsPaused(false)
+    setShowEarlyDialog(false)
   }
 
-  function endEarly() {
-    setPhase('finished')
-    openFinishModal()
+  // ── End early ──
+  function handleEndEarly() {
+    if (completedCycles === 0) {
+      setIsPaused(true)
+      setShowEarlyDialog(true)
+    } else {
+      setPhase('finished')
+      openFinishModal(false)
+    }
   }
 
-  async function openFinishModal() {
+  // ── Fetch items for finish screen ──
+  async function openFinishModal(allCyclesDone: boolean) {
     setLoadingItems(true)
     const studentId = nav?.studentId
     if (!studentId) { setLoadingItems(false); return }
@@ -159,15 +183,16 @@ export default function PomodoroPage() {
         subtitle: i.piece ? (i.piece.composer ?? 'Peça') : (i.exercise?.category ?? 'Exercício'),
       }))
       setDayItems(mapped)
+    }
 
-      // Pre-check the item that launched this session
-      if (nav?.planItemId) {
-        setWorkedIds(new Set([nav.planItemId]))
-      }
+    // Pré-marca o item da sessão sempre (quando todos ciclos completos, marca automaticamente)
+    if (nav?.planItemId) {
+      setWorkedIds(new Set([nav.planItemId]))
     }
     setLoadingItems(false)
   }
 
+  // ── Save ──
   async function saveSession() {
     setSaving(true)
     const studentId = nav?.studentId
@@ -176,13 +201,13 @@ export default function PomodoroPage() {
 
     const endedAt = new Date().toISOString()
 
-    const { data: session } = await supabase
+    const { data: session, error } = await supabase
       .from('study_sessions')
       .insert({
         student_id: studentId,
         cycle_name: c.name,
         cycle_work_minutes: c.workMinutes,
-        cycle_break_minutes: c.shortBreakMinutes,
+        cycle_break_minutes: c.breakMinutes,
         cycle_total: c.totalCycles,
         started_at: startedAt.current,
         ended_at: endedAt,
@@ -192,13 +217,13 @@ export default function PomodoroPage() {
       })
       .select('id').single()
 
+    if (error) console.error('[pomodoro] save error:', error.message)
+
     if (session && workedIds.size > 0) {
       const ids = Array.from(workedIds)
-
       await supabase.from('session_items').insert(
         ids.map(pid => ({ session_id: session.id, plan_item_id: pid }))
       )
-
       await supabase.from('plan_items')
         .update({ is_done: true, done_at: endedAt })
         .in('id', ids)
@@ -210,14 +235,12 @@ export default function PomodoroPage() {
   // ── Derived ──
   const progress   = totalSecs > 0 ? timeLeft / totalSecs : 0
   const dashOffset = CIRCUMFERENCE * (1 - progress)
-  const preset     = PRESETS.find(p => p.key === selectedKey)!
-  const isWork     = phase === 'work'
-  const isBreak    = phase === 'break'
   const c          = activeCycle.current
+  const isWork     = phase === 'work'
 
-  // ───────────────────────────────────────────────
-  // IDLE — seleção de ciclo
-  // ───────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────
+  // IDLE
+  // ─────────────────────────────────────────────────────
   if (phase === 'idle') {
     return (
       <StudentLayout>
@@ -259,17 +282,17 @@ export default function PomodoroPage() {
           <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-5 space-y-3">
             <p className="text-xs font-semibold text-gray-500">Configurar ciclo</p>
             {[
-              { label: 'Minutos de estudo', value: customWork, set: setCustomWork, min: 1, max: 120 },
-              { label: 'Minutos de pausa', value: customBreak, set: setCustomBreak, min: 1, max: 60 },
-              { label: 'Número de ciclos',  value: customCycles, set: setCustomCycles, min: 1, max: 10 },
+              { label: 'Minutos de estudo', value: customWork,   set: setCustomWork,   min: 1, max: 120 },
+              { label: 'Minutos de pausa',  value: customBreak,  set: setCustomBreak,  min: 1, max: 60  },
+              { label: 'Número de ciclos',  value: customCycles, set: setCustomCycles, min: 1, max: 10  },
             ].map(f => (
               <div key={f.label} className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">{f.label}</span>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => f.set(v => Math.max(f.min, v - 1))}
+                  <button onClick={() => f.set((v: number) => Math.max(f.min, v - 1))}
                     className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#4A90C4] transition">−</button>
                   <span className="w-8 text-center text-sm font-semibold text-[#1E3A5F]">{f.value}</span>
-                  <button onClick={() => f.set(v => Math.min(f.max, v + 1))}
+                  <button onClick={() => f.set((v: number) => Math.min(f.max, v + 1))}
                     className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#4A90C4] transition">+</button>
                 </div>
               </div>
@@ -277,31 +300,66 @@ export default function PomodoroPage() {
           </div>
         )}
 
-        <Button
-          onClick={startSession}
-          disabled={selectedKey === 'custom' && (customWork < 1 || customBreak < 1 || customCycles < 1)}
-          className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white h-12 text-base font-semibold rounded-2xl"
-        >
-          Iniciar sessão
-        </Button>
+        {/* Botões */}
+        <div className="flex gap-3">
+          <Button
+            onClick={() => navigate(-1)}
+            variant="outline"
+            className="flex-1 h-12 rounded-2xl text-sm border-gray-200"
+          >
+            Voltar
+          </Button>
+          <Button
+            onClick={startSession}
+            disabled={selectedKey === 'custom' && (customWork < 1 || customBreak < 1 || customCycles < 1)}
+            className="flex-1 h-12 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-2xl text-sm font-semibold"
+          >
+            Iniciar sessão
+          </Button>
+        </div>
       </StudentLayout>
     )
   }
 
-  // ───────────────────────────────────────────────
-  // WORK / BREAK — cronômetro
-  // ───────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────
+  // WORK / BREAK
+  // ─────────────────────────────────────────────────────
   if (phase === 'work' || phase === 'break') {
     return (
       <StudentLayout>
-        <div className="flex justify-end mb-4">
-          <button onClick={endEarly}
-            className="text-xs text-gray-400 hover:text-red-400 transition px-3 py-1 rounded-lg border border-gray-200 hover:border-red-200">
-            Encerrar sessão
-          </button>
-        </div>
+        {/* Dialog de encerramento antecipado */}
+        {showEarlyDialog && (
+          <div className="fixed inset-0 bg-black/40 z-20 flex items-end justify-center pb-8 px-4">
+            <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-xl">
+              <p className="text-sm font-bold text-gray-800 mb-1">Encerrar sessão?</p>
+              <p className="text-xs text-gray-400 mb-4">
+                Você ainda não completou nenhum ciclo. Deseja salvar a sessão mesmo assim?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowEarlyDialog(false); setIsPaused(false) }}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#4A90C4] transition"
+                >
+                  Continuar
+                </button>
+                <button
+                  onClick={() => navigate('/aluno/hoje')}
+                  className="flex-1 py-2.5 rounded-xl border border-red-200 text-sm text-red-500 hover:bg-red-50 transition"
+                >
+                  Descartar
+                </button>
+                <button
+                  onClick={() => { setShowEarlyDialog(false); setPhase('finished'); openFinishModal(false) }}
+                  className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-sm text-white font-medium hover:bg-[#1E3A5F]/90 transition"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-        {/* Cronômetro circular */}
+        {/* Cronômetro */}
         <div className="flex flex-col items-center py-6">
           <div className={`text-xs font-semibold mb-6 px-3 py-1 rounded-full ${
             isWork ? 'bg-[#D6E4F0] text-[#1E3A5F]' : 'bg-green-100 text-green-600'
@@ -329,11 +387,11 @@ export default function PomodoroPage() {
           </div>
 
           {/* Dots de ciclos */}
-          {c && (
+          {c && c.totalCycles > 1 && (
             <div className="flex gap-2 mt-6">
               {Array.from({ length: c.totalCycles }).map((_, i) => (
                 <div key={i} className={`w-2.5 h-2.5 rounded-full transition ${
-                  i < currentCycle - 1 ? 'bg-[#1E3A5F]'
+                  i < completedCycles         ? 'bg-[#1E3A5F]'
                   : i === currentCycle - 1 && isWork ? 'bg-[#4A90C4]'
                   : 'bg-gray-200'
                 }`}/>
@@ -346,8 +404,8 @@ export default function PomodoroPage() {
           )}
         </div>
 
-        {/* Controles */}
-        <div className="flex gap-3 mt-4">
+        {/* Botões */}
+        <div className="flex gap-3 mt-2">
           <Button
             onClick={() => setIsPaused(p => !p)}
             variant="outline"
@@ -355,22 +413,27 @@ export default function PomodoroPage() {
           >
             {isPaused ? 'Retomar' : 'Pausar'}
           </Button>
+          <Button
+            onClick={handleEndEarly}
+            variant="outline"
+            className="flex-1 h-12 rounded-2xl text-sm font-semibold text-red-500 border-red-200 hover:bg-red-50"
+          >
+            Encerrar sessão
+          </Button>
         </div>
       </StudentLayout>
     )
   }
 
-  // ───────────────────────────────────────────────
-  // FINISHED — modal de encerramento
-  // ───────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────
+  // FINISHED
+  // ─────────────────────────────────────────────────────
   return (
     <StudentLayout>
-      <div className="flex flex-col items-center pt-4 pb-8">
+      <div className="flex flex-col items-center pt-4 pb-6">
         <p className="text-4xl mb-2">🎉</p>
         <h1 className="text-xl font-bold text-[#1E3A5F]">Sessão encerrada!</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          {Math.round(workSecs.current / 60)} min de estudo
-        </p>
+        <p className="text-sm text-gray-400 mt-1">{fmtStudied(workSecs.current)}</p>
       </div>
 
       {/* O que você trabalhou */}
@@ -414,14 +477,14 @@ export default function PomodoroPage() {
         )}
       </div>
 
-      {/* Dificuldade */}
+      {/* Como foi */}
       <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
         <p className="text-sm font-semibold text-gray-600 mb-3">Como foi a sessão?</p>
         <div className="flex gap-2">
           {([
-            { key: 'easy', label: 'Fácil', emoji: '😊' },
-            { key: 'ok',   label: 'Ok',    emoji: '😐' },
-            { key: 'hard', label: 'Difícil', emoji: '😓' },
+            { key: 'easy', label: 'Fácil',   emoji: '😊' },
+            { key: 'ok',   label: 'Ok',       emoji: '😐' },
+            { key: 'hard', label: 'Difícil',  emoji: '😓' },
           ] as const).map(d => (
             <button
               key={d.key}
@@ -439,9 +502,11 @@ export default function PomodoroPage() {
         </div>
       </div>
 
-      {/* Comentário */}
+      {/* Comentários */}
       <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
-        <p className="text-sm font-semibold text-gray-600 mb-2">Comentários <span className="font-normal text-gray-400">(opcional)</span></p>
+        <p className="text-sm font-semibold text-gray-600 mb-2">
+          Comentários <span className="font-normal text-gray-400">(opcional)</span>
+        </p>
         <textarea
           value={comment}
           onChange={e => setComment(e.target.value)}
@@ -451,13 +516,23 @@ export default function PomodoroPage() {
         />
       </div>
 
-      <Button
-        onClick={saveSession}
-        disabled={saving}
-        className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white h-12 text-base font-semibold rounded-2xl"
-      >
-        {saving ? 'Salvando...' : 'Salvar sessão'}
-      </Button>
+      {/* Botões */}
+      <div className="flex gap-3">
+        <Button
+          onClick={() => navigate('/aluno/hoje')}
+          variant="outline"
+          className="flex-1 h-12 rounded-2xl text-sm text-red-500 border-red-200 hover:bg-red-50"
+        >
+          Excluir e voltar
+        </Button>
+        <Button
+          onClick={saveSession}
+          disabled={saving}
+          className="flex-1 h-12 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-2xl text-sm font-semibold"
+        >
+          {saving ? 'Salvando...' : 'Salvar sessão'}
+        </Button>
+      </div>
     </StudentLayout>
   )
 }
