@@ -66,11 +66,20 @@ export default function RegisterPage() {
       return
     }
 
-    if (inviteStudentId && data.user) {
-      await supabase
-        .from('students')
-        .update({ profile_id: data.user.id })
-        .eq('id', inviteStudentId)
+    if (data.user) {
+      if (inviteStudentId) {
+        await supabase
+          .from('students')
+          .update({ profile_id: data.user.id })
+          .eq('id', inviteStudentId)
+      } else if (role === 'student') {
+        // Fallback: vincula por e-mail se já existir um registro sem profile_id
+        await supabase
+          .from('students')
+          .update({ profile_id: data.user.id })
+          .eq('contact_email', email)
+          .is('profile_id', null)
+      }
     }
 
     if (role === 'teacher') {

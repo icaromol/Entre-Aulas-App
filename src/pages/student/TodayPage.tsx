@@ -21,7 +21,6 @@ export default function TodayPage() {
   }, [profile])
 
   async function fetchTodayPlan() {
-    // Busca o student_id pelo profile
     const { data: student } = await supabase
       .from('students')
       .select('id')
@@ -31,7 +30,6 @@ export default function TodayPage() {
     if (!student) { setLoading(false); return }
     setStudentId(student.id)
 
-    // Busca o plano da semana atual
     const { data: plan } = await supabase
       .from('weekly_plans')
       .select('id')
@@ -41,7 +39,6 @@ export default function TodayPage() {
 
     if (!plan) { setLoading(false); return }
 
-    // Busca os itens do dia
     const { data: planItems } = await supabase
       .from('plan_items')
       .select(`
