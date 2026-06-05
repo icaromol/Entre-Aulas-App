@@ -139,13 +139,20 @@ export default function StudentProfilePage() {
             {student.instrument} · {levelLabel[student.level] ?? student.level}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => navigate(`/professor/alunos/${studentId}/plano`)}
             variant="outline"
             className="text-xs"
           >
             Plano
+          </Button>
+          <Button
+            onClick={() => navigate(`/professor/alunos/${studentId}/metas/nova`)}
+            variant="outline"
+            className="text-xs"
+          >
+            + Meta
           </Button>
           <Button
             onClick={() => navigate(`/professor/alunos/${studentId}/editar`)}

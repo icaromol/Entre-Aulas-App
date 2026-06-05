@@ -14,6 +14,8 @@ import WeeklyPlanPage from '@/pages/teacher/WeeklyPlanPage'
 import TodayPage from '@/pages/student/TodayPage'
 import PomodoroPage from '@/pages/student/PomodoroPage'
 import RepertoirePage from '@/pages/student/RepertoirePage'
+import GoalsPage from '@/pages/student/GoalsPage'
+import NewGoalPage from '@/pages/teacher/NewGoalPage'
 
 export function Router() {
   return (
@@ -36,12 +38,14 @@ export function Router() {
         <Route path="/professor/alunos/:studentId/exercicios/novo" element={<AuthGuard allowedRole="teacher"><NewExercisePage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/exercicios/:exerciseId" element={<AuthGuard allowedRole="teacher"><ExerciseDetailPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/plano" element={<AuthGuard allowedRole="teacher"><WeeklyPlanPage /></AuthGuard>} />
+        <Route path="/professor/alunos/:studentId/metas/nova" element={<AuthGuard allowedRole="teacher"><NewGoalPage /></AuthGuard>} />
 
         {/* Aluno */}
         <Route path="/aluno" element={<AuthGuard allowedRole="student"><Navigate to="/aluno/hoje" replace /></AuthGuard>} />
         <Route path="/aluno/hoje" element={<AuthGuard allowedRole="student"><TodayPage /></AuthGuard>} />
         <Route path="/aluno/pomodoro" element={<AuthGuard allowedRole="student"><PomodoroPage /></AuthGuard>} />
         <Route path="/aluno/repertorio" element={<AuthGuard allowedRole="student"><RepertoirePage /></AuthGuard>} />
+        <Route path="/aluno/metas" element={<AuthGuard allowedRole="student"><GoalsPage /></AuthGuard>} />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
