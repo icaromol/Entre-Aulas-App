@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -65,13 +65,15 @@ const categoryLabel: Record<string, string> = {
 export default function StudentProfilePage() {
   const { studentId } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const [student, setStudent] = useState<Student | null>(null)
   const [availability, setAvailability] = useState<Availability[]>([])
   const [pieces, setPieces] = useState<Piece[]>([])
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'pieces' | 'exercises' | 'info'>('pieces')
+  const initialTab = searchParams.get('tab') as 'pieces' | 'exercises' | 'info' | null
+  const [activeTab, setActiveTab] = useState<'pieces' | 'exercises' | 'info'>(initialTab ?? 'pieces')
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {

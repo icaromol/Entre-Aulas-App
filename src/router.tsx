@@ -9,6 +9,7 @@ import EditStudentPage from '@/pages/teacher/EditStudentPage'
 import NewPiecePage from '@/pages/teacher/NewPiecePage'
 import PieceDetailPage from '@/pages/teacher/PieceDetailPage'
 import NewExercisePage from '@/pages/teacher/NewExercisePage'
+import ExerciseDetailPage from '@/pages/teacher/ExerciseDetailPage'
 import WeeklyPlanPage from '@/pages/teacher/WeeklyPlanPage'
 import TodayPage from '@/pages/student/TodayPage'
 import PomodoroPage from '@/pages/student/PomodoroPage'
@@ -32,6 +33,7 @@ export function Router() {
         <Route path="/professor/alunos/:studentId/pecas/nova" element={<AuthGuard allowedRole="teacher"><NewPiecePage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/pecas/:pieceId" element={<AuthGuard allowedRole="teacher"><PieceDetailPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/exercicios/novo" element={<AuthGuard allowedRole="teacher"><NewExercisePage /></AuthGuard>} />
+        <Route path="/professor/alunos/:studentId/exercicios/:exerciseId" element={<AuthGuard allowedRole="teacher"><ExerciseDetailPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/plano" element={<AuthGuard allowedRole="teacher"><WeeklyPlanPage /></AuthGuard>} />
 
         {/* Aluno */}
