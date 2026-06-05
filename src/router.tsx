@@ -13,6 +13,7 @@ import ExerciseDetailPage from '@/pages/teacher/ExerciseDetailPage'
 import WeeklyPlanPage from '@/pages/teacher/WeeklyPlanPage'
 import TodayPage from '@/pages/student/TodayPage'
 import PomodoroPage from '@/pages/student/PomodoroPage'
+import RepertoirePage from '@/pages/student/RepertoirePage'
 
 export function Router() {
   return (
@@ -40,6 +41,7 @@ export function Router() {
         <Route path="/aluno" element={<AuthGuard allowedRole="student"><Navigate to="/aluno/hoje" replace /></AuthGuard>} />
         <Route path="/aluno/hoje" element={<AuthGuard allowedRole="student"><TodayPage /></AuthGuard>} />
         <Route path="/aluno/pomodoro" element={<AuthGuard allowedRole="student"><PomodoroPage /></AuthGuard>} />
+        <Route path="/aluno/repertorio" element={<AuthGuard allowedRole="student"><RepertoirePage /></AuthGuard>} />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
