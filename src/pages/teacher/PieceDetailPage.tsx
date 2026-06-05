@@ -79,20 +79,20 @@ export default function PieceDetailPage() {
 
   async function toggleItem(item: ChecklistItem) {
     if (item.completed) {
-      // Desmarca
-      await supabase
+      const { error } = await supabase
         .from('checklist_completions')
         .delete()
         .eq('checklist_item_id', item.id)
         .eq('student_id', studentId!)
+      if (error) console.error('[checklist] delete error:', error.message)
     } else {
-      // Marca
-      await supabase
+      const { error } = await supabase
         .from('checklist_completions')
         .insert({
           checklist_item_id: item.id,
           student_id: studentId!,
         })
+      if (error) console.error('[checklist] insert error:', error.message)
     }
 
     // Atualiza local
