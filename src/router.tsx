@@ -11,6 +11,7 @@ import PieceDetailPage from '@/pages/teacher/PieceDetailPage'
 import NewExercisePage from '@/pages/teacher/NewExercisePage'
 import WeeklyPlanPage from '@/pages/teacher/WeeklyPlanPage'
 import TodayPage from '@/pages/student/TodayPage'
+import PomodoroPage from '@/pages/student/PomodoroPage'
 
 export function Router() {
   return (
@@ -36,6 +37,7 @@ export function Router() {
         {/* Aluno */}
         <Route path="/aluno" element={<AuthGuard allowedRole="student"><Navigate to="/aluno/hoje" replace /></AuthGuard>} />
         <Route path="/aluno/hoje" element={<AuthGuard allowedRole="student"><TodayPage /></AuthGuard>} />
+        <Route path="/aluno/pomodoro" element={<AuthGuard allowedRole="student"><PomodoroPage /></AuthGuard>} />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
