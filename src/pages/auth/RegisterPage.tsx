@@ -1,21 +1,51 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const inviteStudentId = searchParams.get('invite')
+
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState<'teacher' | 'student'>('teacher')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [role, setRole] = useState<'teacher' | 'student'>(
+    inviteStudentId ? 'student' : 'teacher'
+  )
+  const [inviteStudent, setInviteStudent] = useState<{ first_name: string; last_name: string } | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!inviteStudentId) return
+    supabase
+      .from('students')
+      .select('first_name, last_name, contact_email')
+      .eq('id', inviteStudentId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setInviteStudent(data)
+          setFirstName(data.first_name)
+          setLastName(data.last_name)
+          setEmail(data.contact_email ?? '')
+        }
+      })
+  }, [inviteStudentId])
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem.')
+      return
+    }
+
     setLoading(true)
 
     const { data, error } = await supabase.auth.signUp({
@@ -36,6 +66,13 @@ export default function RegisterPage() {
       return
     }
 
+    if (inviteStudentId && data.user) {
+      await supabase
+        .from('students')
+        .update({ profile_id: data.user.id })
+        .eq('id', inviteStudentId)
+    }
+
     if (role === 'teacher') {
       navigate('/professor')
     } else {
@@ -47,13 +84,17 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
 
-        {/* Logo / título */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-[#1E3A5F]">Entre Aulas</h1>
-          <p className="text-sm text-gray-500 mt-1">Crie sua conta</p>
+          {inviteStudent ? (
+            <p className="text-sm text-gray-500 mt-1">
+              Olá, {inviteStudent.first_name}! Crie sua senha de acesso.
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500 mt-1">Crie sua conta</p>
+          )}
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <form onSubmit={handleRegister} className="space-y-4">
 
@@ -66,7 +107,12 @@ export default function RegisterPage() {
                   onChange={e => setFirstName(e.target.value)}
                   placeholder="João"
                   required
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+                  readOnly={!!inviteStudentId}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition ${
+                    inviteStudentId
+                      ? 'bg-gray-50 border-gray-200 text-gray-400'
+                      : 'border-gray-200 focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20'
+                  }`}
                 />
               </div>
               <div className="space-y-1">
@@ -77,7 +123,12 @@ export default function RegisterPage() {
                   onChange={e => setLastName(e.target.value)}
                   placeholder="Silva"
                   required
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+                  readOnly={!!inviteStudentId}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition ${
+                    inviteStudentId
+                      ? 'bg-gray-50 border-gray-200 text-gray-400'
+                      : 'border-gray-200 focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20'
+                  }`}
                 />
               </div>
             </div>
@@ -90,7 +141,12 @@ export default function RegisterPage() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="seu@email.com"
                 required
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+                readOnly={!!inviteStudentId}
+                className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition ${
+                  inviteStudentId
+                    ? 'bg-gray-50 border-gray-200 text-gray-400'
+                    : 'border-gray-200 focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20'
+                }`}
               />
             </div>
 
@@ -107,56 +163,62 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Seleção de role */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Você é</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRole('teacher')}
-                  className={`py-2 rounded-lg border text-sm font-medium transition ${
-                    role === 'teacher'
-                      ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
-                  }`}
-                >
-                  Professor
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole('student')}
-                  className={`py-2 rounded-lg border text-sm font-medium transition ${
-                    role === 'student'
-                      ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
-                  }`}
-                >
-                  Aluno
-                </button>
-              </div>
+              <label className="text-sm font-medium text-gray-700">Confirmar senha</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="repita a senha"
+                required
+                minLength={6}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+              />
             </div>
 
-            {error && (
-              <p className="text-sm text-red-500">{error}</p>
+            {!inviteStudentId && (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Você é</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['teacher', 'student'] as const).map(r => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRole(r)}
+                      className={`py-2 rounded-lg border text-sm font-medium transition ${
+                        role === r
+                          ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
+                      }`}
+                    >
+                      {r === 'teacher' ? 'Professor' : 'Aluno'}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
+
+            {error && <p className="text-sm text-red-500">{error}</p>}
 
             <Button
               type="submit"
               disabled={loading}
               className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-lg h-9"
             >
-              {loading ? 'Criando conta...' : 'Criar conta'}
+              {loading ? 'Criando conta...' : inviteStudentId ? 'Criar minha senha' : 'Criar conta'}
             </Button>
 
           </form>
         </div>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Já tem conta?{' '}
-          <Link to="/login" className="text-[#4A90C4] font-medium hover:underline">
-            Entrar
-          </Link>
-        </p>
+        {!inviteStudentId && (
+          <p className="text-center text-sm text-gray-500 mt-6">
+            Já tem conta?{' '}
+            <Link to="/login" className="text-[#4A90C4] font-medium hover:underline">
+              Entrar
+            </Link>
+          </p>
+        )}
 
       </div>
     </div>
