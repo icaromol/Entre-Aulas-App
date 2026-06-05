@@ -16,6 +16,7 @@ import PomodoroPage from '@/pages/student/PomodoroPage'
 import RepertoirePage from '@/pages/student/RepertoirePage'
 import GoalsPage from '@/pages/student/GoalsPage'
 import NewGoalPage from '@/pages/teacher/NewGoalPage'
+import HistoryPage from '@/pages/student/HistoryPage'
 
 export function Router() {
   return (
@@ -46,6 +47,7 @@ export function Router() {
         <Route path="/aluno/pomodoro" element={<AuthGuard allowedRole="student"><PomodoroPage /></AuthGuard>} />
         <Route path="/aluno/repertorio" element={<AuthGuard allowedRole="student"><RepertoirePage /></AuthGuard>} />
         <Route path="/aluno/metas" element={<AuthGuard allowedRole="student"><GoalsPage /></AuthGuard>} />
+        <Route path="/aluno/historico" element={<AuthGuard allowedRole="student"><HistoryPage /></AuthGuard>} />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
