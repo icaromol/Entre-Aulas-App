@@ -36,13 +36,6 @@ export default function RegisterPage() {
       return
     }
 
-    // Se for professor, cria o registro na tabela teachers
-    if (data.user && role === 'teacher') {
-      await supabase.from('teachers').insert({
-        profile_id: data.user.id,
-      })
-    }
-
     if (role === 'teacher') {
       navigate('/professor')
     } else {
