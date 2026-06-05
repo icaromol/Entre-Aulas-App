@@ -139,6 +139,13 @@ export default function StudentProfilePage() {
         </div>
         <div className="flex gap-2">
           <Button
+            onClick={() => navigate(`/professor/alunos/${studentId}/plano`)}
+            variant="outline"
+            className="text-xs"
+          >
+            Plano
+          </Button>
+          <Button
             onClick={() => navigate(`/professor/alunos/${studentId}/editar`)}
             variant="outline"
             className="text-xs"
