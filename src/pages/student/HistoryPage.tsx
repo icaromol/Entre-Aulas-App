@@ -5,11 +5,18 @@ import { useAuth } from '@/hooks/useAuth'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { getMonday, formatWeekStart, formatWeekLabel } from '@/lib/weekUtils'
 
-interface SessionItem {
-  plan_item: {
+interface PlanItemJoin {
+  is_maintenance: boolean
+  piece: { title: string } | null
+  checklist_item: {
+    title: string
     piece: { title: string } | null
     exercise: { title: string } | null
   } | null
+}
+
+interface SessionItem {
+  plan_item: PlanItemJoin | null
 }
 
 interface Session {
@@ -45,16 +52,24 @@ function fmtWeekTotal(secs: number): string {
 
 function fmtDate(isoStr: string): string {
   return new Date(isoStr).toLocaleDateString('pt-BR', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
+    weekday: 'short', day: '2-digit', month: 'short',
+    hour: '2-digit', minute: '2-digit',
   })
 }
 
 function sessionWeekStart(startedAt: string): string {
   return formatWeekStart(getMonday(new Date(startedAt)))
+}
+
+function itemLabel(si: SessionItem): string | null {
+  const p = si.plan_item
+  if (!p) return null
+  if (p.is_maintenance) return `🔄 ${p.piece?.title ?? 'Manutenção'}`
+  if (p.checklist_item) {
+    const src = p.checklist_item.piece?.title ?? p.checklist_item.exercise?.title
+    return src ? `${p.checklist_item.title} — ${src}` : p.checklist_item.title
+  }
+  return p.piece?.title ?? null
 }
 
 export default function HistoryPage() {
@@ -63,9 +78,7 @@ export default function HistoryPage() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (profile) fetchAll()
-  }, [profile])
+  useEffect(() => { if (profile) fetchAll() }, [profile])
 
   async function fetchAll() {
     const { data: student } = await supabase
@@ -79,12 +92,16 @@ export default function HistoryPage() {
     const { data } = await supabase
       .from('study_sessions')
       .select(`
-        id, started_at, duration_seconds,
-        cycle_name, difficulty_felt, notes,
+        id, started_at, duration_seconds, cycle_name, difficulty_felt, notes,
         session_items(
           plan_item:plan_items(
+            is_maintenance,
             piece:pieces(title),
-            exercise:exercises(title)
+            checklist_item:checklist_items(
+              title,
+              piece:pieces(title),
+              exercise:exercises(title)
+            )
           )
         )
       `)
@@ -108,12 +125,10 @@ export default function HistoryPage() {
     .filter(s => sessionWeekStart(s.started_at) === currentWeekStart)
     .reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0)
 
-  // Agrupa por semana
   const grouped: Record<string, Session[]> = {}
   for (const s of sessions) {
     const key = sessionWeekStart(s.started_at)
-    if (!grouped[key]) grouped[key] = []
-    grouped[key].push(s)
+    ;(grouped[key] ??= []).push(s)
   }
   const weekKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
 
@@ -151,12 +166,11 @@ export default function HistoryPage() {
         <div className="space-y-6">
           {weekKeys.map(weekKey => {
             const weekSessions = grouped[weekKey]
-            const weekTotalSecs = weekSessions.reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0)
+            const weekTotalSecs = weekSessions.reduce((s, sess) => s + (sess.duration_seconds ?? 0), 0)
             const isCurrentWeek = weekKey === currentWeekStart
 
             return (
               <div key={weekKey}>
-                {/* Cabeçalho da semana */}
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     {isCurrentWeek ? 'Esta semana' : formatWeekLabel(weekKey)}
@@ -166,8 +180,8 @@ export default function HistoryPage() {
 
                 <div className="space-y-3">
                   {weekSessions.map(session => {
-                    const itemTitles = session.session_items
-                      .map(si => si.plan_item?.piece?.title ?? si.plan_item?.exercise?.title)
+                    const labels = session.session_items
+                      .map(itemLabel)
                       .filter((t): t is string => Boolean(t))
 
                     const badge = session.difficulty_felt
@@ -192,14 +206,11 @@ export default function HistoryPage() {
                           )}
                         </div>
 
-                        {itemTitles.length > 0 && (
+                        {labels.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
-                            {itemTitles.map((title, i) => (
-                              <span
-                                key={i}
-                                className="text-[11px] bg-[#D6E4F0] text-[#1E3A5F] px-2 py-0.5 rounded-lg font-medium"
-                              >
-                                {title}
+                            {labels.map((label, i) => (
+                              <span key={i} className="text-[11px] bg-[#D6E4F0] text-[#1E3A5F] px-2 py-0.5 rounded-lg font-medium">
+                                {label}
                               </span>
                             ))}
                           </div>
