@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { MdArrowBack, MdMusicNote, MdSchool, MdLibraryMusic, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd } from 'react-icons/md'
+import { MdArrowBack, MdMusicNote, MdSchool, MdLibraryMusic, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd, MdMic, MdFolder } from 'react-icons/md'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -83,6 +83,20 @@ const programaTypeLabel: Record<string, string> = {
   regular: 'Aulas Regulares', recital: 'Recital', concerto: 'Concerto',
   show: 'Show', gravacao: 'Gravação', exame: 'Exame',
   participacao: 'Participação', outro: 'Outro',
+}
+
+function programIcon(type: string) {
+  const map: Record<string, React.ReactNode> = {
+    regular:      <MdSchool       size={20} className="text-white" />,
+    recital:      <MdMusicNote    size={20} className="text-white" />,
+    concerto:     <MdLibraryMusic size={20} className="text-white" />,
+    show:         <MdMic          size={20} className="text-white" />,
+    gravacao:     <MdMic          size={20} className="text-white" />,
+    exame:        <MdSchool       size={20} className="text-white" />,
+    participacao: <MdMusicNote    size={20} className="text-white" />,
+    outro:        <MdFolder       size={20} className="text-white" />,
+  }
+  return map[type] ?? <MdLibraryMusic size={20} className="text-white" />
 }
 
 const programaTypeBadge: Record<string, string> = {
@@ -494,8 +508,11 @@ export default function StudentProfilePage() {
               <Link
                 key={prog.id}
                 to={`/professor/alunos/${studentId}/programas/${prog.id}`}
-                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-3 hover:border-[#4A90C4] transition"
+                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
               >
+                <div className="w-9 h-9 rounded-lg bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                  {programIcon(prog.type)}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-semibold text-gray-800 truncate">{prog.title}</p>
