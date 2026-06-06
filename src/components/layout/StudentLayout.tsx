@@ -77,7 +77,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
           </div>
 
           {/* Centro — logo */}
-          <img src="/estudamus_logo.png" alt="estudamus" className="h-5" />
+          <img src="/estudamus_logo.png" alt="estudamus" className="h-5 mx-auto" />
 
           {/* Direita — logout */}
           <div className="flex justify-end">
