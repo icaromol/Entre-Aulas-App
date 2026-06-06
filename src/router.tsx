@@ -16,6 +16,7 @@ import PomodoroPage from '@/pages/student/PomodoroPage'
 import RepertoirePage from '@/pages/student/RepertoirePage'
 import GoalsPage from '@/pages/student/GoalsPage'
 import NewGoalPage from '@/pages/teacher/NewGoalPage'
+import EditGoalPage from '@/pages/teacher/EditGoalPage'
 import HistoryPage from '@/pages/student/HistoryPage'
 
 export function Router() {
@@ -40,6 +41,7 @@ export function Router() {
         <Route path="/professor/alunos/:studentId/exercicios/:exerciseId" element={<AuthGuard allowedRole="teacher"><ExerciseDetailPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/plano" element={<AuthGuard allowedRole="teacher"><WeeklyPlanPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/metas/nova" element={<AuthGuard allowedRole="teacher"><NewGoalPage /></AuthGuard>} />
+        <Route path="/professor/alunos/:studentId/metas/:goalId/editar" element={<AuthGuard allowedRole="teacher"><EditGoalPage /></AuthGuard>} />
 
         {/* Aluno */}
         <Route path="/aluno" element={<AuthGuard allowedRole="student"><Navigate to="/aluno/hoje" replace /></AuthGuard>} />

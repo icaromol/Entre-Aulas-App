@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useState, useRef } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -37,6 +37,14 @@ interface Exercise {
   status: string
 }
 
+interface Goal {
+  id: string
+  title: string
+  type: string
+  target_value: string | null
+  due_date: string | null
+}
+
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 const levelLabel: Record<string, string> = {
@@ -45,15 +53,14 @@ const levelLabel: Record<string, string> = {
   advanced: 'Avançado',
 }
 
-const statusLabel: Record<string, string> = {
+const pieceStatusLabel: Record<string, string> = {
   in_progress: 'Em andamento',
   completed: 'Concluída',
   paused: 'Pausada',
   future: 'Repertório futuro',
-  active: 'Ativo',
 }
 
-const categoryLabel: Record<string, string> = {
+const exerciseCategoryLabel: Record<string, string> = {
   technique: 'Técnica',
   ear_training: 'Percepção',
   harmony: 'Harmonia',
@@ -62,36 +69,74 @@ const categoryLabel: Record<string, string> = {
   other: 'Outro',
 }
 
+const exerciseStatusLabel: Record<string, string> = {
+  active: 'Ativo',
+  inactive: 'Inativo',
+  completed: 'Concluído',
+}
+
+const typeLabel: Record<string, string> = {
+  free: 'Livre',
+  measurable: 'Mensurável',
+  checklist_item: 'Checklist',
+  exercise: 'Exercício',
+}
+
+const typeBadge: Record<string, string> = {
+  free: 'bg-blue-50 text-blue-600',
+  measurable: 'bg-amber-50 text-amber-700',
+  checklist_item: 'bg-purple-50 text-purple-600',
+  exercise: 'bg-green-50 text-green-700',
+}
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+}
+
 export default function StudentProfilePage() {
   const { studentId } = useParams()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const [student, setStudent] = useState<Student | null>(null)
   const [availability, setAvailability] = useState<Availability[]>([])
   const [pieces, setPieces] = useState<Piece[]>([])
   const [exercises, setExercises] = useState<Exercise[]>([])
+  const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
-  const initialTab = searchParams.get('tab') as 'pieces' | 'exercises' | 'info' | null
-  const [activeTab, setActiveTab] = useState<'pieces' | 'exercises' | 'info'>(initialTab ?? 'pieces')
+  const [showMenu, setShowMenu] = useState(false)
+  const [showInfo, setShowInfo] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [completingGoalId, setCompletingGoalId] = useState<string | null>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     if (studentId) fetchAll()
   }, [studentId])
 
   async function fetchAll() {
-    const [studentRes, availRes, piecesRes, exercisesRes] = await Promise.all([
+    const [studentRes, availRes, piecesRes, exercisesRes, goalsRes] = await Promise.all([
       supabase.from('students').select('*').eq('id', studentId!).single(),
       supabase.from('student_availability').select('*').eq('student_id', studentId!).order('day_of_week'),
       supabase.from('pieces').select('id, title, composer, status, completion_pct').eq('student_id', studentId!).order('created_at', { ascending: false }),
       supabase.from('exercises').select('id, title, category, status').eq('student_id', studentId!).order('created_at', { ascending: false }),
+      supabase.from('goals').select('id, title, type, target_value, due_date').eq('student_id', studentId!).eq('status', 'active').order('created_at', { ascending: false }),
     ])
 
     setStudent(studentRes.data)
     setAvailability(availRes.data ?? [])
     setPieces(piecesRes.data ?? [])
     setExercises(exercisesRes.data ?? [])
+    setGoals(goalsRes.data ?? [])
     setLoading(false)
   }
 
@@ -101,6 +146,13 @@ export default function StudentProfilePage() {
     setDeleting(true)
     await supabase.from('students').delete().eq('id', studentId!)
     navigate('/professor/alunos')
+  }
+
+  async function completeGoal(id: string) {
+    setCompletingGoalId(id)
+    await supabase.from('goals').update({ status: 'completed' }).eq('id', id)
+    setGoals(prev => prev.filter(g => g.id !== id))
+    setCompletingGoalId(null)
   }
 
   if (loading) {
@@ -124,7 +176,73 @@ export default function StudentProfilePage() {
 
   return (
     <TeacherLayout>
-      {/* Header do perfil */}
+      {/* Modal de Informações */}
+      {showInfo && (
+        <div
+          className="fixed inset-0 bg-black/40 z-20 flex items-end justify-center"
+          onClick={() => setShowInfo(false)}
+        >
+          <div
+            className="bg-white rounded-t-2xl p-5 w-full max-w-md"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-[#1E3A5F]">Informações</h2>
+              <button
+                onClick={() => setShowInfo(false)}
+                className="text-gray-400 hover:text-gray-600 transition text-lg leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Contato</h3>
+                <div className="flex justify-between">
+                  <span className="text-xs text-gray-400">E-mail</span>
+                  <span className="text-xs text-gray-700">{student.contact_email ?? '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-gray-400">Telefone</span>
+                  <span className="text-xs text-gray-700">{student.contact_phone ?? '—'}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Disponibilidade semanal</h3>
+                {availability.map(d => (
+                  <div key={d.day_of_week} className="flex items-center justify-between">
+                    <span className={`text-xs font-medium ${d.is_active ? 'text-gray-700' : 'text-gray-300'}`}>
+                      {DAYS[d.day_of_week]}
+                    </span>
+                    {d.is_active
+                      ? <span className="text-xs text-[#4A90C4] font-medium">{d.minutes_available} min</span>
+                      : <span className="text-xs text-gray-300">—</span>
+                    }
+                  </div>
+                ))}
+              </div>
+
+              {student.notes && (
+                <div className="space-y-1">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Observações</h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">{student.notes}</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowInfo(false)}
+              className="mt-5 w-full py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#4A90C4] transition"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link to="/professor/alunos" className="text-gray-400 hover:text-gray-600 transition">
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -139,36 +257,43 @@ export default function StudentProfilePage() {
             {student.instrument} · {levelLabel[student.level] ?? student.level}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => navigate(`/professor/alunos/${studentId}/plano`)}
-            variant="outline"
-            className="text-xs"
+
+        {/* Menu ⋯ */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setShowMenu(v => !v)}
+            className="w-8 h-8 flex flex-col items-center justify-center gap-[3px] rounded-lg hover:bg-gray-100 transition"
+            aria-label="Mais opções"
           >
-            Plano
-          </Button>
-          <Button
-            onClick={() => navigate(`/professor/alunos/${studentId}/metas/nova`)}
-            variant="outline"
-            className="text-xs"
-          >
-            + Meta
-          </Button>
-          <Button
-            onClick={() => navigate(`/professor/alunos/${studentId}/editar`)}
-            variant="outline"
-            className="text-xs"
-          >
-            Editar
-          </Button>
-          <Button
-            onClick={handleDelete}
-            disabled={deleting}
-            variant="outline"
-            className="text-xs text-red-500 border-red-200 hover:bg-red-50"
-          >
-            {deleting ? '...' : 'Excluir'}
-          </Button>
+            <span className="w-1 h-1 rounded-full bg-gray-500"/>
+            <span className="w-1 h-1 rounded-full bg-gray-500"/>
+            <span className="w-1 h-1 rounded-full bg-gray-500"/>
+          </button>
+
+          {showMenu && (
+            <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-44 z-10">
+              <button
+                onClick={() => { setShowMenu(false); setShowInfo(true) }}
+                className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+              >
+                Informações
+              </button>
+              <button
+                onClick={() => { setShowMenu(false); navigate(`/professor/alunos/${studentId}/editar`) }}
+                className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+              >
+                Editar
+              </button>
+              <div className="border-t border-gray-100 my-1"/>
+              <button
+                onClick={() => { setShowMenu(false); handleDelete() }}
+                disabled={deleting}
+                className="w-full px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-50 transition disabled:opacity-50"
+              >
+                {deleting ? '...' : 'Excluir aluno'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -188,159 +313,159 @@ export default function StudentProfilePage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
-        {([
-          { key: 'pieces', label: 'Peças' },
-          { key: 'exercises', label: 'Exercícios' },
-          { key: 'info', label: 'Informações' },
-        ] as const).map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition ${
-              activeTab === tab.key
-                ? 'bg-white text-[#1E3A5F] shadow-sm'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* ── PEÇAS ── */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Peças</h2>
+        <Link to={`/professor/alunos/${studentId}/pecas/nova`}>
+          <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs h-7 px-3">
+            + Nova peça
+          </Button>
+        </Link>
       </div>
 
-      {/* Tab: Peças */}
-      {activeTab === 'pieces' && (
-        <div className="space-y-3">
-          <div className="flex justify-end">
-            <Link to={`/professor/alunos/${studentId}/pecas/nova`}>
-              <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs">
-                + Nova peça
-              </Button>
-            </Link>
+      <div className="space-y-2 mb-7">
+        {pieces.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+            <p className="text-sm text-gray-400">Nenhuma peça cadastrada.</p>
           </div>
-
-          {pieces.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-              <p className="text-sm text-gray-400">Nenhuma peça cadastrada.</p>
-            </div>
-          ) : (
-            pieces.map(piece => (
-              <Link
-                key={piece.id}
-                to={`/professor/alunos/${studentId}/pecas/${piece.id}`}
-                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
-              >
-                <div className="relative w-10 h-10 shrink-0">
-                  <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
-                    <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3"/>
-                    <circle
-                      cx="18" cy="18" r="15" fill="none"
-                      stroke="#4A90C4" strokeWidth="3"
-                      strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-[#1E3A5F]">
-                    {piece.completion_pct}%
-                  </span>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{piece.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {piece.composer ?? '—'} · {statusLabel[piece.status] ?? piece.status}
-                  </p>
-                </div>
-
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                  <path d="M9 18l6-6-6-6"/>
+        ) : (
+          pieces.map(piece => (
+            <Link
+              key={piece.id}
+              to={`/professor/alunos/${studentId}/pecas/${piece.id}`}
+              className="bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center gap-4 hover:border-[#4A90C4] transition"
+            >
+              <div className="relative w-9 h-9 shrink-0">
+                <svg viewBox="0 0 36 36" className="w-9 h-9 -rotate-90">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3"/>
+                  <circle
+                    cx="18" cy="18" r="15" fill="none"
+                    stroke="#4A90C4" strokeWidth="3"
+                    strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`}
+                    strokeLinecap="round"
+                  />
                 </svg>
-              </Link>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Tab: Exercícios */}
-      {activeTab === 'exercises' && (
-        <div className="space-y-3">
-          <div className="flex justify-end">
-            <Link to={`/professor/alunos/${studentId}/exercicios/novo`}>
-              <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs">
-                + Novo exercício
-              </Button>
+                <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-[#1E3A5F]">
+                  {piece.completion_pct}%
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800 truncate">{piece.title}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {piece.composer ?? '—'} · {pieceStatusLabel[piece.status] ?? piece.status}
+                </p>
+              </div>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
             </Link>
+          ))
+        )}
+      </div>
+
+      {/* ── EXERCÍCIOS ── */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Exercícios</h2>
+        <Link to={`/professor/alunos/${studentId}/exercicios/novo`}>
+          <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs h-7 px-3">
+            + Novo exercício
+          </Button>
+        </Link>
+      </div>
+
+      <div className="space-y-2 mb-7">
+        {exercises.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+            <p className="text-sm text-gray-400">Nenhum exercício cadastrado.</p>
           </div>
-
-          {exercises.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-              <p className="text-sm text-gray-400">Nenhum exercício cadastrado.</p>
-            </div>
-          ) : (
-            exercises.map(ex => (
-              <Link
-                key={ex.id}
-                to={`/professor/alunos/${studentId}/exercicios/${ex.id}`}
-                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between hover:border-[#4A90C4] transition"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">{ex.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {categoryLabel[ex.category] ?? ex.category} · {statusLabel[ex.status] ?? ex.status}
-                  </p>
-                </div>
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                  <path d="M9 18l6-6-6-6"/>
-                </svg>
-              </Link>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Tab: Informações */}
-      {activeTab === 'info' && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-600">Contato</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-xs text-gray-400">E-mail</span>
-                <span className="text-xs text-gray-700">{student.contact_email ?? '—'}</span>
+        ) : (
+          exercises.map(ex => (
+            <Link
+              key={ex.id}
+              to={`/professor/alunos/${studentId}/exercicios/${ex.id}`}
+              className="bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center justify-between hover:border-[#4A90C4] transition"
+            >
+              <div>
+                <p className="text-sm font-semibold text-gray-800">{ex.title}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {exerciseCategoryLabel[ex.category] ?? ex.category} · {exerciseStatusLabel[ex.status] ?? ex.status}
+                </p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-xs text-gray-400">Telefone</span>
-                <span className="text-xs text-gray-700">{student.contact_phone ?? '—'}</span>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </Link>
+          ))
+        )}
+      </div>
+
+      {/* ── METAS ── */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Metas</h2>
+        <Link to={`/professor/alunos/${studentId}/metas/nova`}>
+          <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs h-7 px-3">
+            + Nova meta
+          </Button>
+        </Link>
+      </div>
+
+      <div className="space-y-2 mb-7">
+        {goals.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+            <p className="text-sm text-gray-400">Nenhuma meta ativa.</p>
+          </div>
+        ) : (
+          goals.map(goal => (
+            <div key={goal.id} className="bg-white rounded-2xl border border-gray-100 px-4 py-3">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <p className="text-sm font-semibold text-gray-800 flex-1">{goal.title}</p>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${typeBadge[goal.type] ?? 'bg-gray-100 text-gray-500'}`}>
+                  {typeLabel[goal.type] ?? goal.type}
+                </span>
+              </div>
+              {(goal.target_value || goal.due_date) && (
+                <div className="flex gap-3 mb-2">
+                  {goal.target_value && (
+                    <span className="text-xs text-gray-400">Alvo: {goal.target_value}</span>
+                  )}
+                  {goal.due_date && (
+                    <span className="text-xs text-gray-400">Prazo: {formatDate(goal.due_date)}</span>
+                  )}
+                </div>
+              )}
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => navigate(`/professor/alunos/${studentId}/metas/${goal.id}/editar`)}
+                  className="flex-1 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-[#4A90C4] transition"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => completeGoal(goal.id)}
+                  disabled={completingGoalId === goal.id}
+                  className="flex-1 py-1.5 rounded-lg bg-[#D6E4F0] text-xs font-medium text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition disabled:opacity-50"
+                >
+                  {completingGoalId === goal.id ? '...' : 'Concluir'}
+                </button>
               </div>
             </div>
-          </div>
+          ))
+        )}
+      </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-600">Disponibilidade semanal</h3>
-            <div className="space-y-2">
-              {availability.map(d => (
-                <div key={d.day_of_week} className="flex items-center justify-between">
-                  <span className={`text-xs font-medium ${d.is_active ? 'text-gray-700' : 'text-gray-300'}`}>
-                    {DAYS[d.day_of_week]}
-                  </span>
-                  {d.is_active
-                    ? <span className="text-xs text-[#4A90C4] font-medium">{d.minutes_available} min</span>
-                    : <span className="text-xs text-gray-300">—</span>
-                  }
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {student.notes && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
-              <h3 className="text-sm font-semibold text-gray-600">Observações</h3>
-              <p className="text-xs text-gray-600 leading-relaxed">{student.notes}</p>
-            </div>
-          )}
-        </div>
-      )}
+      {/* ── PLANO SEMANAL ── */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Plano semanal</h2>
+      </div>
+      <button
+        onClick={() => navigate(`/professor/alunos/${studentId}/plano`)}
+        className="w-full bg-white rounded-2xl border border-gray-100 px-4 py-4 flex items-center justify-between hover:border-[#4A90C4] transition"
+      >
+        <span className="text-sm font-medium text-gray-700">Abrir plano semanal</span>
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </button>
     </TeacherLayout>
   )
 }
