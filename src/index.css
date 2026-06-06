@@ -134,3 +134,29 @@
     @apply font-sans;
     }
 }
+
+/* ── Planejamento board scrollbar ── */
+/* overflow-x in @media so it only applies on desktop (mobile is flex-col, no horizontal overflow) */
+@media (min-width: 768px) {
+  .scrollbar-plan {
+    overflow-x: scroll;
+  }
+}
+.scrollbar-plan {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 144, 196, 0.4) transparent;
+}
+.scrollbar-plan::-webkit-scrollbar {
+  height: 5px;
+  display: block;
+}
+.scrollbar-plan::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-plan::-webkit-scrollbar-thumb {
+  background-color: rgba(74, 144, 196, 0.35);
+  border-radius: 9999px;
+}
+.scrollbar-plan::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(74, 144, 196, 0.65);
+}
