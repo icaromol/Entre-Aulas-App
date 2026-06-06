@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MdArrowBack, MdLibraryMusic, MdNotes } from 'react-icons/md'
+import { MdArrowBack, MdLibraryMusic, MdNotes, MdMusicNote, MdSchool } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -19,20 +19,65 @@ const TYPES: { value: ProgramaType; label: string; emoji: string; needsDeadline:
   { value: 'outro',        label: 'Outro',            emoji: '📁', needsDeadline: false },
 ]
 
+interface PieceItem { id: string; title: string; composer: string | null }
+interface ExerciseItem { id: string; title: string; category: string }
+
+const exerciseCategoryLabel: Record<string, string> = {
+  technique: 'Técnica', ear_training: 'Percepção', harmony: 'Harmonia',
+  history: 'História', improvisation: 'Improvisação', other: 'Outro',
+}
+
 export default function NewProgramaPage() {
   const { studentId } = useParams()
   const navigate = useNavigate()
   const { profile } = useAuth()
 
-  const [title, setTitle] = useState('')
   const [type, setType] = useState<ProgramaType>('regular')
+  const [title, setTitle] = useState(TYPES[0].label)
+  const [autoTitle, setAutoTitle] = useState(true)
   const [deadline, setDeadline] = useState('')
   const [venue, setVenue] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  const [pieces, setPieces] = useState<PieceItem[]>([])
+  const [exercises, setExercises] = useState<ExerciseItem[]>([])
+  const [selectedPieceIds, setSelectedPieceIds] = useState<Set<string>>(new Set())
+  const [selectedExerciseIds, setSelectedExerciseIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!studentId) return
+    Promise.all([
+      supabase.from('pieces').select('id, title, composer').eq('student_id', studentId).order('title'),
+      supabase.from('exercises').select('id, title, category').eq('student_id', studentId).order('title'),
+    ]).then(([pr, er]) => {
+      setPieces(pr.data ?? [])
+      setExercises(er.data ?? [])
+    })
+  }, [studentId])
+
   const selected = TYPES.find(t => t.value === type)!
+
+  function handleTypeChange(newType: ProgramaType) {
+    setType(newType)
+    if (autoTitle) {
+      setTitle(newType === 'outro' ? '' : TYPES.find(t => t.value === newType)!.label)
+    }
+  }
+
+  function handleTitleChange(val: string) {
+    setTitle(val)
+    setAutoTitle(false)
+  }
+
+  function togglePiece(id: string, checked: boolean) {
+    setSelectedPieceIds(prev => { const n = new Set(prev); checked ? n.add(id) : n.delete(id); return n })
+  }
+
+  function toggleExercise(id: string, checked: boolean) {
+    setSelectedExerciseIds(prev => { const n = new Set(prev); checked ? n.add(id) : n.delete(id); return n })
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -43,14 +88,16 @@ export default function NewProgramaPage() {
       return
     }
 
+    const finalTitle = title.trim() || (type !== 'outro' ? selected.label : '')
+    if (!finalTitle) {
+      setError('Informe o nome do programa.')
+      return
+    }
+
     setSaving(true)
     try {
       const { data: teacher } = await supabase
-        .from('teachers')
-        .select('id')
-        .eq('profile_id', profile!.id)
-        .single()
-
+        .from('teachers').select('id').eq('profile_id', profile!.id).single()
       if (!teacher) throw new Error('Professor não encontrado.')
 
       const { data, error: err } = await supabase
@@ -58,16 +105,29 @@ export default function NewProgramaPage() {
         .insert({
           student_id: studentId!,
           teacher_id: teacher.id,
-          title,
+          title: finalTitle,
           type,
           deadline: deadline || null,
           venue: venue || null,
           notes: notes || null,
         })
-        .select()
-        .single()
+        .select().single()
 
       if (err) throw err
+
+      if (type !== 'regular') {
+        if (selectedPieceIds.size > 0) {
+          await supabase.from('program_pieces').insert(
+            [...selectedPieceIds].map(pieceId => ({ program_id: data.id, piece_id: pieceId }))
+          )
+        }
+        if (selectedExerciseIds.size > 0) {
+          await supabase.from('program_exercises').insert(
+            [...selectedExerciseIds].map(exerciseId => ({ program_id: data.id, exercise_id: exerciseId }))
+          )
+        }
+      }
+
       toast.success('Programa criado!')
       navigate(`/professor/alunos/${studentId}/programas/${data.id}`)
     } catch (err: unknown) {
@@ -76,6 +136,8 @@ export default function NewProgramaPage() {
       setSaving(false)
     }
   }
+
+  const hasItems = pieces.length > 0 || exercises.length > 0
 
   return (
     <TeacherLayout>
@@ -98,7 +160,7 @@ export default function NewProgramaPage() {
               <button
                 key={t.value}
                 type="button"
-                onClick={() => setType(t.value)}
+                onClick={() => handleTypeChange(t.value)}
                 className={`py-3 px-3 rounded-xl border text-sm font-medium transition flex items-center gap-2 ${
                   type === t.value
                     ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
@@ -123,9 +185,8 @@ export default function NewProgramaPage() {
             <label className="text-xs font-medium text-gray-500">Nome do programa</label>
             <input
               value={title}
-              onChange={e => setTitle(e.target.value)}
-              required
-              placeholder={type === 'regular' ? 'Ex: Aulas de Junho 2025' : 'Ex: Recital de Inverno 2025'}
+              onChange={e => handleTitleChange(e.target.value)}
+              placeholder={type === 'outro' ? 'Nome do programa' : selected.label}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
             />
           </div>
@@ -156,6 +217,99 @@ export default function NewProgramaPage() {
             </div>
           )}
         </div>
+
+        {/* Peças e Exercícios */}
+        {type !== 'regular' && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-5">
+
+            {/* Peças */}
+            {pieces.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600">
+                    <MdMusicNote size={15} />Peças
+                  </h2>
+                  <div className="flex gap-3">
+                    <button type="button"
+                      onClick={() => setSelectedPieceIds(new Set(pieces.map(p => p.id)))}
+                      className="text-xs text-[#4A90C4] hover:underline">
+                      Marcar todas
+                    </button>
+                    <button type="button"
+                      onClick={() => setSelectedPieceIds(new Set())}
+                      className="text-xs text-gray-400 hover:underline">
+                      Desmarcar
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1 mt-1">
+                  {pieces.map(piece => (
+                    <label key={piece.id} className="flex items-start gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 cursor-pointer transition">
+                      <input
+                        type="checkbox"
+                        checked={selectedPieceIds.has(piece.id)}
+                        onChange={e => togglePiece(piece.id, e.target.checked)}
+                        className="mt-0.5 w-4 h-4 accent-[#4A90C4] shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-800 truncate">{piece.title}</p>
+                        {piece.composer && (
+                          <p className="text-xs text-gray-400 truncate">{piece.composer}</p>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Exercícios */}
+            {exercises.length > 0 && (
+              <div className="space-y-2">
+                {pieces.length > 0 && <div className="border-t border-gray-100" />}
+                <div className="flex items-center justify-between">
+                  <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600">
+                    <MdSchool size={15} />Exercícios
+                  </h2>
+                  <div className="flex gap-3">
+                    <button type="button"
+                      onClick={() => setSelectedExerciseIds(new Set(exercises.map(ex => ex.id)))}
+                      className="text-xs text-[#4A90C4] hover:underline">
+                      Marcar todos
+                    </button>
+                    <button type="button"
+                      onClick={() => setSelectedExerciseIds(new Set())}
+                      className="text-xs text-gray-400 hover:underline">
+                      Desmarcar
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1 mt-1">
+                  {exercises.map(ex => (
+                    <label key={ex.id} className="flex items-start gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 cursor-pointer transition">
+                      <input
+                        type="checkbox"
+                        checked={selectedExerciseIds.has(ex.id)}
+                        onChange={e => toggleExercise(ex.id, e.target.checked)}
+                        className="mt-0.5 w-4 h-4 accent-[#4A90C4] shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-800 truncate">{ex.title}</p>
+                        <p className="text-xs text-gray-400">{exerciseCategoryLabel[ex.category] ?? ex.category}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!hasItems && (
+              <p className="text-xs text-gray-400 text-center py-2">
+                Nenhuma peça ou exercício cadastrado ainda.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Observações */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">

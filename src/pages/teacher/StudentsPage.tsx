@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { MdAdd, MdCalendarMonth, MdMoreVert } from 'react-icons/md'
+import { MdAdd, MdMoreVert } from 'react-icons/md'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -163,15 +163,6 @@ export default function StudentsPage() {
                 </div>
               </Link>
 
-              {/* Novo planejamento */}
-              <button
-                onClick={() => navigate(`/professor/alunos/${student.id}/planejamento`)}
-                className="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-[#D6E4F0] text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition text-xs font-semibold shrink-0"
-              >
-                <MdCalendarMonth size={14} />
-                <span>Novo planejamento</span>
-              </button>
-
               {/* 3-dot menu */}
               <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
                 <button
@@ -184,7 +175,14 @@ export default function StudentsPage() {
                   <MdMoreVert size={18} />
                 </button>
                 {menuOpenId === student.id && (
-                  <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-44 z-20">
+                  <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-48 z-20">
+                    <button
+                      onClick={() => { setMenuOpenId(null); navigate(`/professor/alunos/${student.id}/planejamento`) }}
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium text-[#1E3A5F] hover:bg-[#D6E4F0] transition"
+                    >
+                      Novo planejamento
+                    </button>
+                    <div className="border-t border-gray-100 my-1" />
                     <button
                       onClick={() => { setMenuOpenId(null); navigate(`/professor/alunos/${student.id}`) }}
                       className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
