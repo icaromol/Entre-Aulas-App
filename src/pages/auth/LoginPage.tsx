@@ -47,8 +47,8 @@ export default function LoginPage() {
 
         {/* Logo / título */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[#1E3A5F]">Entre Aulas</h1>
-          <p className="text-sm text-gray-500 mt-1">Acesse sua conta</p>
+          <img src="/logo-dark.svg" alt="estudamus" className="h-10 mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Acesse sua conta</p>
         </div>
 
         {/* Card */}

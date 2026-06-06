@@ -55,8 +55,8 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
 
           {/* Logo */}
-          <Link to="/professor/alunos" className="text-base font-bold text-[#1E3A5F]">
-            Entre Aulas
+          <Link to="/professor/alunos" className="flex items-center">
+            <img src="/logo-dark.svg" alt="estudamus" className="h-7" />
           </Link>
 
           {/* Nav central */}

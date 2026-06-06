@@ -77,7 +77,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
           </div>
 
           {/* Centro — logo */}
-          <span className="text-base font-bold text-[#1E3A5F] text-center">Entre Aulas</span>
+          <img src="/logo-dark.svg" alt="estudamus" className="h-6" />
 
           {/* Direita — logout */}
           <div className="flex justify-end">
