@@ -97,7 +97,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm">
 
         <div className="text-center mb-8">
-          <img src="/logo-dark.svg" alt="estudamus" className="h-10 mx-auto mb-3" />
+          <img src="/estudamus_logo_dark.png" alt="estudamus" className="h-10 mx-auto mb-3" />
           {inviteStudent ? (
             <p className="text-sm text-gray-500 mt-1">
               Olá, {inviteStudent.first_name}! Crie sua senha de acesso.

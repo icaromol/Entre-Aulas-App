@@ -56,7 +56,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
 
           {/* Logo */}
           <Link to="/professor/alunos" className="flex items-center">
-            <img src="/logo-dark.svg" alt="estudamus" className="h-7" />
+            <img src="/estudamus_logo_dark.png" alt="estudamus" className="h-7" />
           </Link>
 
           {/* Nav central */}
