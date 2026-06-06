@@ -223,14 +223,12 @@ export default function ExerciseDetailPage() {
                       {item.title}
                       {item.is_optional && <span className="text-xs text-gray-400 ml-1">(opcional)</span>}
                     </span>
-                    {category === 'Personalizado' && (
-                      <button
-                        onClick={() => deleteItem(item.id)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition text-xs"
-                      >
-                        ✕
-                      </button>
-                    )}
+                    <button
+                      onClick={() => deleteItem(item.id)}
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition text-xs shrink-0"
+                    >
+                      ✕
+                    </button>
                   </div>
                 ))}
               </div>

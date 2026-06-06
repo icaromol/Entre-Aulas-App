@@ -35,8 +35,28 @@ export default function NewPiecePage() {
   const [difficulty, setDifficulty] = useState<number>(5)
   const [pedagogicalGoal, setPedagogicalGoal] = useState('')
   const [notes, setNotes] = useState('')
+  const [checklistItems, setChecklistItems] = useState(
+    DEFAULT_CHECKLIST.map((item, i) => ({ ...item, tempId: i }))
+  )
+  const [newChecklistTitle, setNewChecklistTitle] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  function removeChecklistItem(tempId: number) {
+    setChecklistItems(prev => prev.filter(i => i.tempId !== tempId))
+  }
+
+  function addChecklistItem() {
+    if (!newChecklistTitle.trim()) return
+    setChecklistItems(prev => [...prev, {
+      title: newChecklistTitle.trim(),
+      category: 'Personalizado',
+      position: prev.length,
+      is_optional: false,
+      tempId: Date.now(),
+    }])
+    setNewChecklistTitle('')
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -63,13 +83,13 @@ export default function NewPiecePage() {
 
       if (pieceError || !piece) throw new Error('Erro ao criar peça.')
 
-      // 2. Gera checklist padrão
-      const checklistRows = DEFAULT_CHECKLIST.map(item => ({
+      // 2. Gera checklist
+      const checklistRows = checklistItems.map((item, idx) => ({
         piece_id: piece.id,
         title: item.title,
         category: item.category,
-        position: item.position,
-        is_default: true,
+        position: idx,
+        is_default: false,
         is_optional: item.is_optional,
       }))
 
@@ -159,24 +179,39 @@ export default function NewPiecePage() {
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
         </div>
 
-        {/* Preview da checklist */}
+        {/* Checklist editável */}
         <div className="bg-[#F5F7FA] rounded-2xl border border-gray-100 p-5">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 mb-3">
-            <MdTune size={15} />Checklist gerada automaticamente
+            <MdTune size={15} />Checklist
           </h2>
-          <p className="text-xs text-gray-400 mb-3">
-            {DEFAULT_CHECKLIST.filter(i => !i.is_optional).length} itens obrigatórios
-            · {DEFAULT_CHECKLIST.filter(i => i.is_optional).length} opcional
-          </p>
-          <div className="space-y-1.5">
-            {DEFAULT_CHECKLIST.map((item, i) => (
-              <div key={i} className="flex items-center gap-2">
+          <div className="space-y-1.5 mb-4">
+            {checklistItems.map(item => (
+              <div key={item.tempId} className="flex items-center gap-2 group">
                 <div className="w-3.5 h-3.5 rounded border border-gray-300 shrink-0" />
-                <span className={`text-xs ${item.is_optional ? 'text-gray-400 italic' : 'text-gray-600'}`}>
-                  {item.title} {item.is_optional && '(opcional)'}
+                <span className={`text-xs flex-1 ${item.is_optional ? 'text-gray-400 italic' : 'text-gray-600'}`}>
+                  {item.title}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => removeChecklistItem(item.tempId)}
+                  className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition text-xs shrink-0"
+                >✕</button>
               </div>
             ))}
+          </div>
+          <div className="flex gap-2 pt-3 border-t border-gray-200">
+            <input
+              value={newChecklistTitle}
+              onChange={e => setNewChecklistTitle(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addChecklistItem())}
+              placeholder="Adicionar item ao checklist..."
+              className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs outline-none focus:border-[#4A90C4] transition"
+            />
+            <button
+              type="button"
+              onClick={addChecklistItem}
+              className="px-3 py-1.5 rounded-lg bg-[#1E3A5F] text-white text-xs hover:bg-[#1E3A5F]/90 transition"
+            >+</button>
           </div>
         </div>
 

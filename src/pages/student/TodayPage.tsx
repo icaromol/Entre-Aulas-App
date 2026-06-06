@@ -145,11 +145,11 @@ export default function TodayPage() {
 
       {/* Lista de itens */}
       {items.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
+        <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
           <p className="text-4xl mb-3">🎵</p>
-          <p className="text-sm font-semibold text-gray-600">Nenhum item para este dia</p>
-          <p className="text-xs text-gray-400 mt-1">
-            Seu professor ainda não montou o plano desta semana.
+          <p className="text-sm font-semibold text-gray-700">Nenhum item para hoje</p>
+          <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+            Pode aproveitar! Que tal fazer um estudo extra com o botão abaixo?
           </p>
         </div>
       ) : (
@@ -227,23 +227,21 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Banner de pomodoro */}
-      {items.length > 0 && !items.every(i => i.is_done) && (
-        <button
-          onClick={() => navigate('/aluno/pomodoro', {
-            state: { title: 'Sessão de hoje', durationMinutes: totalMinutes || 25, studentId }
-          })}
-          className="mt-5 w-full bg-[#1E3A5F] rounded-2xl px-5 py-5 flex items-center justify-center gap-4 hover:bg-[#1E3A5F]/90 transition cursor-pointer"
-        >
-          <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-            <MdPlayArrow size={28} className="text-white ml-1" />
-          </div>
-          <div className="text-left">
-            <p className="text-base font-bold text-white">Iniciar pomodoro</p>
-            <p className="text-xs text-white/60 mt-0.5">Modo Clássico · 25 min foco</p>
-          </div>
-        </button>
-      )}
+      {/* Banner de pomodoro — sempre visível */}
+      <button
+        onClick={() => navigate('/aluno/pomodoro', {
+          state: { title: 'Sessão de hoje', durationMinutes: totalMinutes || 25, studentId, autoStart: true }
+        })}
+        className="mt-5 w-full bg-[#1E3A5F] rounded-2xl px-5 py-5 flex items-center justify-center gap-4 hover:bg-[#1E3A5F]/90 transition cursor-pointer"
+      >
+        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+          <MdPlayArrow size={28} className="text-white ml-1" />
+        </div>
+        <div className="text-left">
+          <p className="text-base font-bold text-white">Início rápido</p>
+          <p className="text-xs text-white/60 mt-0.5">Modo Clássico · inicia imediatamente</p>
+        </div>
+      </button>
 
       {/* Mensagem de conclusão */}
       {total > 0 && done === total && (

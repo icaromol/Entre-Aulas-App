@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
-import { getMonday, formatWeekStart, getTodayDayOfWeek } from '@/lib/weekUtils'
 
 interface CyclePreset {
   key: string
@@ -26,9 +25,16 @@ type Phase = 'idle' | 'work' | 'break' | 'finished'
 
 interface DayItem {
   id: string
+  kind: 'checklist' | 'goal'
   title: string
   subtitle: string
-  is_done: boolean
+}
+
+const typeLabel: Record<string, string> = {
+  free: 'Livre',
+  measurable: 'Mensurável',
+  checklist_item: 'Checklist',
+  exercise: 'Exercício',
 }
 
 const CIRCUMFERENCE = 2 * Math.PI * 54
@@ -48,7 +54,7 @@ export default function PomodoroPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const nav = location.state as {
-    planItemId?: string; title?: string; durationMinutes?: number; studentId?: string
+    planItemId?: string; title?: string; durationMinutes?: number; studentId?: string; autoStart?: boolean
   } | null
 
   // ── Cycle selection ──
@@ -76,6 +82,22 @@ export default function PomodoroPage() {
   const [comment, setComment]           = useState('')
   const [saving, setSaving]             = useState(false)
   const [loadingItems, setLoadingItems] = useState(false)
+
+  // ── Auto-start no modo Clássico ──
+  useEffect(() => {
+    if (!nav?.autoStart) return
+    const classic = PRESETS.find(p => p.key === 'classic')!
+    activeCycle.current = classic
+    startedAt.current = new Date().toISOString()
+    workSecs.current = 0
+    const secs = classic.workMinutes * 60
+    setCurrentCycle(1)
+    setCompletedCycles(0)
+    setPhase('work')
+    setTimeLeft(secs)
+    setTotalSecs(secs)
+    setIsPaused(false)
+  }, [])
 
   // ── Helpers ──
   function buildCycle(): CyclePreset {
@@ -160,51 +182,59 @@ export default function PomodoroPage() {
   // ── Fetch items for finish screen ──
   async function openFinishModal(_allCyclesDone: boolean) {
     setLoadingItems(true)
-    const studentId = nav?.studentId
-    if (!studentId) { setLoadingItems(false); return }
+    const sid = nav?.studentId
+    if (!sid) { setLoadingItems(false); return }
 
-    const weekStart = formatWeekStart(getMonday(new Date()))
-    const today = getTodayDayOfWeek()
+    const [completionsRes, piecesRes, exercisesRes, goalsRes] = await Promise.all([
+      supabase.from('checklist_completions').select('checklist_item_id').eq('student_id', sid),
+      supabase.from('pieces')
+        .select('id, title, checklist_items(id, title)')
+        .eq('student_id', sid).eq('status', 'in_progress'),
+      supabase.from('exercises')
+        .select('id, title, checklist_items(id, title)')
+        .eq('student_id', sid).eq('status', 'active'),
+      supabase.from('goals').select('id, title, type').eq('student_id', sid).eq('status', 'active'),
+    ])
 
-    const { data: plan } = await supabase
-      .from('weekly_plans').select('id')
-      .eq('student_id', studentId).eq('week_start', weekStart).single()
+    const completedIds = new Set(
+      (completionsRes.data ?? []).map((c: any) => c.checklist_item_id)
+    )
 
-    if (plan) {
-      const { data: items } = await supabase
-        .from('plan_items')
-        .select(`id, is_done, piece:pieces(title, composer), exercise:exercises(title, category)`)
-        .eq('plan_id', plan.id).eq('day_of_week', today).order('position')
+    const items: DayItem[] = []
 
-      const mapped: DayItem[] = (items ?? []).map((i: any) => ({
-        id: i.id,
-        is_done: i.is_done,
-        title: i.piece?.title ?? i.exercise?.title ?? '—',
-        subtitle: i.piece ? (i.piece.composer ?? 'Peça') : (i.exercise?.category ?? 'Exercício'),
-      }))
-      setDayItems(mapped)
+    for (const piece of (piecesRes.data ?? []) as any[]) {
+      for (const ci of (piece.checklist_items ?? []) as any[]) {
+        if (!completedIds.has(ci.id))
+          items.push({ id: ci.id, kind: 'checklist', title: ci.title, subtitle: piece.title })
+      }
+    }
+    for (const ex of (exercisesRes.data ?? []) as any[]) {
+      for (const ci of (ex.checklist_items ?? []) as any[]) {
+        if (!completedIds.has(ci.id))
+          items.push({ id: ci.id, kind: 'checklist', title: ci.title, subtitle: ex.title })
+      }
+    }
+    for (const g of (goalsRes.data ?? []) as any[]) {
+      items.push({ id: g.id, kind: 'goal', title: g.title, subtitle: typeLabel[g.type] ?? g.type })
     }
 
-    // Pré-marca o item da sessão sempre (quando todos ciclos completos, marca automaticamente)
-    if (nav?.planItemId) {
-      setWorkedIds(new Set([nav.planItemId]))
-    }
+    setDayItems(items)
     setLoadingItems(false)
   }
 
   // ── Save ──
   async function saveSession() {
     setSaving(true)
-    const studentId = nav?.studentId
+    const sid = nav?.studentId
     const c = activeCycle.current
-    if (!studentId || !c) { setSaving(false); navigate('/aluno/hoje'); return }
+    if (!sid || !c) { setSaving(false); navigate('/aluno/hoje'); return }
 
     const endedAt = new Date().toISOString()
 
-    const { data: session, error } = await supabase
+    const { error } = await supabase
       .from('study_sessions')
       .insert({
-        student_id: studentId,
+        student_id: sid,
         cycle_name: c.name,
         cycle_work_minutes: c.workMinutes,
         cycle_break_minutes: c.breakMinutes,
@@ -215,18 +245,21 @@ export default function PomodoroPage() {
         difficulty_felt: difficulty || null,
         notes: comment || null,
       })
-      .select('id').single()
 
     if (error) console.error('[pomodoro] save error:', error.message)
 
-    if (session && workedIds.size > 0) {
-      const ids = Array.from(workedIds)
-      await supabase.from('session_items').insert(
-        ids.map(pid => ({ session_id: session.id, plan_item_id: pid }))
-      )
-      await supabase.from('plan_items')
-        .update({ is_done: true, done_at: endedAt })
-        .in('id', ids)
+    if (workedIds.size > 0) {
+      const checklistIds = [...workedIds].filter(id => dayItems.find(i => i.id === id)?.kind === 'checklist')
+      const goalIds      = [...workedIds].filter(id => dayItems.find(i => i.id === id)?.kind === 'goal')
+
+      if (checklistIds.length > 0) {
+        await supabase.from('checklist_completions').insert(
+          checklistIds.map(id => ({ checklist_item_id: id, student_id: sid }))
+        )
+      }
+      if (goalIds.length > 0) {
+        await supabase.from('goals').update({ status: 'completed' }).in('id', goalIds)
+      }
     }
 
     navigate('/aluno/hoje')
@@ -241,6 +274,10 @@ export default function PomodoroPage() {
   // ─────────────────────────────────────────────────────
   // IDLE
   // ─────────────────────────────────────────────────────
+  if (phase === 'idle' && nav?.autoStart) {
+    return <StudentLayout><p className="text-sm text-gray-400 mt-8 text-center">Iniciando...</p></StudentLayout>
+  }
+
   if (phase === 'idle') {
     return (
       <StudentLayout>
@@ -442,7 +479,7 @@ export default function PomodoroPage() {
         {loadingItems ? (
           <p className="text-xs text-gray-400">Carregando...</p>
         ) : dayItems.length === 0 ? (
-          <p className="text-xs text-gray-400">Nenhum item no plano de hoje.</p>
+          <p className="text-xs text-gray-400 py-4 text-center">Nenhum item pendente. Tudo em dia! 🎉</p>
         ) : (
           <div className="space-y-2">
             {dayItems.map(item => {
@@ -468,7 +505,7 @@ export default function PomodoroPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-700 truncate">{item.title}</p>
-                    <p className="text-xs text-gray-400">{item.subtitle}</p>
+                    <p className="text-xs text-gray-400 truncate">{item.subtitle}</p>
                   </div>
                 </button>
               )
