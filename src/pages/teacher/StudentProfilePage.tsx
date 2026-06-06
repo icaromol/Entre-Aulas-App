@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { toast } from 'sonner'
-import { MdArrowBack, MdMusicNote, MdSchool, MdOutlineFlag, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd, MdEdit, MdCheck } from 'react-icons/md'
+import { MdArrowBack, MdMusicNote, MdSchool, MdLibraryMusic, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd } from 'react-icons/md'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -41,12 +40,12 @@ interface Exercise {
   status: string
 }
 
-interface Goal {
+interface Programa {
   id: string
   title: string
   type: string
-  target_value: string | null
-  due_date: string | null
+  deadline: string | null
+  status: string
 }
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
@@ -81,25 +80,33 @@ const exerciseStatusLabel: Record<string, string> = {
   completed: 'Concluído',
 }
 
-const typeLabel: Record<string, string> = {
-  free: 'Livre',
-  measurable: 'Mensurável',
-  checklist_item: 'Checklist',
-  exercise: 'Exercício',
+const programaTypeLabel: Record<string, string> = {
+  regular: 'Aulas Regulares', recital: 'Recital', concerto: 'Concerto',
+  show: 'Show', gravacao: 'Gravação', exame: 'Exame',
+  participacao: 'Participação', outro: 'Outro',
 }
 
-const typeBadge: Record<string, string> = {
-  free: 'bg-blue-50 text-blue-600',
-  measurable: 'bg-amber-50 text-amber-700',
-  checklist_item: 'bg-purple-50 text-purple-600',
-  exercise: 'bg-green-50 text-green-700',
+const programaTypeBadge: Record<string, string> = {
+  regular: 'bg-blue-50 text-blue-600',
+  recital: 'bg-purple-50 text-purple-600',
+  concerto: 'bg-indigo-50 text-indigo-600',
+  show: 'bg-pink-50 text-pink-600',
+  gravacao: 'bg-red-50 text-red-600',
+  exame: 'bg-amber-50 text-amber-700',
+  participacao: 'bg-green-50 text-green-700',
+  outro: 'bg-gray-100 text-gray-600',
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+function daysUntilLabel(date: string) {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const target = new Date(date + 'T00:00:00')
+  const days = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  if (days < 0) return 'passou'
+  if (days === 0) return 'hoje'
+  return `em ${days} dias`
 }
 
-type TabKey = 'pieces' | 'exercises' | 'goals' | 'plan'
+type TabKey = 'pieces' | 'exercises' | 'programs'
 
 export default function StudentProfilePage() {
   const { studentId } = useParams()
@@ -111,14 +118,13 @@ export default function StudentProfilePage() {
   const [availability, setAvailability] = useState<Availability[]>([])
   const [pieces, setPieces] = useState<Piece[]>([])
   const [exercises, setExercises] = useState<Exercise[]>([])
-  const [goals, setGoals] = useState<Goal[]>([])
+  const [programas, setProgramas] = useState<Programa[]>([])
   const [loading, setLoading] = useState(true)
   const initialTab = (searchParams.get('tab') as TabKey) ?? 'pieces'
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
   const [showMenu, setShowMenu] = useState(false)
   const [showInfo, setShowInfo] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [completingGoalId, setCompletingGoalId] = useState<string | null>(null)
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -135,19 +141,19 @@ export default function StudentProfilePage() {
   }, [studentId])
 
   async function fetchAll() {
-    const [studentRes, availRes, piecesRes, exercisesRes, goalsRes] = await Promise.all([
+    const [studentRes, availRes, piecesRes, exercisesRes, programasRes] = await Promise.all([
       supabase.from('students').select('*').eq('id', studentId!).single(),
       supabase.from('student_availability').select('*').eq('student_id', studentId!).order('day_of_week'),
       supabase.from('pieces').select('id, title, composer, status, completion_pct').eq('student_id', studentId!).order('created_at', { ascending: false }),
       supabase.from('exercises').select('id, title, category, status').eq('student_id', studentId!).order('created_at', { ascending: false }),
-      supabase.from('goals').select('id, title, type, target_value, due_date').eq('student_id', studentId!).eq('status', 'active').order('created_at', { ascending: false }),
+      supabase.from('programas').select('id, title, type, deadline, status').eq('student_id', studentId!).neq('status', 'archived').order('created_at', { ascending: false }),
     ])
 
     setStudent(studentRes.data)
     setAvailability(availRes.data ?? [])
     setPieces(piecesRes.data ?? [])
     setExercises(exercisesRes.data ?? [])
-    setGoals(goalsRes.data ?? [])
+    setProgramas(programasRes.data ?? [])
     setLoading(false)
   }
 
@@ -157,14 +163,6 @@ export default function StudentProfilePage() {
     setDeleting(true)
     await supabase.from('students').delete().eq('id', studentId!)
     navigate('/professor/alunos')
-  }
-
-  async function completeGoal(id: string) {
-    setCompletingGoalId(id)
-    await supabase.from('goals').update({ status: 'completed' }).eq('id', id)
-    setGoals(prev => prev.filter(g => g.id !== id))
-    setCompletingGoalId(null)
-    toast.success('Tarefa concluída!')
   }
 
   if (loading) {
@@ -325,10 +323,9 @@ export default function StudentProfilePage() {
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
         {([
-          { key: 'pieces',    label: 'Peças',      Icon: MdMusicNote },
-          { key: 'exercises', label: 'Exercícios',  Icon: MdSchool },
-          { key: 'goals',     label: 'Tarefas',     Icon: MdOutlineFlag },
-          { key: 'plan',      label: 'Plano',       Icon: MdCalendarMonth },
+          { key: 'pieces',   label: 'Peças',      Icon: MdMusicNote },
+          { key: 'exercises',label: 'Exercícios',  Icon: MdSchool },
+          { key: 'programs', label: 'Programas',   Icon: MdLibraryMusic },
         ] as const).map(tab => (
           <button
             key={tab.key}
@@ -424,102 +421,55 @@ export default function StudentProfilePage() {
         </div>
       )}
 
-      {/* Tab: Tarefas */}
-      {activeTab === 'goals' && (
+      {/* Tab: Programas */}
+      {activeTab === 'programs' && (
         <div className="space-y-3">
-          <Link to={`/professor/alunos/${studentId}/metas/nova`} className="block">
-            <Button className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm cursor-pointer">
-              <MdAdd size={16} className="inline -mt-0.5 mr-1" />Nova tarefa
-            </Button>
-          </Link>
-          {goals.length === 0 ? (
-            <EmptyState title="Nenhuma tarefa ativa" description="Defina tarefas de repertório, técnica ou progresso." />
+          <div className="flex gap-2">
+            <Link to={`/professor/alunos/${studentId}/programas/novo`} className="flex-1">
+              <Button className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm cursor-pointer">
+                <MdAdd size={16} className="inline -mt-0.5 mr-1" />Novo programa
+              </Button>
+            </Link>
+            <button
+              onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
+              className="flex-1 py-2 px-4 rounded-lg border border-[#1E3A5F] text-sm font-medium text-[#1E3A5F] hover:bg-[#D6E4F0] transition"
+            >
+              Gerar planejamento
+            </button>
+          </div>
+
+          {programas.length === 0 ? (
+            <EmptyState
+              title="Nenhum programa ainda"
+              description="Crie um programa para começar a gerar o planejamento de estudos do aluno."
+            />
           ) : (
-            goals.map(goal => (
-              <div key={goal.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <p className="text-sm font-semibold text-gray-800 flex-1">{goal.title}</p>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${typeBadge[goal.type] ?? 'bg-gray-100 text-gray-500'}`}>
-                      {typeLabel[goal.type] ?? goal.type}
+            programas.map(prog => (
+              <Link
+                key={prog.id}
+                to={`/professor/alunos/${studentId}/programas/${prog.id}`}
+                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-3 hover:border-[#4A90C4] transition"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{prog.title}</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${programaTypeBadge[prog.type] ?? 'bg-gray-100 text-gray-600'}`}>
+                      {programaTypeLabel[prog.type] ?? prog.type}
                     </span>
-                    <button
-                      onClick={() => navigate(`/professor/alunos/${studentId}/metas/${goal.id}/editar`)}
-                      className="text-gray-400 hover:text-[#4A90C4] transition cursor-pointer"
-                      aria-label="Editar tarefa"
-                    >
-                      <MdEdit size={16} />
-                    </button>
+                    {prog.deadline && (
+                      <span className="flex items-center gap-0.5 text-xs text-gray-400">
+                        <MdCalendarMonth size={11} />
+                        {daysUntilLabel(prog.deadline)}
+                      </span>
+                    )}
                   </div>
                 </div>
-                {(goal.target_value || goal.due_date) && (
-                  <div className="flex gap-3 mb-3">
-                    {goal.target_value && (
-                      <span className="text-xs text-gray-400">Alvo: {goal.target_value}</span>
-                    )}
-                    {goal.due_date && (
-                      <span className="text-xs text-gray-400">Prazo: {formatDate(goal.due_date)}</span>
-                    )}
-                  </div>
-                )}
-                <button
-                  onClick={() => completeGoal(goal.id)}
-                  disabled={completingGoalId === goal.id}
-                  className="w-full py-2 rounded-xl bg-[#D6E4F0] text-sm font-medium text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition disabled:opacity-50 cursor-pointer"
-                >
-                  {completingGoalId === goal.id ? '...' : (
-                    <span className="flex items-center justify-center gap-1.5"><MdCheck size={16} />Concluir tarefa</span>
-                  )}
-                </button>
-              </div>
+                <MdChevronRight size={16} className="text-gray-400 shrink-0" />
+              </Link>
             ))
           )}
-        </div>
-      )}
-
-      {/* Tab: Plano */}
-      {activeTab === 'plan' && (
-        <div className="space-y-3">
-          <button
-            onClick={() => navigate(`/professor/alunos/${studentId}/plano`)}
-            className="w-full bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between hover:border-[#4A90C4] transition cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#D6E4F0] flex items-center justify-center shrink-0">
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#1E3A5F" strokeWidth={2}>
-                  <rect x="3" y="4" width="18" height="18" rx="2"/>
-                  <path d="M16 2v4M8 2v4M3 10h18"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-semibold text-gray-800">Abrir plano semanal</p>
-                <p className="text-xs text-gray-400 mt-0.5">Ver e editar a semana atual</p>
-              </div>
-            </div>
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </button>
-
-          <button
-            onClick={() => navigate(`/professor/alunos/${studentId}/plano`)}
-            className="w-full bg-[#1E3A5F] rounded-2xl px-5 py-4 flex items-center justify-between hover:bg-[#1E3A5F]/90 transition cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2}>
-                  <path d="M12 5v14M5 12h14"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-semibold text-white">Criar novo plano</p>
-                <p className="text-xs text-white/60 mt-0.5">Montar o plano da semana</p>
-              </div>
-            </div>
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2}>
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </button>
         </div>
       )}
     </TeacherLayout>

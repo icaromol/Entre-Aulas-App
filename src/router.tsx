@@ -11,15 +11,15 @@ import NewPiecePage from '@/pages/teacher/NewPiecePage'
 import PieceDetailPage from '@/pages/teacher/PieceDetailPage'
 import NewExercisePage from '@/pages/teacher/NewExercisePage'
 import ExerciseDetailPage from '@/pages/teacher/ExerciseDetailPage'
-import WeeklyPlanPage from '@/pages/teacher/WeeklyPlanPage'
 import EditPiecePage from '@/pages/teacher/EditPiecePage'
 import EditExercisePage from '@/pages/teacher/EditExercisePage'
+import NewProgramaPage from '@/pages/teacher/NewProgramaPage'
+import ProgramaDetailPage from '@/pages/teacher/ProgramaDetailPage'
+import EditProgramaPage from '@/pages/teacher/EditProgramaPage'
+import PlanejamentoPage from '@/pages/teacher/PlanejamentoPage'
 import TodayPage from '@/pages/student/TodayPage'
 import PomodoroPage from '@/pages/student/PomodoroPage'
 import RepertoirePage from '@/pages/student/RepertoirePage'
-import GoalsPage from '@/pages/student/GoalsPage'
-import NewGoalPage from '@/pages/teacher/NewGoalPage'
-import EditGoalPage from '@/pages/teacher/EditGoalPage'
 import HistoryPage from '@/pages/student/HistoryPage'
 
 export function Router() {
@@ -44,16 +44,16 @@ export function Router() {
         <Route path="/professor/alunos/:studentId/exercicios/novo" element={<AuthGuard allowedRole="teacher"><NewExercisePage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/exercicios/:exerciseId" element={<AuthGuard allowedRole="teacher"><ExerciseDetailPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/exercicios/:exerciseId/editar" element={<AuthGuard allowedRole="teacher"><EditExercisePage /></AuthGuard>} />
-        <Route path="/professor/alunos/:studentId/plano" element={<AuthGuard allowedRole="teacher"><WeeklyPlanPage /></AuthGuard>} />
-        <Route path="/professor/alunos/:studentId/metas/nova" element={<AuthGuard allowedRole="teacher"><NewGoalPage /></AuthGuard>} />
-        <Route path="/professor/alunos/:studentId/metas/:goalId/editar" element={<AuthGuard allowedRole="teacher"><EditGoalPage /></AuthGuard>} />
+        <Route path="/professor/alunos/:studentId/programas/novo" element={<AuthGuard allowedRole="teacher"><NewProgramaPage /></AuthGuard>} />
+        <Route path="/professor/alunos/:studentId/programas/:programId" element={<AuthGuard allowedRole="teacher"><ProgramaDetailPage /></AuthGuard>} />
+        <Route path="/professor/alunos/:studentId/programas/:programId/editar" element={<AuthGuard allowedRole="teacher"><EditProgramaPage /></AuthGuard>} />
+        <Route path="/professor/alunos/:studentId/planejamento" element={<AuthGuard allowedRole="teacher"><PlanejamentoPage /></AuthGuard>} />
 
         {/* Aluno */}
         <Route path="/aluno" element={<AuthGuard allowedRole="student"><Navigate to="/aluno/hoje" replace /></AuthGuard>} />
         <Route path="/aluno/hoje" element={<AuthGuard allowedRole="student"><TodayPage /></AuthGuard>} />
         <Route path="/aluno/pomodoro" element={<AuthGuard allowedRole="student"><PomodoroPage /></AuthGuard>} />
         <Route path="/aluno/repertorio" element={<AuthGuard allowedRole="student"><RepertoirePage /></AuthGuard>} />
-        <Route path="/aluno/metas" element={<AuthGuard allowedRole="student"><GoalsPage /></AuthGuard>} />
         <Route path="/aluno/historico" element={<AuthGuard allowedRole="student"><HistoryPage /></AuthGuard>} />
 
         <Route path="*" element={<NotFoundPage />} />
