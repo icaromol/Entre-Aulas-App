@@ -296,7 +296,7 @@ export default function StudentProfilePage() {
         <div className="flex-1">
           <h1 className="text-xl font-bold text-[#1E3A5F]">{student.first_name} {student.last_name}</h1>
           <p className="text-xs text-gray-400 mt-0.5">
-            {student.instrument} · {levelLabel[student.level] ?? student.level}
+            {[student.contact_email, student.contact_phone].filter(Boolean).join(' · ') || '—'}
           </p>
         </div>
 
@@ -361,6 +361,16 @@ export default function StudentProfilePage() {
         <MdChevronRight size={20} className="text-white/60 group-hover:text-white transition" />
       </button>
 
+      {/* Pills: instrumento + nível */}
+      <div className="flex gap-2 mb-3">
+        <span className="px-3 py-1 rounded-full bg-[#D6E4F0] text-[#1E3A5F] text-xs font-semibold">
+          {student.instrument}
+        </span>
+        <span className="px-3 py-1 rounded-full bg-[#D6E4F0] text-[#1E3A5F] text-xs font-semibold">
+          {levelLabel[student.level] ?? student.level}
+        </span>
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
@@ -378,6 +388,38 @@ export default function StudentProfilePage() {
           <p className="text-2xl font-bold text-[#1E3A5F]">{totalMinutes}</p>
           <p className="text-xs text-gray-400 mt-1">min/semana</p>
         </div>
+      </div>
+
+      {/* Disponibilidade — 7 dias */}
+      <div className="flex gap-1.5 mb-5">
+        {[
+          { label: 'SEG', dow: 1 },
+          { label: 'TER', dow: 2 },
+          { label: 'QUA', dow: 3 },
+          { label: 'QUI', dow: 4 },
+          { label: 'SEX', dow: 5 },
+          { label: 'SÁB', dow: 6 },
+          { label: 'DOM', dow: 0 },
+        ].map(({ label, dow }) => {
+          const day = availability.find(d => d.day_of_week === dow)
+          const active = day?.is_active ?? false
+          return (
+            <div key={dow} className="flex-1">
+              <div className={`w-full rounded-lg py-2 flex flex-col items-center justify-center gap-0.5 ${
+                active ? 'bg-[#1E3A5F]' : 'bg-gray-100'
+              }`}>
+                {active && (
+                  <span className="text-[9px] text-white/60 leading-none">
+                    {day!.minutes_available}m
+                  </span>
+                )}
+                <span className={`text-[10px] font-bold leading-none ${active ? 'text-white' : 'text-gray-300'}`}>
+                  {label}
+                </span>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Tabs */}
