@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { MdAdd, MdChevronRight } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -88,7 +89,7 @@ function handleCopy() {
         </div>
         <Link to="/professor/alunos/novo">
           <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm">
-            + Novo aluno
+            <MdAdd size={16} className="inline -mt-0.5 mr-0.5" />Novo aluno
           </Button>
         </Link>
       </div>
@@ -127,9 +128,7 @@ function handleCopy() {
                   </p>
                 </div>
               </div>
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
+              <MdChevronRight size={16} className="text-gray-400" />
             </Link>
           ))}
         </div>

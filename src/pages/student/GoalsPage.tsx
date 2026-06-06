@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { MdNotes, MdTrendingUp, MdTaskAlt, MdSchool, MdCheckCircle, MdEvent, MdChevronRight } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { StudentLayout } from '@/components/layout/StudentLayout'
@@ -29,6 +30,13 @@ const typeBadge: Record<string, string> = {
   measurable: 'bg-amber-50 text-amber-700',
   checklist_item: 'bg-purple-50 text-purple-600',
   exercise: 'bg-green-50 text-green-700',
+}
+
+const typeIcon: Record<string, React.ElementType> = {
+  free: MdNotes,
+  measurable: MdTrendingUp,
+  checklist_item: MdTaskAlt,
+  exercise: MdSchool,
 }
 
 function formatDate(dateStr: string) {
@@ -120,18 +128,17 @@ export default function GoalsPage() {
                   <p className={`text-sm font-semibold flex-1 ${isAutoCompleted ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
                     {goal.title}
                   </p>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${typeBadge[goal.type] ?? 'bg-gray-100 text-gray-500'}`}>
-                    {typeLabel[goal.type] ?? goal.type}
-                  </span>
+                  {(() => { const GoalIcon = typeIcon[goal.type]; return (
+                    <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${typeBadge[goal.type] ?? 'bg-gray-100 text-gray-500'}`}>
+                      {GoalIcon && <GoalIcon size={10} />}
+                      {typeLabel[goal.type] ?? goal.type}
+                    </span>
+                  ) })()}
                 </div>
 
                 {isAutoCompleted && (
                   <div className="flex items-center gap-1.5 mb-2">
-                    <div className="w-3.5 h-3.5 rounded-full bg-green-500 flex items-center justify-center shrink-0">
-                      <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
-                        <path d="M5 13l4 4L19 7"/>
-                      </svg>
-                    </div>
+                    <MdCheckCircle size={14} className="text-green-500 shrink-0" />
                     <span className="text-xs text-green-600 font-medium">Item concluído</span>
                   </div>
                 )}
@@ -154,7 +161,10 @@ export default function GoalsPage() {
                     <p className="text-xs text-gray-400 leading-relaxed mt-1">{goal.notes}</p>
                   )}
                   {goal.due_date && (
-                    <p className="text-xs text-gray-400 mt-1">Prazo: {formatDate(goal.due_date)}</p>
+                    <p className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                      <MdEvent size={11} />
+                      {formatDate(goal.due_date)}
+                    </p>
                   )}
                 </div>
               </div>
@@ -170,12 +180,7 @@ export default function GoalsPage() {
             onClick={() => setShowCompleted(v => !v)}
             className="flex items-center gap-2 text-sm font-semibold text-gray-400 mb-3 w-full"
           >
-            <svg
-              width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-              className={`transition-transform ${showCompleted ? 'rotate-90' : ''}`}
-            >
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
+            <MdChevronRight size={16} className={`transition-transform ${showCompleted ? 'rotate-90' : ''}`} />
             Concluídas ({completedGoals.length})
           </button>
 
@@ -190,7 +195,10 @@ export default function GoalsPage() {
                     </span>
                   </div>
                   {goal.due_date && (
-                    <p className="text-xs text-gray-400 mt-1">Prazo: {formatDate(goal.due_date)}</p>
+                    <p className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                      <MdEvent size={11} />
+                      {formatDate(goal.due_date)}
+                    </p>
                   )}
                 </div>
               ))}

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { MdArrowBack, MdMusicNote, MdSchool, MdOutlineFlag, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -244,9 +245,7 @@ export default function StudentProfilePage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link to="/professor/alunos" className="text-gray-400 hover:text-gray-600 transition">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
+          <MdArrowBack size={20} />
         </Link>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-[#1E3A5F]">{student.first_name} {student.last_name}</h1>
@@ -296,14 +295,17 @@ export default function StudentProfilePage() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+          <MdMusicNote size={16} className="mx-auto mb-1 text-[#4A90C4]" />
           <p className="text-2xl font-bold text-[#1E3A5F]">{pieces.length}</p>
           <p className="text-xs text-gray-400 mt-1">Peças</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+          <MdSchool size={16} className="mx-auto mb-1 text-[#4A90C4]" />
           <p className="text-2xl font-bold text-[#1E3A5F]">{exercises.length}</p>
           <p className="text-xs text-gray-400 mt-1">Exercícios</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+          <MdAccessTime size={16} className="mx-auto mb-1 text-[#4A90C4]" />
           <p className="text-2xl font-bold text-[#1E3A5F]">{totalMinutes}</p>
           <p className="text-xs text-gray-400 mt-1">min/semana</p>
         </div>
@@ -312,20 +314,21 @@ export default function StudentProfilePage() {
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
         {([
-          { key: 'pieces',    label: 'Peças' },
-          { key: 'exercises', label: 'Exercícios' },
-          { key: 'goals',     label: 'Metas' },
-          { key: 'plan',      label: 'Plano' },
+          { key: 'pieces',    label: 'Peças',      Icon: MdMusicNote },
+          { key: 'exercises', label: 'Exercícios',  Icon: MdSchool },
+          { key: 'goals',     label: 'Metas',       Icon: MdOutlineFlag },
+          { key: 'plan',      label: 'Plano',       Icon: MdCalendarMonth },
         ] as const).map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition ${
+            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${
               activeTab === tab.key
                 ? 'bg-white text-[#1E3A5F] shadow-sm'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
+            <tab.Icon size={13} />
             {tab.label}
           </button>
         ))}
@@ -337,7 +340,7 @@ export default function StudentProfilePage() {
           <div className="flex justify-end">
             <Link to={`/professor/alunos/${studentId}/pecas/nova`}>
               <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs">
-                + Nova peça
+                <MdAdd size={15} className="inline -mt-0.5 mr-0.5" />Nova peça
               </Button>
             </Link>
           </div>
@@ -370,9 +373,7 @@ export default function StudentProfilePage() {
                     {piece.composer ?? '—'} · {pieceStatusLabel[piece.status] ?? piece.status}
                   </p>
                 </div>
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                  <path d="M9 18l6-6-6-6"/>
-                </svg>
+                <MdChevronRight size={16} className="text-gray-400 shrink-0" />
               </Link>
             ))
           )}
@@ -385,7 +386,7 @@ export default function StudentProfilePage() {
           <div className="flex justify-end">
             <Link to={`/professor/alunos/${studentId}/exercicios/novo`}>
               <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs">
-                + Novo exercício
+                <MdAdd size={15} className="inline -mt-0.5 mr-0.5" />Novo exercício
               </Button>
             </Link>
           </div>
@@ -404,9 +405,7 @@ export default function StudentProfilePage() {
                     {exerciseCategoryLabel[ex.category] ?? ex.category} · {exerciseStatusLabel[ex.status] ?? ex.status}
                   </p>
                 </div>
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                  <path d="M9 18l6-6-6-6"/>
-                </svg>
+                <MdChevronRight size={16} className="text-gray-400 shrink-0" />
               </Link>
             ))
           )}
@@ -419,7 +418,7 @@ export default function StudentProfilePage() {
           <div className="flex justify-end">
             <Link to={`/professor/alunos/${studentId}/metas/nova`}>
               <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs">
-                + Nova meta
+                <MdAdd size={15} className="inline -mt-0.5 mr-0.5" />Nova meta
               </Button>
             </Link>
           </div>

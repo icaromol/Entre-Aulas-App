@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { MdArrowBack, MdPerson, MdMusicNote, MdAccessTime, MdNotes } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -132,9 +133,7 @@ export default function EditStudentPage() {
     <TeacherLayout>
       <div className="flex items-center gap-3 mb-6">
         <Link to={`/professor/alunos/${studentId}`} className="text-gray-400 hover:text-gray-600 transition">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
+          <MdArrowBack size={20} />
         </Link>
         <h1 className="text-xl font-bold text-[#1E3A5F]">Editar aluno</h1>
       </div>
@@ -142,7 +141,7 @@ export default function EditStudentPage() {
       <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-600">Dados pessoais</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdPerson size={15} />Dados pessoais</h2>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-500">Nome</label>
@@ -163,7 +162,7 @@ export default function EditStudentPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-600">Instrumento</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdMusicNote size={15} />Instrumento</h2>
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Instrumento</label>
             <select value={instrument} onChange={e => setInstrument(e.target.value)} required
@@ -188,7 +187,7 @@ export default function EditStudentPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-600">Disponibilidade semanal</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdAccessTime size={15} />Disponibilidade semanal</h2>
           <div className="space-y-2">
             {availability.map(day => (
               <div key={day.day} className="flex items-center gap-3">
@@ -212,7 +211,7 @@ export default function EditStudentPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
-          <h2 className="text-sm font-semibold text-gray-600">Observações</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdNotes size={15} />Observações</h2>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
             placeholder="Anotações sobre o aluno..."
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />

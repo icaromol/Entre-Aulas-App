@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { MdAccessTime } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { StudentLayout } from '@/components/layout/StudentLayout'
@@ -127,10 +128,7 @@ export default function HistoryPage() {
       {thisWeekSeconds > 0 && (
         <div className="bg-[#D6E4F0] rounded-2xl p-4 mb-5 flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2}>
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M12 7v5l3 3"/>
-            </svg>
+            <MdAccessTime size={22} color="white" />
           </div>
           <div>
             <p className="text-xs font-semibold text-[#4A90C4]">Esta semana</p>

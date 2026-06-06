@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { MdArrowBack, MdPerson, MdMusicNote, MdAccessTime, MdNotes, MdAdd } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -124,9 +125,7 @@ export default function NewStudentPage() {
     <TeacherLayout>
       <div className="flex items-center gap-3 mb-6">
         <Link to="/professor/alunos" className="text-gray-400 hover:text-gray-600 transition">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
+          <MdArrowBack size={20} />
         </Link>
         <h1 className="text-xl font-bold text-[#1E3A5F]">Novo aluno</h1>
       </div>
@@ -134,7 +133,7 @@ export default function NewStudentPage() {
       <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-600">Dados pessoais</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdPerson size={15} />Dados pessoais</h2>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -183,7 +182,7 @@ export default function NewStudentPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-600">Instrumento</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdMusicNote size={15} />Instrumento</h2>
 
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Instrumento</label>
@@ -222,7 +221,7 @@ export default function NewStudentPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-600">Disponibilidade semanal</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdAccessTime size={15} />Disponibilidade semanal</h2>
 
           <div className="space-y-2">
             {availability.map((day) => (
@@ -259,7 +258,7 @@ export default function NewStudentPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
-          <h2 className="text-sm font-semibold text-gray-600">Observações</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdNotes size={15} />Observações</h2>
           <textarea
             value={notes}
             onChange={e => setNotes(e.target.value)}
@@ -276,7 +275,7 @@ export default function NewStudentPage() {
           disabled={loading}
           className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10"
         >
-          {loading ? 'Salvando...' : 'Cadastrar aluno e enviar convite'}
+          {loading ? 'Salvando...' : <span className="flex items-center gap-1.5 justify-center"><MdAdd size={16} />Cadastrar aluno e enviar convite</span>}
         </Button>
 
       </form>

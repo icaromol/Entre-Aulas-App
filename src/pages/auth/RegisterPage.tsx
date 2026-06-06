@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { MdEmail, MdLock } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 
@@ -144,45 +145,54 @@ export default function RegisterPage() {
 
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">E-mail</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-                readOnly={!!inviteStudentId}
-                className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition ${
-                  inviteStudentId
-                    ? 'bg-gray-50 border-gray-200 text-gray-400'
-                    : 'border-gray-200 focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20'
-                }`}
-              />
+              <div className="relative">
+                <MdEmail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  required
+                  readOnly={!!inviteStudentId}
+                  className={`w-full pl-9 pr-3 py-2 rounded-lg border text-sm outline-none transition ${
+                    inviteStudentId
+                      ? 'bg-gray-50 border-gray-200 text-gray-400'
+                      : 'border-gray-200 focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20'
+                  }`}
+                />
+              </div>
             </div>
 
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">Senha</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="mínimo 6 caracteres"
-                required
-                minLength={6}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
-              />
+              <div className="relative">
+                <MdLock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="mínimo 6 caracteres"
+                  required
+                  minLength={6}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+                />
+              </div>
             </div>
 
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">Confirmar senha</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="repita a senha"
-                required
-                minLength={6}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
-              />
+              <div className="relative">
+                <MdLock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="repita a senha"
+                  required
+                  minLength={6}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+                />
+              </div>
             </div>
 
             {!inviteStudentId && (

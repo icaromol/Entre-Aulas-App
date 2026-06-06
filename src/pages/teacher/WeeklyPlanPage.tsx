@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import { MdArrowBack, MdChevronRight, MdDragIndicator, MdMusicNote, MdSchool, MdAccessTime, MdClose, MdSave } from 'react-icons/md'
 import {
   DndContext,
   type DragEndEvent,
@@ -84,20 +85,16 @@ function SortablePlanItem({
         {...listeners}
         className="text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing shrink-0"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
-          <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
-          <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
-        </svg>
+        <MdDragIndicator size={16} />
       </div>
 
       {/* Tipo badge */}
-      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ${
+      <span className={`flex items-center justify-center w-5 h-5 rounded-md shrink-0 ${
         item.piece_id
           ? 'bg-[#D6E4F0] text-[#1E3A5F]'
           : 'bg-purple-100 text-purple-600'
       }`}>
-        {item.piece_id ? 'PEÇA' : 'EX'}
+        {item.piece_id ? <MdMusicNote size={12} /> : <MdSchool size={12} />}
       </span>
 
       {/* Info */}
@@ -117,6 +114,7 @@ function SortablePlanItem({
         className="w-12 text-center text-xs border border-gray-200 rounded-lg py-1 outline-none focus:border-[#4A90C4] transition"
         title="minutos"
       />
+      <MdAccessTime size={12} className="text-gray-400 shrink-0" />
       <span className="text-[10px] text-gray-400 shrink-0">min</span>
 
       {/* Remover */}
@@ -124,9 +122,7 @@ function SortablePlanItem({
         onClick={() => onRemove(item.id)}
         className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition shrink-0"
       >
-        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
+        <MdClose size={14} />
       </button>
     </div>
   )
@@ -516,9 +512,7 @@ export default function WeeklyPlanPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
         <Link to={`/professor/alunos/${studentId}`} className="text-gray-400 hover:text-gray-600 transition">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
+          <MdArrowBack size={20} />
         </Link>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-[#1E3A5F]">Plano semanal</h1>
@@ -527,8 +521,9 @@ export default function WeeklyPlanPage() {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs"
+          className="flex items-center gap-1.5 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs"
         >
+          <MdSave size={15} />
           {saving ? 'Salvando...' : 'Salvar plano'}
         </Button>
       </div>
@@ -536,9 +531,7 @@ export default function WeeklyPlanPage() {
       {/* Navegação de semana */}
       <div className="flex items-center justify-between bg-white rounded-2xl border border-gray-100 px-4 py-3 mb-5">
         <button onClick={() => changeWeek(-1)} className="text-gray-400 hover:text-[#1E3A5F] transition">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
+          <MdArrowBack size={18} />
         </button>
         <div className="text-center">
           <p className="text-sm font-semibold text-[#1E3A5F]">{formatWeekLabel(weekStart)}</p>
@@ -550,9 +543,7 @@ export default function WeeklyPlanPage() {
           </button>
         </div>
         <button onClick={() => changeWeek(1)} className="text-gray-400 hover:text-[#1E3A5F] transition">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <MdChevronRight size={18} />
         </button>
       </div>
 

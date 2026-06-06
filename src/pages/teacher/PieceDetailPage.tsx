@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { MdArrowBack, MdTaskAlt, MdInfoOutline } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -163,9 +164,7 @@ export default function PieceDetailPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link to={`/professor/alunos/${studentId}`} className="text-gray-400 hover:text-gray-600 transition">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
+          <MdArrowBack size={20} />
         </Link>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-[#1E3A5F]">{piece.title}</h1>
@@ -203,7 +202,7 @@ export default function PieceDetailPage() {
 
       {/* Checklist */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5">
-        <h2 className="text-sm font-semibold text-gray-600 mb-4">Checklist</h2>
+        <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 mb-4"><MdTaskAlt size={15} />Checklist</h2>
 
         <div className="space-y-5">
           {Object.entries(grouped).map(([category, items]) => (
@@ -265,7 +264,7 @@ export default function PieceDetailPage() {
       {/* Info da peça */}
       {(piece.notes || piece.difficulty) && (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-gray-600">Detalhes</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdInfoOutline size={15} />Detalhes</h2>
           {piece.difficulty && (
             <div className="flex justify-between">
               <span className="text-xs text-gray-400">Dificuldade</span>
