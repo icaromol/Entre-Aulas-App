@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import NotFoundPage from '@/pages/NotFoundPage'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import LoginPage from '@/pages/auth/LoginPage'
 import RegisterPage from '@/pages/auth/RegisterPage'
@@ -51,7 +52,7 @@ export function Router() {
         <Route path="/aluno/metas" element={<AuthGuard allowedRole="student"><GoalsPage /></AuthGuard>} />
         <Route path="/aluno/historico" element={<AuthGuard allowedRole="student"><HistoryPage /></AuthGuard>} />
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   )

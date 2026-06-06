@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 interface Student {
   id: string
@@ -158,6 +160,7 @@ export default function StudentProfilePage() {
     await supabase.from('goals').update({ status: 'completed' }).eq('id', id)
     setGoals(prev => prev.filter(g => g.id !== id))
     setCompletingGoalId(null)
+    toast.success('Meta concluída!')
   }
 
   if (loading) {
@@ -339,9 +342,7 @@ export default function StudentProfilePage() {
             </Link>
           </div>
           {pieces.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-              <p className="text-sm text-gray-400">Nenhuma peça cadastrada.</p>
-            </div>
+            <EmptyState title="Nenhuma peça ainda" description="Adicione a primeira peça do repertório." />
           ) : (
             pieces.map(piece => (
               <Link
@@ -389,9 +390,7 @@ export default function StudentProfilePage() {
             </Link>
           </div>
           {exercises.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-              <p className="text-sm text-gray-400">Nenhum exercício cadastrado.</p>
-            </div>
+            <EmptyState title="Nenhum exercício ainda" description="Adicione exercícios técnicos ou teóricos." />
           ) : (
             exercises.map(ex => (
               <Link
@@ -425,9 +424,7 @@ export default function StudentProfilePage() {
             </Link>
           </div>
           {goals.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-              <p className="text-sm text-gray-400">Nenhuma meta ativa.</p>
-            </div>
+            <EmptyState title="Nenhuma meta ativa" description="Defina metas de repertório, técnica ou progresso." />
           ) : (
             goals.map(goal => (
               <div key={goal.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4">

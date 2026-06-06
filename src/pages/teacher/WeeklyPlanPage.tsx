@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import {
   DndContext,
   type DragEndEvent,
@@ -500,6 +501,7 @@ export default function WeeklyPlanPage() {
     }
 
     setSaving(false)
+    toast.success('Plano salvo!')
   }, [planId, planItems])
 
   function changeWeek(delta: number) {
