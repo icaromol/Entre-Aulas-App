@@ -301,6 +301,23 @@ export default function StudentProfilePage() {
         </div>
       </div>
 
+      {/* Banner: Gerar planejamento */}
+      <button
+        onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
+        className="w-full mb-5 bg-[#4A90C4] hover:bg-[#4A90C4]/90 rounded-2xl px-5 py-4 flex items-center justify-between transition group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <MdCalendarMonth size={22} className="text-white" />
+          </div>
+          <div className="text-left">
+            <p className="text-white font-bold text-sm">Gerar planejamento de estudos</p>
+            <p className="text-white/70 text-xs mt-0.5">Plano semanal personalizado para {student.first_name}</p>
+          </div>
+        </div>
+        <MdChevronRight size={20} className="text-white/60 group-hover:text-white transition" />
+      </button>
+
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
@@ -319,23 +336,6 @@ export default function StudentProfilePage() {
           <p className="text-xs text-gray-400 mt-1">min/semana</p>
         </div>
       </div>
-
-      {/* Banner: Gerar planejamento */}
-      <button
-        onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
-        className="w-full mb-5 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 rounded-2xl px-5 py-4 flex items-center justify-between transition group"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-            <MdCalendarMonth size={22} className="text-white" />
-          </div>
-          <div className="text-left">
-            <p className="text-white font-bold text-sm">Gerar planejamento de estudos</p>
-            <p className="text-white/60 text-xs mt-0.5">Plano semanal personalizado para {student.first_name}</p>
-          </div>
-        </div>
-        <MdChevronRight size={20} className="text-white/50 group-hover:text-white/80 transition" />
-      </button>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
@@ -441,20 +441,11 @@ export default function StudentProfilePage() {
       {/* Tab: Programas */}
       {activeTab === 'programs' && (
         <div className="space-y-3">
-          <div className="flex gap-2">
-            <Link to={`/professor/alunos/${studentId}/programas/novo`} className="flex-1">
-              <Button className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm cursor-pointer">
-                <MdAdd size={16} className="inline -mt-0.5 mr-1" />Novo programa
-              </Button>
-            </Link>
-            <button
-              onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
-              className="flex-1 py-2 px-4 rounded-lg border border-[#1E3A5F] text-sm font-medium text-[#1E3A5F] hover:bg-[#D6E4F0] transition flex items-center justify-center gap-1.5"
-            >
-              <MdCalendarMonth size={15} />
-              Gerar novo planejamento
-            </button>
-          </div>
+          <Link to={`/professor/alunos/${studentId}/programas/novo`} className="block">
+            <Button className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm cursor-pointer">
+              <MdAdd size={16} className="inline -mt-0.5 mr-1" />Novo programa
+            </Button>
+          </Link>
 
           {programas.length === 0 ? (
             <EmptyState
