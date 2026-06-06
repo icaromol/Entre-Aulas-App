@@ -79,12 +79,6 @@ const exerciseStatusLabel: Record<string, string> = {
   completed: 'Concluído',
 }
 
-const programaTypeLabel: Record<string, string> = {
-  regular: 'Aulas Regulares', recital: 'Recital', concerto: 'Concerto',
-  show: 'Show', gravacao: 'Gravação', exame: 'Exame',
-  participacao: 'Participação', outro: 'Outro',
-}
-
 function programIcon(type: string) {
   const map: Record<string, React.ReactNode> = {
     regular:      <MdSchool       size={20} className="text-white" />,
@@ -99,16 +93,6 @@ function programIcon(type: string) {
   return map[type] ?? <MdLibraryMusic size={20} className="text-white" />
 }
 
-const programaTypeBadge: Record<string, string> = {
-  regular: 'bg-blue-50 text-blue-600',
-  recital: 'bg-purple-50 text-purple-600',
-  concerto: 'bg-indigo-50 text-indigo-600',
-  show: 'bg-pink-50 text-pink-600',
-  gravacao: 'bg-red-50 text-red-600',
-  exame: 'bg-amber-50 text-amber-700',
-  participacao: 'bg-green-50 text-green-700',
-  outro: 'bg-gray-100 text-gray-600',
-}
 
 function daysUntilLabel(date: string) {
   const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -517,17 +501,12 @@ export default function StudentProfilePage() {
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-semibold text-gray-800 truncate">{prog.title}</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${programaTypeBadge[prog.type] ?? 'bg-gray-100 text-gray-600'}`}>
-                      {programaTypeLabel[prog.type] ?? prog.type}
+                  {prog.deadline && (
+                    <span className="flex items-center gap-0.5 text-xs text-gray-400 mt-0.5">
+                      <MdCalendarMonth size={11} />
+                      {daysUntilLabel(prog.deadline)}
                     </span>
-                    {prog.deadline && (
-                      <span className="flex items-center gap-0.5 text-xs text-gray-400">
-                        <MdCalendarMonth size={11} />
-                        {daysUntilLabel(prog.deadline)}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
                 <MdChevronRight size={16} className="text-gray-400 shrink-0" />
               </Link>
