@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { MdAdd, MdChevronRight, MdEdit, MdCalendarMonth } from 'react-icons/md'
+import { MdAdd, MdCalendarMonth, MdMoreVert } from 'react-icons/md'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -25,9 +25,10 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true)
 
   const location = useLocation()
-  const inviteLink = location.state?.inviteLink as string | undefined
-  const inviteStudentName = location.state?.studentName as string | undefined
+  const [inviteLink, setInviteLink] = useState<string | undefined>(location.state?.inviteLink)
+  const [inviteStudentName, setInviteStudentName] = useState<string | undefined>(location.state?.studentName)
   const [copied, setCopied] = useState(false)
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
 
   function handleCopy() {
     if (!inviteLink) return
@@ -35,6 +36,27 @@ export default function StudentsPage() {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  function handleInvite(student: Student) {
+    const link = `${window.location.origin}/cadastro?invite=${student.id}`
+    setInviteLink(link)
+    setInviteStudentName(`${student.first_name} ${student.last_name}`)
+    setCopied(false)
+    setMenuOpenId(null)
+  }
+
+  async function handleDeleteStudent(student: Student) {
+    setMenuOpenId(null)
+    if (!confirm(`Excluir ${student.first_name} ${student.last_name}? Esta ação não pode ser desfeita.`)) return
+    await supabase.from('students').delete().eq('id', student.id)
+    setStudents(prev => prev.filter(s => s.id !== student.id))
+  }
+
+  useEffect(() => {
+    function handleClose() { setMenuOpenId(null) }
+    document.addEventListener('click', handleClose)
+    return () => document.removeEventListener('click', handleClose)
+  }, [])
 
   useEffect(() => {
     if (profile) fetchStudents()
@@ -116,7 +138,7 @@ export default function StudentsPage() {
           {students.map(student => (
             <div
               key={student.id}
-              className="bg-white rounded-2xl border border-gray-100 hover:border-[#4A90C4] transition px-5 py-4 flex items-center gap-4"
+              className="relative bg-white rounded-2xl border border-gray-100 hover:border-[#4A90C4] transition px-5 py-4 flex items-center gap-4 group"
             >
               {/* Área clicável → perfil */}
               <Link
@@ -141,24 +163,55 @@ export default function StudentsPage() {
                 </div>
               </Link>
 
-              {/* Ações inline + chevron */}
-              <div className="flex items-center gap-1 shrink-0">
+              {/* Novo planejamento */}
+              <button
+                onClick={() => navigate(`/professor/alunos/${student.id}/planejamento`)}
+                className="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-[#D6E4F0] text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition text-xs font-semibold shrink-0"
+              >
+                <MdCalendarMonth size={14} />
+                <span>Novo planejamento</span>
+              </button>
+
+              {/* 3-dot menu */}
+              <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
                 <button
-                  onClick={() => navigate(`/professor/alunos/${student.id}/planejamento`)}
-                  className="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-[#D6E4F0] text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition text-xs font-semibold shrink-0"
-                  title="Gerar planejamento"
+                  onClick={() => setMenuOpenId(menuOpenId === student.id ? null : student.id)}
+                  className={`w-8 h-8 rounded-lg transition flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 ${
+                    menuOpenId === student.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  }`}
+                  title="Mais opções"
                 >
-                  <MdCalendarMonth size={14} />
-                  <span>Novo planejamento</span>
+                  <MdMoreVert size={18} />
                 </button>
-                <button
-                  onClick={() => navigate(`/professor/alunos/${student.id}/editar`)}
-                  className="w-8 h-8 rounded-lg text-gray-400 hover:text-[#4A90C4] hover:bg-gray-100 transition flex items-center justify-center"
-                  title="Editar aluno"
-                >
-                  <MdEdit size={16} />
-                </button>
-                <MdChevronRight size={16} className="text-gray-300" />
+                {menuOpenId === student.id && (
+                  <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-44 z-20">
+                    <button
+                      onClick={() => { setMenuOpenId(null); navigate(`/professor/alunos/${student.id}`) }}
+                      className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      Informações
+                    </button>
+                    <button
+                      onClick={() => handleInvite(student)}
+                      className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      Criar convite
+                    </button>
+                    <button
+                      onClick={() => { setMenuOpenId(null); navigate(`/professor/alunos/${student.id}/editar`) }}
+                      className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      Editar
+                    </button>
+                    <div className="border-t border-gray-100 my-1" />
+                    <button
+                      onClick={() => handleDeleteStudent(student)}
+                      className="w-full px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-50 transition"
+                    >
+                      Excluir aluno
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}

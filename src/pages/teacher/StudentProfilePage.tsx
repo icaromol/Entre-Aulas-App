@@ -124,6 +124,8 @@ export default function StudentProfilePage() {
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
   const [showMenu, setShowMenu] = useState(false)
   const [showInfo, setShowInfo] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
+  const [inviteCopied, setInviteCopied] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
@@ -186,6 +188,44 @@ export default function StudentProfilePage() {
 
   return (
     <TeacherLayout>
+      {/* Modal de Convite */}
+      {showInvite && (
+        <div
+          className="fixed inset-0 bg-black/40 z-20 flex items-end justify-center"
+          onClick={() => setShowInvite(false)}
+        >
+          <div
+            className="bg-white rounded-t-2xl p-5 w-full max-w-md"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold text-[#1E3A5F]">Link de convite</h2>
+              <button onClick={() => setShowInvite(false)} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">
+              Compartilhe este link com {student.first_name} para ele criar a senha de acesso.
+            </p>
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={`${window.location.origin}/cadastro?invite=${studentId}`}
+                className="flex-1 px-3 py-2 rounded-lg border border-[#4A90C4]/30 bg-white text-xs text-gray-600 outline-none"
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/cadastro?invite=${studentId}`)
+                  setInviteCopied(true)
+                  setTimeout(() => setInviteCopied(false), 2000)
+                }}
+                className="px-4 py-2 rounded-lg bg-[#1E3A5F] text-white text-xs font-medium hover:bg-[#1E3A5F]/90 transition whitespace-nowrap"
+              >
+                {inviteCopied ? '✓ Copiado!' : 'Copiar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Informações */}
       {showInfo && (
         <div
@@ -281,6 +321,12 @@ export default function StudentProfilePage() {
                 className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
               >
                 Informações
+              </button>
+              <button
+                onClick={() => { setShowMenu(false); setInviteCopied(false); setShowInvite(true) }}
+                className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+              >
+                Criar convite
               </button>
               <button
                 onClick={() => { setShowMenu(false); navigate(`/professor/alunos/${studentId}/editar`) }}
