@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { MdArrowBack, MdMusicNote, MdSchool, MdLibraryMusic, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd, MdMic, MdFolder } from 'react-icons/md'
+import { MdArrowBack, MdMusicNote, MdSchool, MdLibraryMusic, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd, MdMic, MdFolder, MdPiano, MdTrendingUp, MdEmojiEvents, MdGraphicEq } from 'react-icons/md'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -55,6 +55,22 @@ const levelLabel: Record<string, string> = {
   beginner: 'Iniciante',
   intermediate: 'Intermediário',
   advanced: 'Avançado',
+}
+
+function instrumentIcon(instrument: string) {
+  const s = instrument.toLowerCase()
+  if (['piano', 'teclado', 'órgão', 'orgao', 'cravo'].some(k => s.includes(k))) return MdPiano
+  if (['voz', 'canto', 'vocal', 'soprano', 'tenor', 'contralto', 'barítono', 'baritono'].some(k => s.includes(k))) return MdMic
+  if (['flauta', 'sax', 'trompete', 'clarinete', 'oboé', 'oboe', 'trombone', 'tuba', 'sopro', 'fagote', 'cors'].some(k => s.includes(k))) return MdGraphicEq
+  if (['bateria', 'percussão', 'percussao', 'cajón', 'cajon', 'tambor', 'bumbo'].some(k => s.includes(k))) return MdGraphicEq
+  return MdMusicNote // violão, guitarra, baixo, violino, ukulele, banjo, etc.
+}
+
+function levelIcon(level: string) {
+  if (level === 'beginner')     return MdSchool
+  if (level === 'intermediate') return MdTrendingUp
+  if (level === 'advanced')     return MdEmojiEvents
+  return MdSchool
 }
 
 const pieceStatusLabel: Record<string, string> = {
@@ -364,12 +380,12 @@ export default function StudentProfilePage() {
       {/* Cards: instrumento + nível */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-          <MdMusicNote size={32} className="mx-auto mb-2 text-[#4A90C4]" />
+          {(() => { const Icon = instrumentIcon(student.instrument); return <Icon size={32} className="mx-auto mb-2 text-[#4A90C4]" /> })()}
           <p className="text-sm font-bold text-[#1E3A5F] truncate">{student.instrument}</p>
           <p className="text-xs text-gray-400 mt-0.5">Instrumento</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-          <MdSchool size={32} className="mx-auto mb-2 text-[#4A90C4]" />
+          {(() => { const Icon = levelIcon(student.level); return <Icon size={32} className="mx-auto mb-2 text-[#4A90C4]" /> })()}
           <p className="text-sm font-bold text-[#1E3A5F]">{levelLabel[student.level] ?? student.level}</p>
           <p className="text-xs text-gray-400 mt-0.5">Nível</p>
         </div>
