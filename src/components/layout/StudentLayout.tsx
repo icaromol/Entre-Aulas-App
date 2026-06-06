@@ -58,26 +58,26 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       {/* Header simples */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="px-4 h-14 grid grid-cols-3 items-center">
-          {/* Esquerda — perfil */}
-          <div className="flex items-center gap-2.5">
+          {/* Esquerda — perfil com hover reveal */}
+          <div className="flex items-center gap-2 group cursor-default">
             <div className="rounded-full overflow-hidden shrink-0">
               <Avatar
-                size={32}
+                size={24}
                 name={`${profile?.first_name ?? ''} ${profile?.last_name ?? ''}`}
                 variant="beam"
                 colors={AVATAR_COLORS}
               />
             </div>
-            <div className="leading-tight min-w-0">
-              <p className="text-sm font-semibold text-gray-700 truncate">
+            <div className="leading-tight overflow-hidden max-w-0 opacity-0 group-hover:max-w-[200px] group-hover:opacity-100 transition-all duration-300 ease-in-out">
+              <p className="text-xs font-semibold text-gray-700 whitespace-nowrap">
                 {profile?.first_name} {profile?.last_name}
               </p>
-              <p className="text-[11px] text-gray-400 truncate">{user?.email}</p>
+              <p className="text-[10px] text-gray-400 whitespace-nowrap">{user?.email}</p>
             </div>
           </div>
 
           {/* Centro — logo */}
-          <img src="/estudamus_logo_dark.png" alt="estudamus" className="h-6" />
+          <img src="/estudamus_logo.png" alt="estudamus" className="h-5" />
 
           {/* Direita — logout */}
           <div className="flex justify-end">

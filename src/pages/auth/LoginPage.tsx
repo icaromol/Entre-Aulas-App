@@ -47,7 +47,7 @@ export default function LoginPage() {
 
         {/* Logo / título */}
         <div className="text-center mb-8">
-          <img src="/estudamus_logo_dark.png" alt="estudamus" className="h-10 mx-auto mb-3" />
+          <img src="/estudamus_logo.png" alt="estudamus" className="h-10 mx-auto mb-3" />
           <p className="text-sm text-gray-500">Acesse sua conta</p>
         </div>
 
