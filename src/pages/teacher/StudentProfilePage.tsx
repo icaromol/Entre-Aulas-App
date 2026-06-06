@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MdArrowBack, MdMusicNote, MdSchool, MdOutlineFlag, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd } from 'react-icons/md'
+import { MdArrowBack, MdMusicNote, MdSchool, MdOutlineFlag, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd, MdEdit } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -161,7 +161,7 @@ export default function StudentProfilePage() {
     await supabase.from('goals').update({ status: 'completed' }).eq('id', id)
     setGoals(prev => prev.filter(g => g.id !== id))
     setCompletingGoalId(null)
-    toast.success('Meta concluída!')
+    toast.success('Tarefa concluída!')
   }
 
   if (loading) {
@@ -316,7 +316,7 @@ export default function StudentProfilePage() {
         {([
           { key: 'pieces',    label: 'Peças',      Icon: MdMusicNote },
           { key: 'exercises', label: 'Exercícios',  Icon: MdSchool },
-          { key: 'goals',     label: 'Metas',       Icon: MdOutlineFlag },
+          { key: 'goals',     label: 'Tarefas',     Icon: MdOutlineFlag },
           { key: 'plan',      label: 'Plano',       Icon: MdCalendarMonth },
         ] as const).map(tab => (
           <button

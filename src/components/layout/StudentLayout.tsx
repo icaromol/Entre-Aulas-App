@@ -9,7 +9,7 @@ interface StudentLayoutProps {
 const navItems = [
   { label: 'Hoje',       path: '/aluno/hoje',       Icon: MdCalendarToday },
   { label: 'Repertório', path: '/aluno/repertorio',  Icon: MdLibraryMusic },
-  { label: 'Metas',      path: '/aluno/metas',       Icon: MdOutlineFlag },
+  { label: 'Tarefas',    path: '/aluno/metas',       Icon: MdOutlineFlag },
   { label: 'Histórico',  path: '/aluno/historico',   Icon: MdHistory },
 ]
 

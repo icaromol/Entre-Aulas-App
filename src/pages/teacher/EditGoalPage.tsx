@@ -124,10 +124,10 @@ export default function EditGoalPage() {
         <Link to={`/professor/alunos/${studentId}?tab=goals`} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Editar meta</h1>
+        <h1 className="text-xl font-bold text-[#1E3A5F]">Editar tarefa</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
+      <form onSubmit={handleSubmit} className="space-y-5 max-w-xl mx-auto">
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
           <div className="space-y-1">

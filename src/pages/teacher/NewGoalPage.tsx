@@ -113,10 +113,10 @@ export default function NewGoalPage() {
         <Link to={`/professor/alunos/${studentId}?tab=goals`} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Nova meta</h1>
+        <h1 className="text-xl font-bold text-[#1E3A5F]">Nova tarefa</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
+      <form onSubmit={handleSubmit} className="space-y-5 max-w-xl mx-auto">
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
           <div className="space-y-1">
@@ -250,7 +250,7 @@ export default function NewGoalPage() {
           disabled={loading}
           className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10"
         >
-          {loading ? 'Salvando...' : <span className="flex items-center gap-1.5 justify-center"><MdAdd size={16} />Criar meta</span>}
+          {loading ? 'Salvando...' : <span className="flex items-center gap-1.5 justify-center"><MdAdd size={16} />Criar tarefa</span>}
         </Button>
 
       </form>

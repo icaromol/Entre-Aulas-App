@@ -101,7 +101,7 @@ export default function GoalsPage() {
   return (
     <StudentLayout>
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Metas</h1>
+        <h1 className="text-xl font-bold text-[#1E3A5F]">Tarefas</h1>
         <p className="text-sm text-gray-400 mt-0.5">Objetivos definidos pelo seu professor</p>
       </div>
 
