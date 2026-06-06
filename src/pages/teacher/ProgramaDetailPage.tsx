@@ -5,7 +5,6 @@ import { MdArrowBack, MdAdd, MdDeleteOutline, MdEdit, MdMusicNote, MdSchool, MdC
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
-import { Button } from '@/components/ui/button'
 import type { Programa, ProgramPiece, ProgramExercise } from '@/types/programs'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
@@ -409,20 +408,12 @@ export default function ProgramaDetailPage() {
       )}
 
       {programa.status === 'active' && (
-        <>
-          <Button
-            onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
-            className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-12 text-sm font-semibold mb-3"
-          >
-            Gerar Planejamento de Estudos
-          </Button>
-          <button
-            onClick={archivePrograma}
-            className="w-full py-3 rounded-2xl border border-gray-200 text-sm text-gray-400 hover:border-gray-300 hover:text-gray-600 transition mb-2"
-          >
-            Arquivar programa
-          </button>
-        </>
+        <button
+          onClick={archivePrograma}
+          className="w-full py-3 rounded-2xl border border-gray-200 text-sm text-gray-400 hover:border-gray-300 hover:text-gray-600 transition mb-2"
+        >
+          Arquivar programa
+        </button>
       )}
       <button
         onClick={deletePrograma}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { MdAdd, MdChevronRight, MdEdit } from 'react-icons/md'
+import { MdAdd, MdChevronRight, MdEdit, MdCalendarMonth } from 'react-icons/md'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -144,11 +144,12 @@ export default function StudentsPage() {
               {/* Ações inline + chevron */}
               <div className="flex items-center gap-1 shrink-0">
                 <button
-                  onClick={() => navigate(`/professor/alunos/${student.id}/plano`)}
-                  className="w-8 h-8 rounded-lg bg-[#D6E4F0] text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition flex items-center justify-center"
-                  title="Criar plano"
+                  onClick={() => navigate(`/professor/alunos/${student.id}/planejamento`)}
+                  className="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-[#D6E4F0] text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition text-xs font-semibold shrink-0"
+                  title="Gerar planejamento"
                 >
-                  <MdAdd size={16} />
+                  <MdCalendarMonth size={14} />
+                  <span>Novo planejamento</span>
                 </button>
                 <button
                   onClick={() => navigate(`/professor/alunos/${student.id}/editar`)}
