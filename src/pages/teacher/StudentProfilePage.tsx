@@ -360,6 +360,30 @@ export default function StudentProfilePage() {
         </div>
       </div>
 
+      {/* Disponibilidade — 7 dias */}
+      <div className="flex gap-1.5 mb-5">
+        {[
+          { label: 'SEG', dow: 1 },
+          { label: 'TER', dow: 2 },
+          { label: 'QUA', dow: 3 },
+          { label: 'QUI', dow: 4 },
+          { label: 'SEX', dow: 5 },
+          { label: 'SÁB', dow: 6 },
+          { label: 'DOM', dow: 0 },
+        ].map(({ label, dow }) => {
+          const day = availability.find(d => d.day_of_week === dow)
+          const active = day?.is_active ?? false
+          return (
+            <div key={dow} className="flex-1 flex flex-col items-center gap-1">
+              <span className="text-[10px] text-gray-400">{label}</span>
+              <div className={`w-full h-8 rounded-lg border-2 ${
+                active ? 'border-[#4A90C4]' : 'border-gray-200'
+              }`} />
+            </div>
+          )
+        })}
+      </div>
+
       {/* Banner: Gerar planejamento */}
       <button
         onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
@@ -408,38 +432,6 @@ export default function StudentProfilePage() {
           <p className="text-2xl font-bold text-[#1E3A5F]">{totalMinutes}</p>
           <p className="text-xs text-gray-400 mt-1">min/semana</p>
         </div>
-      </div>
-
-      {/* Disponibilidade — 7 dias */}
-      <div className="flex gap-1.5 mb-5">
-        {[
-          { label: 'SEG', dow: 1 },
-          { label: 'TER', dow: 2 },
-          { label: 'QUA', dow: 3 },
-          { label: 'QUI', dow: 4 },
-          { label: 'SEX', dow: 5 },
-          { label: 'SÁB', dow: 6 },
-          { label: 'DOM', dow: 0 },
-        ].map(({ label, dow }) => {
-          const day = availability.find(d => d.day_of_week === dow)
-          const active = day?.is_active ?? false
-          return (
-            <div key={dow} className="flex-1">
-              <div className={`w-full rounded-lg py-2 flex flex-col items-center justify-center gap-0.5 ${
-                active ? 'bg-[#1E3A5F]' : 'bg-gray-100'
-              }`}>
-                {active && (
-                  <span className="text-[9px] text-white/60 leading-none">
-                    {day!.minutes_available}m
-                  </span>
-                )}
-                <span className={`text-[10px] font-bold leading-none ${active ? 'text-white' : 'text-gray-300'}`}>
-                  {label}
-                </span>
-              </div>
-            </div>
-          )
-        })}
       </div>
 
       {/* Tabs */}
