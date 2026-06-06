@@ -176,7 +176,7 @@ export default function PlanejamentoPage() {
       const nonRegularIds = selected.filter(p => p.type !== 'regular').map(p => p.id)
 
       const [{ data: allPieces }, { data: allExercises }] = await Promise.all([
-        supabase.from('pieces').select('id, title, composer, difficulty, completion_pct').eq('student_id', studentId!).eq('status', 'active'),
+        supabase.from('pieces').select('id, title, composer, difficulty, completion_pct, status').eq('student_id', studentId!).in('status', ['in_progress', 'completed']),
         supabase.from('exercises').select('id, title, category, difficulty').eq('student_id', studentId!),
       ])
 
