@@ -443,8 +443,8 @@ export default function StudentProfilePage() {
             ))
           )}
           <Link to={`/professor/alunos/${studentId}/pecas/nova`}
-            className="flex items-center gap-1.5 text-sm font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition pt-1">
-            <MdAdd size={16} />Nova peça
+            className="flex items-center justify-center gap-2 w-full py-3 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
+            <MdAdd size={22} />Nova peça
           </Link>
         </div>
       )}
@@ -475,8 +475,8 @@ export default function StudentProfilePage() {
             ))
           )}
           <Link to={`/professor/alunos/${studentId}/exercicios/novo`}
-            className="flex items-center gap-1.5 text-sm font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition pt-1">
-            <MdAdd size={16} />Novo exercício
+            className="flex items-center justify-center gap-2 w-full py-3 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
+            <MdAdd size={22} />Novo exercício
           </Link>
         </div>
       )}
@@ -517,8 +517,8 @@ export default function StudentProfilePage() {
             ))
           )}
           <Link to={`/professor/alunos/${studentId}/programas/novo`}
-            className="flex items-center gap-1.5 text-sm font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition pt-1">
-            <MdAdd size={16} />Novo programa
+            className="flex items-center justify-center gap-2 w-full py-3 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
+            <MdAdd size={22} />Novo programa
           </Link>
         </div>
       )}
