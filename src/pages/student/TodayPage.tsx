@@ -7,6 +7,34 @@ import { StudentLayout } from '@/components/layout/StudentLayout'
 import type { PlanItem } from '@/types/plan'
 import { getMonday, formatWeekStart, getDayFullLabel, getTodayDayOfWeek } from '@/lib/weekUtils'
 
+const TYPE_EMOJI: Record<string, string> = {
+  regular: '📚', recital: '🎭', concerto: '🎹', show: '🎤',
+  gravacao: '🎙️', exame: '📋', participacao: '🎵', outro: '📁',
+}
+
+function itemDisplay(item: PlanItem): { title: string; subtitle: string; icon: string } {
+  if (item.is_maintenance) {
+    return {
+      title: 'Manutenção',
+      subtitle: item.piece?.title ?? '—',
+      icon: '🔄',
+    }
+  }
+  if (item.checklist_item) {
+    return {
+      title: item.checklist_item.title,
+      subtitle: item.checklist_item.piece?.title ?? item.checklist_item.exercise?.title ?? '—',
+      icon: item.checklist_item.piece ? '🎵' : '🎯',
+    }
+  }
+  // fallback (legacy item without checklist_item)
+  return {
+    title: item.piece?.title ?? '—',
+    subtitle: item.piece?.composer ?? '',
+    icon: '🎵',
+  }
+}
+
 export default function TodayPage() {
   const { profile } = useAuth()
   const navigate = useNavigate()
@@ -18,7 +46,6 @@ export default function TodayPage() {
 
   const weekStart = formatWeekStart(getMonday(new Date()))
 
-  // Calcula a data real do dia visualizado para exibição DD/MM
   const monday = getMonday(new Date())
   const viewDate = new Date(monday)
   viewDate.setDate(viewDate.getDate() + (viewDay === 0 ? 6 : viewDay - 1))
@@ -59,19 +86,21 @@ export default function TodayPage() {
     const { data: planItems } = await supabase
       .from('plan_items')
       .select(`
-        *,
-        piece:pieces(title, composer, completion_pct),
-        exercise:exercises(title, category)
+        id, plan_id, day_of_week, piece_id, checklist_item_id, program_id,
+        duration_minutes, position, is_done, done_at, is_maintenance,
+        checklist_item:checklist_items(
+          id, title,
+          piece:pieces(title, composer),
+          exercise:exercises(title, category)
+        ),
+        piece:pieces(title, composer),
+        programa:programas(title, type)
       `)
       .eq('plan_id', plan.id)
       .eq('day_of_week', viewDay)
       .order('position')
 
-    setItems((planItems ?? []).map((item: PlanItem) => ({
-      ...item,
-      piece: item.piece ?? undefined,
-      exercise: item.exercise ?? undefined,
-    })))
+    setItems((planItems ?? []) as unknown as PlanItem[])
     setLoading(false)
   }
 
@@ -82,15 +111,13 @@ export default function TodayPage() {
       .update({ is_done: newDone, done_at: newDone ? new Date().toISOString() : null })
       .eq('id', item.id)
 
-    setItems(prev =>
-      prev.map(i => i.id === item.id ? { ...i, is_done: newDone } : i)
-    )
+    setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_done: newDone } : i))
   }
 
-  const done = items.filter(i => i.is_done).length
+  const done  = items.filter(i => i.is_done).length
   const total = items.length
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0
-  const totalMinutes = items.reduce((sum, i) => sum + (i.duration_minutes ?? 0), 0)
+  const pct   = total > 0 ? Math.round((done / total) * 100) : 0
+  const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
 
   if (loading) {
     return (
@@ -155,12 +182,8 @@ export default function TodayPage() {
       ) : (
         <div className="space-y-3">
           {items.map(item => {
-            const title = item.piece?.title ?? item.exercise?.title ?? '—'
-            const subtitle = item.piece
-              ? item.piece.composer ?? 'Peça'
-              : item.exercise
-              ? item.exercise.category
-              : ''
+            const { title, subtitle, icon } = itemDisplay(item)
+            const prog = item.programa
 
             return (
               <div
@@ -169,11 +192,11 @@ export default function TodayPage() {
                   item.is_done ? 'border-gray-100 opacity-60' : 'border-gray-100'
                 }`}
               >
-                <div className="px-4 py-4 flex items-center gap-3">
+                <div className="px-4 py-4 flex items-start gap-3">
                   {/* Checkbox */}
                   <button
                     onClick={() => toggleDone(item)}
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition ${
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition ${
                       item.is_done
                         ? 'bg-[#1E3A5F] border-[#1E3A5F]'
                         : 'border-gray-300 hover:border-[#4A90C4]'
@@ -186,17 +209,25 @@ export default function TodayPage() {
                     )}
                   </button>
 
+                  {/* Ícone */}
+                  <span className="text-base mt-0.5 shrink-0">{icon}</span>
+
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm font-semibold truncate ${item.is_done ? 'line-through text-gray-400' : 'text-gray-800'}`}>
                       {title}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">{subtitle}</p>
+                    {prog && (
+                      <span className="inline-block mt-1 text-[10px] bg-[#D6E4F0] text-[#1E3A5F] rounded-full px-2 py-0.5 font-medium">
+                        {TYPE_EMOJI[prog.type] ?? '📁'} {prog.title}
+                      </span>
+                    )}
                   </div>
 
                   {/* Tempo */}
                   {item.duration_minutes && (
-                    <span className="text-xs text-gray-400 shrink-0">
+                    <span className="text-xs text-gray-400 shrink-0 mt-0.5">
                       {item.duration_minutes} min
                     </span>
                   )}
@@ -209,7 +240,7 @@ export default function TodayPage() {
                       onClick={() => navigate('/aluno/pomodoro', {
                         state: {
                           planItemId: item.id,
-                          title,
+                          title: subtitle ? `${title} — ${subtitle}` : title,
                           durationMinutes: item.duration_minutes,
                           studentId,
                         }
@@ -227,7 +258,7 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Banner de pomodoro — sempre visível */}
+      {/* Banner de início rápido */}
       <button
         onClick={() => navigate('/aluno/pomodoro', {
           state: { title: 'Sessão de hoje', durationMinutes: totalMinutes || 25, studentId, autoStart: true }
@@ -243,7 +274,7 @@ export default function TodayPage() {
         </div>
       </button>
 
-      {/* Mensagem de conclusão */}
+      {/* Conclusão */}
       {total > 0 && done === total && (
         <div className="mt-5 bg-[#D6E4F0] rounded-2xl p-4 text-center">
           <p className="text-2xl mb-1">🎉</p>

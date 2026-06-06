@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Avatar from 'boring-avatars'
 import { useAuth } from '@/hooks/useAuth'
-import { MdCalendarToday, MdLibraryMusic, MdOutlineFlag, MdHistory, MdLogout } from 'react-icons/md'
+import { MdCalendarToday, MdLibraryMusic, MdHistory, MdLogout } from 'react-icons/md'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
 
@@ -11,10 +11,9 @@ interface StudentLayoutProps {
 }
 
 const navItems = [
-  { label: 'Hoje',       path: '/aluno/hoje',       Icon: MdCalendarToday },
-  { label: 'Repertório', path: '/aluno/repertorio',  Icon: MdLibraryMusic },
-  { label: 'Tarefas',    path: '/aluno/metas',       Icon: MdOutlineFlag },
-  { label: 'Histórico',  path: '/aluno/historico',   Icon: MdHistory },
+  { label: 'Hoje',       path: '/aluno/hoje',      Icon: MdCalendarToday },
+  { label: 'Repertório', path: '/aluno/repertorio', Icon: MdLibraryMusic },
+  { label: 'Histórico',  path: '/aluno/historico',  Icon: MdHistory },
 ]
 
 export function StudentLayout({ children }: StudentLayoutProps) {
