@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
+import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { StudentLayout } from '@/components/layout/StudentLayout'
+
+const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
 
 interface ChecklistItem {
   id: string
@@ -166,7 +169,7 @@ export default function RepertoirePage() {
                   >
                     {/* Círculo de progresso */}
                     <div className="relative w-10 h-10 shrink-0">
-                      <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
+                      <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90 absolute inset-0">
                         <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3"/>
                         <circle
                           cx="18" cy="18" r="15" fill="none"
@@ -175,9 +178,11 @@ export default function RepertoirePage() {
                           strokeLinecap="round"
                         />
                       </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-[#1E3A5F]">
-                        {piece.completion_pct}%
-                      </span>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="rounded-full overflow-hidden">
+                          <Avatar size={24} name={piece.title} variant="marble" colors={AVATAR_COLORS} />
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -250,11 +255,16 @@ export default function RepertoirePage() {
             </div>
           ) : (
             exercises.map(ex => (
-              <div key={ex.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4">
-                <p className="text-sm font-semibold text-gray-800">{ex.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {categoryLabel[ex.category] ?? ex.category} · {exerciseStatusLabel[ex.status] ?? ex.status}
-                </p>
+              <div key={ex.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4">
+                <div className="shrink-0 rounded-lg overflow-hidden">
+                  <Avatar size={36} name={ex.title} variant="pixel" colors={AVATAR_COLORS} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{ex.title}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {categoryLabel[ex.category] ?? ex.category} · {exerciseStatusLabel[ex.status] ?? ex.status}
+                  </p>
+                </div>
               </div>
             ))
           )}
