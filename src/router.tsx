@@ -12,6 +12,8 @@ import PieceDetailPage from '@/pages/teacher/PieceDetailPage'
 import NewExercisePage from '@/pages/teacher/NewExercisePage'
 import ExerciseDetailPage from '@/pages/teacher/ExerciseDetailPage'
 import WeeklyPlanPage from '@/pages/teacher/WeeklyPlanPage'
+import EditPiecePage from '@/pages/teacher/EditPiecePage'
+import EditExercisePage from '@/pages/teacher/EditExercisePage'
 import TodayPage from '@/pages/student/TodayPage'
 import PomodoroPage from '@/pages/student/PomodoroPage'
 import RepertoirePage from '@/pages/student/RepertoirePage'
@@ -38,8 +40,10 @@ export function Router() {
         <Route path="/professor/alunos/:studentId/editar" element={<AuthGuard allowedRole="teacher"><EditStudentPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/pecas/nova" element={<AuthGuard allowedRole="teacher"><NewPiecePage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/pecas/:pieceId" element={<AuthGuard allowedRole="teacher"><PieceDetailPage /></AuthGuard>} />
+        <Route path="/professor/alunos/:studentId/pecas/:pieceId/editar" element={<AuthGuard allowedRole="teacher"><EditPiecePage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/exercicios/novo" element={<AuthGuard allowedRole="teacher"><NewExercisePage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/exercicios/:exerciseId" element={<AuthGuard allowedRole="teacher"><ExerciseDetailPage /></AuthGuard>} />
+        <Route path="/professor/alunos/:studentId/exercicios/:exerciseId/editar" element={<AuthGuard allowedRole="teacher"><EditExercisePage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/plano" element={<AuthGuard allowedRole="teacher"><WeeklyPlanPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/metas/nova" element={<AuthGuard allowedRole="teacher"><NewGoalPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/metas/:goalId/editar" element={<AuthGuard allowedRole="teacher"><EditGoalPage /></AuthGuard>} />

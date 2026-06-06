@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { MdArrowBack, MdTaskAlt, MdInfoOutline } from 'react-icons/md'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { MdArrowBack, MdTaskAlt, MdInfoOutline, MdEdit, MdDeleteOutline } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -41,6 +41,7 @@ const statusOptions = [
 
 export default function PieceDetailPage() {
   const { studentId, pieceId } = useParams()
+  const navigate = useNavigate()
 
   const [piece, setPiece] = useState<Piece | null>(null)
   const [checklist, setChecklist] = useState<ChecklistItem[]>([])
@@ -148,6 +149,12 @@ export default function PieceDetailPage() {
     setChecklist(prev => prev.filter(c => c.id !== itemId))
   }
 
+  async function deletePiece() {
+    if (!confirm('Excluir esta peça? Esta ação não pode ser desfeita.')) return
+    await supabase.from('pieces').delete().eq('id', pieceId!)
+    navigate(`/professor/alunos/${studentId}`)
+  }
+
   if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
   if (!piece) return <TeacherLayout><p className="text-sm text-red-400">Peça não encontrada.</p></TeacherLayout>
 
@@ -174,6 +181,9 @@ export default function PieceDetailPage() {
             {piece.period && ` · ${periodLabel[piece.period] ?? piece.period}`}
           </p>
         </div>
+        <Link to={`/professor/alunos/${studentId}/pecas/${pieceId}/editar`} className="text-gray-400 hover:text-[#4A90C4] transition">
+          <MdEdit size={20} />
+        </Link>
       </div>
 
       {/* Progresso */}
@@ -261,7 +271,7 @@ export default function PieceDetailPage() {
 
       {/* Info da peça */}
       {(piece.notes || piece.difficulty) && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5 space-y-3">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdInfoOutline size={15} />Detalhes</h2>
           {piece.difficulty && (
             <div className="flex justify-between">
@@ -272,6 +282,14 @@ export default function PieceDetailPage() {
           {piece.notes && <p className="text-xs text-gray-600 leading-relaxed">{piece.notes}</p>}
         </div>
       )}
+
+      <button
+        onClick={deletePiece}
+        className="w-full py-3 rounded-2xl border border-red-200 text-sm font-medium text-red-400 hover:bg-red-50 transition flex items-center justify-center gap-1.5"
+      >
+        <MdDeleteOutline size={16} />
+        Excluir peça
+      </button>
     </TeacherLayout>
   )
 }

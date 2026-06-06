@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { MdArrowBack, MdTaskAlt, MdDeleteOutline } from 'react-icons/md'
+import { MdArrowBack, MdTaskAlt, MdDeleteOutline, MdEdit } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -165,6 +165,9 @@ export default function ExerciseDetailPage() {
           <h1 className="text-xl font-bold text-[#1E3A5F]">{exercise.title}</h1>
           <p className="text-xs text-gray-400 mt-0.5">{categoryLabel[exercise.category] ?? exercise.category}</p>
         </div>
+        <Link to={`/professor/alunos/${studentId}/exercicios/${exerciseId}/editar`} className="text-gray-400 hover:text-[#4A90C4] transition">
+          <MdEdit size={20} />
+        </Link>
       </div>
 
       {/* Progresso */}
