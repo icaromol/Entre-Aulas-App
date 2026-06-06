@@ -361,14 +361,18 @@ export default function StudentProfilePage() {
         <MdChevronRight size={20} className="text-white/60 group-hover:text-white transition" />
       </button>
 
-      {/* Pills: instrumento + nível */}
-      <div className="flex gap-2 mb-3">
-        <span className="px-3 py-1 rounded-full bg-[#D6E4F0] text-[#1E3A5F] text-xs font-semibold">
-          {student.instrument}
-        </span>
-        <span className="px-3 py-1 rounded-full bg-[#D6E4F0] text-[#1E3A5F] text-xs font-semibold">
-          {levelLabel[student.level] ?? student.level}
-        </span>
+      {/* Cards: instrumento + nível */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+          <MdMusicNote size={32} className="mx-auto mb-2 text-[#4A90C4]" />
+          <p className="text-sm font-bold text-[#1E3A5F] truncate">{student.instrument}</p>
+          <p className="text-xs text-gray-400 mt-0.5">Instrumento</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+          <MdSchool size={32} className="mx-auto mb-2 text-[#4A90C4]" />
+          <p className="text-sm font-bold text-[#1E3A5F]">{levelLabel[student.level] ?? student.level}</p>
+          <p className="text-xs text-gray-400 mt-0.5">Nível</p>
+        </div>
       </div>
 
       {/* Summary cards */}
