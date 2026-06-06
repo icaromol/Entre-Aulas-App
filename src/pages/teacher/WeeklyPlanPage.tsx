@@ -1,25 +1,10 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MdArrowBack, MdChevronRight, MdDragIndicator, MdMusicNote, MdSchool, MdAccessTime, MdClose, MdSave } from 'react-icons/md'
 import {
-  DndContext,
-  type DragEndEvent,
-  type DragOverEvent,
-  type DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragOverlay,
-  closestCorners,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-  arrayMove,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+  MdArrowBack, MdChevronLeft, MdChevronRight,
+  MdMusicNote, MdFitnessCenter, MdAccessTime, MdClose, MdSave, MdAdd,
+} from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -30,7 +15,9 @@ import {
   formatWeekStart,
   addWeeks,
   formatWeekLabel,
+  getDayLabel,
   getDayFullLabel,
+  getDayDate,
 } from '@/lib/weekUtils'
 
 interface Availability {
@@ -46,8 +33,8 @@ interface RepertoireItem {
   subtitle: string
 }
 
-// ─── Componente de item draggable ───
-function SortablePlanItem({
+// ─── Item do dia ───
+function DayPlanItem({
   item,
   onRemove,
   onDurationChange,
@@ -56,70 +43,41 @@ function SortablePlanItem({
   onRemove: (id: string) => void
   onDurationChange: (id: string, minutes: number) => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: item.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  }
-
+  const dur = item.duration_minutes ?? 15
   const title = item.piece?.title ?? item.exercise?.title ?? '—'
   const subtitle = item.piece
     ? `${item.piece.completion_pct}% concluída`
-    : item.exercise
-    ? item.exercise.category
-    : ''
+    : item.exercise?.category ?? ''
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="bg-white border border-gray-100 rounded-xl px-3 py-2.5 flex items-center gap-2 group"
-    >
-      {/* Handle */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing shrink-0"
-      >
-        <MdDragIndicator size={16} />
-      </div>
-
-      {/* Tipo badge */}
-      <span className={`flex items-center justify-center w-5 h-5 rounded-md shrink-0 ${
-        item.piece_id
-          ? 'bg-[#D6E4F0] text-[#1E3A5F]'
-          : 'bg-purple-100 text-purple-600'
+    <div className="bg-white border border-gray-100 rounded-xl px-3 py-2.5 flex items-center gap-2">
+      <span className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
+        item.piece_id ? 'bg-[#D6E4F0] text-[#1E3A5F]' : 'bg-purple-100 text-purple-600'
       }`}>
-        {item.piece_id ? <MdMusicNote size={12} /> : <MdSchool size={12} />}
+        {item.piece_id ? <MdMusicNote size={12} /> : <MdFitnessCenter size={12} />}
       </span>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-gray-700 truncate">{title}</p>
         <p className="text-[10px] text-gray-400 truncate">{subtitle}</p>
       </div>
 
-      {/* Duração */}
-      <input
-        type="number"
-        value={item.duration_minutes ?? 15}
-        onChange={e => onDurationChange(item.id, Number(e.target.value))}
-        min={5}
-        max={120}
-        step={5}
-        className="w-12 text-center text-xs border border-gray-200 rounded-lg py-1 outline-none focus:border-[#4A90C4] transition"
-        title="minutos"
-      />
-      <MdAccessTime size={12} className="text-gray-400 shrink-0" />
-      <span className="text-[10px] text-gray-400 shrink-0">min</span>
+      <div className="flex items-center gap-0.5 shrink-0">
+        <button
+          onClick={() => onDurationChange(item.id, Math.max(5, dur - 5))}
+          className="w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-xs font-bold transition"
+        >−</button>
+        <span className="text-xs font-semibold text-gray-700 w-7 text-center">{dur}</span>
+        <button
+          onClick={() => onDurationChange(item.id, Math.min(120, dur + 5))}
+          className="w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-xs font-bold transition"
+        >+</button>
+        <MdAccessTime size={11} className="text-gray-300 ml-1" />
+      </div>
 
-      {/* Remover */}
       <button
         onClick={() => onRemove(item.id)}
-        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition shrink-0"
+        className="text-gray-300 hover:text-red-400 transition shrink-0"
       >
         <MdClose size={14} />
       </button>
@@ -127,101 +85,72 @@ function SortablePlanItem({
   )
 }
 
-// ─── Componente de coluna do dia ───
+// ─── Coluna de um dia ───
 function DayColumn({
   day,
+  date,
   items,
   availability,
   onRemove,
   onDurationChange,
-  onAddItem,
-  repertoire,
+  onOpenPicker,
 }: {
   day: number
+  date: string
   items: PlanItem[]
   availability: Availability | undefined
   onRemove: (id: string) => void
   onDurationChange: (id: string, minutes: number) => void
-  onAddItem: (day: number, item: RepertoireItem) => void
-  repertoire: RepertoireItem[]
+  onOpenPicker: () => void
 }) {
-  const [showPicker, setShowPicker] = useState(false)
   const totalMinutes = items.reduce((sum, i) => sum + (i.duration_minutes ?? 0), 0)
   const availableMinutes = availability?.minutes_available ?? 0
   const isOvertime = totalMinutes > availableMinutes && availableMinutes > 0
+  const isActive = availability?.is_active ?? false
 
   return (
-    <div className="bg-gray-50 rounded-2xl p-3 min-h-32">
-      {/* Header do dia */}
-      <div className="flex items-center justify-between mb-2">
+    <div className={`shrink-0 w-[260px] snap-start rounded-2xl p-3 min-h-36 ${isActive ? 'bg-gray-50' : 'bg-gray-50/50'}`}>
+      <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-xs font-bold text-gray-600">{getDayFullLabel(day)}</p>
-          {availability?.is_active ? (
-            <p className={`text-[10px] font-medium ${isOvertime ? 'text-red-400' : 'text-gray-400'}`}>
+          <p className={`text-xs font-bold ${isActive ? 'text-gray-700' : 'text-gray-300'}`}>
+            {getDayLabel(day)}
+          </p>
+          <p className={`text-[10px] mt-0.5 ${isActive ? 'text-gray-400' : 'text-gray-300'}`}>{date}</p>
+          {isActive && availableMinutes > 0 && (
+            <p className={`text-[10px] font-medium mt-0.5 ${isOvertime ? 'text-red-400' : 'text-gray-400'}`}>
               {totalMinutes}/{availableMinutes} min
             </p>
-          ) : (
-            <p className="text-[10px] text-gray-300">Sem disponibilidade</p>
+          )}
+          {isActive && availableMinutes === 0 && (
+            <p className="text-[10px] text-gray-400 mt-0.5">sem duração</p>
+          )}
+          {!isActive && (
+            <p className="text-[10px] text-gray-300 mt-0.5">indisponível</p>
           )}
         </div>
-        <button
-          onClick={() => setShowPicker(true)}
-          className="w-6 h-6 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:border-[#4A90C4] hover:text-[#4A90C4] transition"
-        >
-          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-        </button>
+        {isActive && (
+          <button
+            onClick={onOpenPicker}
+            className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:border-[#4A90C4] hover:text-[#4A90C4] transition shrink-0"
+          >
+            <MdAdd size={14} />
+          </button>
+        )}
       </div>
 
-      {/* Lista sortable */}
-      <SortableContext
-        items={items.map(i => i.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="space-y-1.5 min-h-8">
-          {items.map(item => (
-            <SortablePlanItem
-              key={item.id}
-              item={item}
-              onRemove={onRemove}
-              onDurationChange={onDurationChange}
-            />
-          ))}
-        </div>
-      </SortableContext>
+      <div className="space-y-1.5">
+        {items.map(item => (
+          <DayPlanItem
+            key={item.id}
+            item={item}
+            onRemove={onRemove}
+            onDurationChange={onDurationChange}
+          />
+        ))}
+      </div>
 
-      {items.length === 0 && (
-        <p className="text-[10px] text-gray-300 text-center mt-4">
-          Arraste itens aqui
-        </p>
-      )}
-
-      {/* Picker de itens */}
-      {showPicker && (
-        <div className="mt-2 bg-white border border-gray-200 rounded-xl shadow-lg p-2 max-h-48 overflow-y-auto">
-          <p className="text-[10px] font-semibold text-gray-400 px-2 mb-1">Adicionar ao dia</p>
-          {repertoire.length === 0 ? (
-            <p className="text-xs text-gray-400 px-2 py-2">Nenhum item no repertório.</p>
-          ) : (
-            repertoire.map(r => (
-              <button
-                key={r.id}
-                onClick={() => { onAddItem(day, r); setShowPicker(false) }}
-                className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-gray-50 transition"
-              >
-                <p className="text-xs font-medium text-gray-700">{r.title}</p>
-                <p className="text-[10px] text-gray-400">{r.subtitle}</p>
-              </button>
-            ))
-          )}
-          <button
-            onClick={() => setShowPicker(false)}
-            className="w-full text-center text-[10px] text-gray-400 py-1 mt-1 border-t border-gray-100"
-          >
-            Fechar
-          </button>
-        </div>
+      {isActive && items.length === 0 && (
+        <p className="text-[10px] text-gray-300 text-center mt-4">Nenhum item</p>
       )}
     </div>
   )
@@ -238,14 +167,13 @@ export default function WeeklyPlanPage() {
   const [availability, setAvailability] = useState<Availability[]>([])
   const [repertoire, setRepertoire] = useState<RepertoireItem[]>([])
   const [studentName, setStudentName] = useState('')
-  const [activeDays, setActiveDays] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [activeItem, setActiveItem] = useState<PlanItem | null>(null)
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  )
+  // Picker state
+  const [pickerDay, setPickerDay] = useState<number | null>(null)
+  const [pickerSelected, setPickerSelected] = useState<Set<string>>(new Set())
+  const [adding, setAdding] = useState(false)
 
   useEffect(() => {
     if (studentId && profile) fetchAll()
@@ -262,10 +190,7 @@ export default function WeeklyPlanPage() {
     ])
 
     setStudentName(`${studentRes.data?.first_name} ${studentRes.data?.last_name}`)
-
-    const avail: Availability[] = availRes.data ?? []
-    setAvailability(avail)
-    setActiveDays(avail.filter(d => d.is_active).map(d => d.day_of_week).sort())
+    setAvailability(availRes.data ?? [])
 
     const rep: RepertoireItem[] = [
       ...(piecesRes.data ?? []).map((p: { id: string; title: string; composer: string | null; completion_pct: number }) => ({
@@ -282,13 +207,11 @@ export default function WeeklyPlanPage() {
       })),
     ]
     setRepertoire(rep)
-
-    // Busca ou cria o plano da semana
-    await fetchOrCreatePlan(rep)
+    await fetchOrCreatePlan()
     setLoading(false)
   }
 
-  async function fetchOrCreatePlan(_rep: RepertoireItem[]) {
+  async function fetchOrCreatePlan() {
     const { data: teacher } = await supabase
       .from('teachers')
       .select('id')
@@ -318,11 +241,7 @@ export default function WeeklyPlanPage() {
 
     const { data: items } = await supabase
       .from('plan_items')
-      .select(`
-        *,
-        piece:pieces(title, composer, completion_pct),
-        exercise:exercises(title, category)
-      `)
+      .select(`*, piece:pieces(title, composer, completion_pct), exercise:exercises(title, category)`)
       .eq('plan_id', plan.id)
       .order('position')
 
@@ -344,10 +263,7 @@ export default function WeeklyPlanPage() {
       .eq('week_start', lastWeek)
       .single()
 
-    if (!lastPlan) {
-      alert('Nenhum plano encontrado na semana anterior.')
-      return
-    }
+    if (!lastPlan) { alert('Nenhum plano encontrado na semana anterior.'); return }
 
     const { data: lastItems } = await supabase
       .from('plan_items')
@@ -355,126 +271,104 @@ export default function WeeklyPlanPage() {
       .eq('plan_id', lastPlan.id)
       .order('position')
 
-    if (!lastItems || lastItems.length === 0) {
-      alert('O plano da semana anterior está vazio.')
-      return
-    }
+    if (!lastItems || lastItems.length === 0) { alert('O plano da semana anterior está vazio.'); return }
 
-    // Remove itens atuais e copia
     await supabase.from('plan_items').delete().eq('plan_id', planId)
-
-    const newItems = lastItems.map((item: PlanItem) => ({
-      plan_id: planId,
-      day_of_week: item.day_of_week,
-      piece_id: item.piece_id,
-      exercise_id: item.exercise_id,
-      duration_minutes: item.duration_minutes,
-      position: item.position,
-      notes: item.notes,
-      is_done: false,
-    }))
-
-    await supabase.from('plan_items').insert(newItems)
-    await fetchOrCreatePlan(repertoire)
+    await supabase.from('plan_items').insert(
+      lastItems.map((item: PlanItem) => ({
+        plan_id: planId,
+        day_of_week: item.day_of_week,
+        piece_id: item.piece_id,
+        exercise_id: item.exercise_id,
+        duration_minutes: item.duration_minutes,
+        position: item.position,
+        notes: item.notes,
+        is_done: false,
+      }))
+    )
+    await fetchOrCreatePlan()
   }
 
-  // ─── Drag handlers ───
-  function handleDragStart(event: DragStartEvent) {
-    const item = planItems.find(i => i.id === event.active.id)
-    setActiveItem(item ?? null)
+  function closePicker() {
+    setPickerDay(null)
+    setPickerSelected(new Set())
   }
 
-  function handleDragOver(event: DragOverEvent) {
-    const { active, over } = event
-    if (!over) return
+  function togglePickerItem(id: string) {
+    setPickerSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
-    const activeId = active.id as string
-    const overId = over.id as string
-
-    const activeItem = planItems.find(i => i.id === activeId)
-    if (!activeItem) return
-
-    // Se está sobre um dia (container)
-    const overDay = parseInt(overId.replace('day-', ''))
-    if (!isNaN(overDay) && activeItem.day_of_week !== overDay) {
-      setPlanItems(prev =>
-        prev.map(i => i.id === activeId ? { ...i, day_of_week: overDay } : i)
-      )
-      return
-    }
-
-    // Se está sobre outro item
-    const overItem = planItems.find(i => i.id === overId)
-    if (!overItem) return
-
-    if (activeItem.day_of_week !== overItem.day_of_week) {
-      setPlanItems(prev =>
-        prev.map(i => i.id === activeId ? { ...i, day_of_week: overItem.day_of_week } : i)
-      )
+  function toggleSelectAll() {
+    if (pickerSelected.size === repertoire.length) {
+      setPickerSelected(new Set())
+    } else {
+      setPickerSelected(new Set(repertoire.map(r => r.id)))
     }
   }
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    setActiveItem(null)
-
-    if (!over) return
-
-    const activeId = active.id as string
-    const overId = over.id as string
-
-    const activeIdx = planItems.findIndex(i => i.id === activeId)
-    const overIdx = planItems.findIndex(i => i.id === overId)
-
-    if (activeIdx !== -1 && overIdx !== -1 && activeIdx !== overIdx) {
-      const reordered = arrayMove(planItems, activeIdx, overIdx)
-      setPlanItems(reordered)
-    }
-  }
-
-  // ─── Adicionar item ───
-  async function handleAddItem(day: number, repertoireItem: RepertoireItem) {
-    if (!planId) return
+  async function handleAddSelected() {
+    if (!planId || pickerDay === null || pickerSelected.size === 0) return
+    const day = pickerDay
+    setAdding(true)
+    closePicker()
 
     const dayItems = planItems.filter(i => i.day_of_week === day)
-    const position = dayItems.length
+    const inserts = [...pickerSelected].map((rid, idx) => {
+      const rep = repertoire.find(r => r.id === rid)!
+      return {
+        plan_id: planId,
+        day_of_week: day,
+        piece_id: rep.type === 'piece' ? rid : null,
+        exercise_id: rep.type === 'exercise' ? rid : null,
+        duration_minutes: 15,
+        position: dayItems.length + idx,
+        is_done: false,
+      }
+    })
 
-    const insertData = {
-      plan_id: planId,
-      day_of_week: day,
-      piece_id: repertoireItem.type === 'piece' ? repertoireItem.id : null,
-      exercise_id: repertoireItem.type === 'exercise' ? repertoireItem.id : null,
-      duration_minutes: 15,
-      position,
-      is_done: false,
-    }
-
-    const { data } = await supabase
+    const { data: newItems } = await supabase
       .from('plan_items')
-      .insert(insertData)
-      .select(`*, piece:pieces(title, composer, completion_pct), exercise:exercises(title, category)`)
-      .single()
+      .insert(inserts)
+      .select('*, piece:pieces(title, composer, completion_pct), exercise:exercises(title, category)')
 
-    if (data) {
-      setPlanItems(prev => [...prev, { ...data, piece: data.piece ?? undefined, exercise: data.exercise ?? undefined }])
+    if (newItems) {
+      const avail = availability.find(a => a.day_of_week === day)
+      const availMins = avail?.minutes_available ?? 0
+      const all = [...dayItems, ...newItems]
+      const perItem = availMins > 0
+        ? Math.max(5, Math.round(availMins / all.length / 5) * 5)
+        : 15
+
+      setPlanItems(prev => [
+        ...prev.filter(i => i.day_of_week !== day),
+        ...all.map(i => ({
+          ...i,
+          duration_minutes: perItem,
+          piece: i.piece ?? undefined,
+          exercise: i.exercise ?? undefined,
+        })),
+      ])
     }
+
+    setAdding(false)
   }
 
-  // ─── Remover item ───
   async function handleRemove(itemId: string) {
     await supabase.from('plan_items').delete().eq('id', itemId)
     setPlanItems(prev => prev.filter(i => i.id !== itemId))
   }
 
-  // ─── Atualizar duração ───
   function handleDurationChange(itemId: string, minutes: number) {
     setPlanItems(prev =>
       prev.map(i => i.id === itemId ? { ...i, duration_minutes: minutes } : i)
     )
   }
 
-  // ─── Salvar plano ───
-  const handleSave = useCallback(async () => {
+  async function handleSave() {
     if (!planId) return
     setSaving(true)
 
@@ -491,23 +385,89 @@ export default function WeeklyPlanPage() {
     }))
 
     await supabase.from('plan_items').delete().eq('plan_id', planId)
-    if (updates.length > 0) {
-      await supabase.from('plan_items').insert(updates)
-    }
+    if (updates.length > 0) await supabase.from('plan_items').insert(updates)
 
     setSaving(false)
     toast.success('Plano salvo!')
-  }, [planId, planItems])
+  }
 
   function changeWeek(delta: number) {
-    const current = new Date(weekStart + 'T00:00:00')
-    setWeekStart(formatWeekStart(addWeeks(current, delta)))
+    setWeekStart(formatWeekStart(addWeeks(new Date(weekStart + 'T00:00:00'), delta)))
   }
+
+  const hasActiveDays = availability.some(a => a.is_active)
 
   if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
 
   return (
     <TeacherLayout>
+      {/* Picker modal */}
+      {pickerDay !== null && (
+        <div className="fixed inset-0 bg-black/40 z-20 flex items-end justify-center" onClick={closePicker}>
+          <div
+            className="bg-white rounded-t-2xl w-full max-w-md flex flex-col max-h-[80vh]"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+              <h2 className="text-base font-bold text-[#1E3A5F]">
+                Adicionar — {getDayFullLabel(pickerDay)}
+              </h2>
+              <button onClick={closePicker} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+            </div>
+
+            <div className="px-5 pt-3">
+              <button
+                onClick={toggleSelectAll}
+                className="w-full py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-600 hover:border-[#4A90C4] hover:text-[#4A90C4] transition"
+              >
+                {pickerSelected.size === repertoire.length ? 'Desmarcar todos' : 'Selecionar todos'}
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2">
+              {repertoire.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-6">
+                  Nenhuma peça ou exercício ativo.
+                </p>
+              ) : (
+                repertoire.map(r => (
+                  <label
+                    key={r.id}
+                    className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 cursor-pointer hover:bg-[#D6E4F0]/30 transition"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={pickerSelected.has(r.id)}
+                      onChange={() => togglePickerItem(r.id)}
+                      className="accent-[#1E3A5F] w-4 h-4 shrink-0"
+                    />
+                    <span className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+                      r.type === 'piece' ? 'bg-[#D6E4F0] text-[#1E3A5F]' : 'bg-purple-100 text-purple-600'
+                    }`}>
+                      {r.type === 'piece' ? <MdMusicNote size={13} /> : <MdFitnessCenter size={13} />}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{r.title}</p>
+                      <p className="text-xs text-gray-400">{r.subtitle}</p>
+                    </div>
+                  </label>
+                ))
+              )}
+            </div>
+
+            <div className="px-5 pb-6 pt-3 border-t border-gray-100">
+              <Button
+                onClick={handleAddSelected}
+                disabled={pickerSelected.size === 0 || adding}
+                className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white"
+              >
+                {adding ? 'Adicionando...' : `Adicionar ${pickerSelected.size > 0 ? pickerSelected.size : ''} ${pickerSelected.size === 1 ? 'item' : 'itens'}`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
         <Link to={`/professor/alunos/${studentId}`} className="text-gray-400 hover:text-gray-600 transition">
@@ -523,14 +483,28 @@ export default function WeeklyPlanPage() {
           className="flex items-center gap-1.5 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs"
         >
           <MdSave size={15} />
-          {saving ? 'Salvando...' : 'Salvar plano'}
+          {saving ? 'Salvando...' : 'Salvar'}
         </Button>
+      </div>
+
+      {/* Seletor de tipo de plano */}
+      <div className="flex gap-2 mb-5">
+        <button className="px-4 py-2 rounded-xl bg-[#1E3A5F] text-white text-xs font-semibold">
+          Plano semanal
+        </button>
+        <button
+          disabled
+          className="px-4 py-2 rounded-xl border border-gray-200 text-xs text-gray-300 cursor-not-allowed flex items-center gap-1.5"
+        >
+          Plano personalizado
+          <span className="text-[9px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full">Em breve</span>
+        </button>
       </div>
 
       {/* Navegação de semana */}
       <div className="flex items-center justify-between bg-white rounded-2xl border border-gray-100 px-4 py-3 mb-5">
         <button onClick={() => changeWeek(-1)} className="text-gray-400 hover:text-[#1E3A5F] transition">
-          <MdArrowBack size={18} />
+          <MdChevronLeft size={20} />
         </button>
         <div className="text-center">
           <p className="text-sm font-semibold text-[#1E3A5F]">{formatWeekLabel(weekStart)}</p>
@@ -542,69 +516,40 @@ export default function WeeklyPlanPage() {
           </button>
         </div>
         <button onClick={() => changeWeek(1)} className="text-gray-400 hover:text-[#1E3A5F] transition">
-          <MdChevronRight size={18} />
+          <MdChevronRight size={20} />
         </button>
       </div>
 
-      {/* Grid de dias */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {activeDays.map(day => (
-            <DayColumn
-              key={day}
-              day={day}
-              items={planItems.filter(i => i.day_of_week === day)}
-              availability={availability.find(a => a.day_of_week === day)}
-              onRemove={handleRemove}
-              onDurationChange={handleDurationChange}
-              onAddItem={handleAddItem}
-              repertoire={repertoire}
-            />
-          ))}
+      {/* Dias em scroll horizontal */}
+      {!hasActiveDays ? (
+        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
+          <p className="text-sm text-gray-400">
+            Este aluno não tem disponibilidade semanal configurada.
+          </p>
+          <Link to={`/professor/alunos/${studentId}/editar`}>
+            <Button className="mt-4 bg-[#1E3A5F] text-white text-xs">
+              Configurar disponibilidade
+            </Button>
+          </Link>
         </div>
-
-        {activeDays.length === 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-            <p className="text-sm text-gray-400">
-              Este aluno não tem disponibilidade semanal configurada.
-            </p>
-            <Link to={`/professor/alunos/${studentId}/editar`}>
-              <Button className="mt-4 bg-[#1E3A5F] text-white text-xs">
-                Configurar disponibilidade
-              </Button>
-            </Link>
+      ) : (
+        <>
+          <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory -mx-4 px-4">
+            {[1, 2, 3, 4, 5, 6, 0].map(day => (
+              <DayColumn
+                key={day}
+                day={day}
+                date={getDayDate(weekStart, day)}
+                items={planItems.filter(i => i.day_of_week === day)}
+                availability={availability.find(a => a.day_of_week === day)}
+                onRemove={handleRemove}
+                onDurationChange={handleDurationChange}
+                onOpenPicker={() => { setPickerDay(day); setPickerSelected(new Set()) }}
+              />
+            ))}
           </div>
-        )}
 
-        <DragOverlay>
-          {activeItem && (
-            <div className="bg-white border border-[#4A90C4] rounded-xl px-3 py-2.5 shadow-lg">
-              <p className="text-xs font-semibold text-gray-700">
-                {activeItem.piece?.title ?? activeItem.exercise?.title}
-              </p>
-            </div>
-          )}
-        </DragOverlay>
-      </DndContext>
-
-      {/* Legenda */}
-      {activeDays.length > 0 && (
-        <div className="mt-4 flex items-center gap-4 text-[10px] text-gray-400">
-          <div className="flex items-center gap-1">
-            <span className="bg-[#D6E4F0] text-[#1E3A5F] font-bold px-1.5 py-0.5 rounded-md">PEÇA</span>
-            <span>Peça musical</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="bg-purple-100 text-purple-600 font-bold px-1.5 py-0.5 rounded-md">EX</span>
-            <span>Exercício</span>
-          </div>
-        </div>
+        </>
       )}
     </TeacherLayout>
   )

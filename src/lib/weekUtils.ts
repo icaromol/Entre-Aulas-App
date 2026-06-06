@@ -37,3 +37,11 @@ export function getDayFullLabel(day: number): string {
 export function getTodayDayOfWeek(): number {
   return new Date().getDay()
 }
+
+export function getDayDate(weekStart: string, dayOfWeek: number): string {
+  const monday = new Date(weekStart + 'T00:00:00')
+  const offset = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+  const d = new Date(monday)
+  d.setDate(monday.getDate() + offset)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
