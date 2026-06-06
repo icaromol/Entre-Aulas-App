@@ -4,7 +4,6 @@ import { MdArrowBack, MdMusicNote, MdSchool, MdLibraryMusic, MdCalendarMonth, Md
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
-import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/EmptyState'
 
 interface Student {
@@ -408,11 +407,6 @@ export default function StudentProfilePage() {
       {/* Tab: Peças */}
       {activeTab === 'pieces' && (
         <div className="space-y-3">
-          <Link to={`/professor/alunos/${studentId}/pecas/nova`} className="block">
-            <Button className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm cursor-pointer">
-              <MdAdd size={16} className="inline -mt-0.5 mr-1" />Nova peça
-            </Button>
-          </Link>
           {pieces.length === 0 ? (
             <EmptyState title="Nenhuma peça ainda" description="Adicione a primeira peça do repertório." />
           ) : (
@@ -448,17 +442,16 @@ export default function StudentProfilePage() {
               </Link>
             ))
           )}
+          <Link to={`/professor/alunos/${studentId}/pecas/nova`}
+            className="flex items-center gap-1.5 text-sm font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition pt-1">
+            <MdAdd size={16} />Nova peça
+          </Link>
         </div>
       )}
 
       {/* Tab: Exercícios */}
       {activeTab === 'exercises' && (
         <div className="space-y-3">
-          <Link to={`/professor/alunos/${studentId}/exercicios/novo`} className="block">
-            <Button className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm cursor-pointer">
-              <MdAdd size={16} className="inline -mt-0.5 mr-1" />Novo exercício
-            </Button>
-          </Link>
           {exercises.length === 0 ? (
             <EmptyState title="Nenhum exercício ainda" description="Adicione exercícios técnicos ou teóricos." />
           ) : (
@@ -481,18 +474,16 @@ export default function StudentProfilePage() {
               </Link>
             ))
           )}
+          <Link to={`/professor/alunos/${studentId}/exercicios/novo`}
+            className="flex items-center gap-1.5 text-sm font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition pt-1">
+            <MdAdd size={16} />Novo exercício
+          </Link>
         </div>
       )}
 
       {/* Tab: Programas */}
       {activeTab === 'programs' && (
         <div className="space-y-3">
-          <Link to={`/professor/alunos/${studentId}/programas/novo`} className="block">
-            <Button className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm cursor-pointer">
-              <MdAdd size={16} className="inline -mt-0.5 mr-1" />Novo programa
-            </Button>
-          </Link>
-
           {programas.length === 0 ? (
             <EmptyState
               title="Nenhum programa ainda"
@@ -525,6 +516,10 @@ export default function StudentProfilePage() {
               </Link>
             ))
           )}
+          <Link to={`/professor/alunos/${studentId}/programas/novo`}
+            className="flex items-center gap-1.5 text-sm font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition pt-1">
+            <MdAdd size={16} />Novo programa
+          </Link>
         </div>
       )}
     </TeacherLayout>
