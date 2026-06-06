@@ -151,10 +151,18 @@ export default function ProgramaDetailPage() {
   }
 
   async function archivePrograma() {
-    if (!confirm('Arquivar este programa?')) return
+    if (!confirm('Arquivar este programa? Ele deixará de aparecer na lista ativa.')) return
     await supabase.from('programas').update({ status: 'archived' }).eq('id', programId!)
     setPrograma(prev => prev ? { ...prev, status: 'archived' } : prev)
     toast.success('Programa arquivado')
+  }
+
+  async function deletePrograma() {
+    if (!confirm('Excluir permanentemente este programa? Esta ação não pode ser desfeita.')) return
+    const { error } = await supabase.from('programas').delete().eq('id', programId!)
+    if (error) { toast.error('Erro ao excluir programa.'); return }
+    toast.success('Programa excluído')
+    navigate(`/professor/alunos/${studentId}?tab=programs`)
   }
 
   if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
@@ -410,12 +418,18 @@ export default function ProgramaDetailPage() {
           </Button>
           <button
             onClick={archivePrograma}
-            className="w-full py-3 rounded-2xl border border-gray-200 text-sm text-gray-400 hover:border-gray-300 hover:text-gray-600 transition"
+            className="w-full py-3 rounded-2xl border border-gray-200 text-sm text-gray-400 hover:border-gray-300 hover:text-gray-600 transition mb-2"
           >
             Arquivar programa
           </button>
         </>
       )}
+      <button
+        onClick={deletePrograma}
+        className="w-full py-3 rounded-2xl border border-red-100 text-sm text-red-400 hover:border-red-300 hover:text-red-600 transition"
+      >
+        Excluir programa
+      </button>
     </TeacherLayout>
   )
 }
