@@ -68,7 +68,7 @@ export default function NewExercisePage() {
         }))
       )
 
-      navigate(`/professor/alunos/${studentId}`)
+      navigate(`/professor/alunos/${studentId}?tab=exercises`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')
     } finally {

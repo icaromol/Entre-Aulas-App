@@ -136,7 +136,7 @@ export default function ExerciseDetailPage() {
   async function deleteExercise() {
     if (!confirm('Excluir este exercício? Esta ação não pode ser desfeita.')) return
     await supabase.from('exercises').delete().eq('id', exerciseId!)
-    navigate(`/professor/alunos/${studentId}`)
+    navigate(`/professor/alunos/${studentId}?tab=exercises`)
   }
 
   if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>

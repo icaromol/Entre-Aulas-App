@@ -107,7 +107,7 @@ export default function EditGoalPage() {
 
       if (updateError) throw new Error(updateError.message)
 
-      navigate(`/professor/alunos/${studentId}`)
+      navigate(`/professor/alunos/${studentId}?tab=goals`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')
     } finally {

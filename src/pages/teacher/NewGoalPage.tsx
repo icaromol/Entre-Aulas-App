@@ -98,7 +98,7 @@ export default function NewGoalPage() {
 
       if (insertError) throw new Error(insertError.message)
 
-      navigate(`/professor/alunos/${studentId}`)
+      navigate(`/professor/alunos/${studentId}?tab=goals`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')
     } finally {
