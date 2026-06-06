@@ -1,65 +1,103 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MdArrowBack, MdSchool, MdNotes, MdAdd } from 'react-icons/md'
+import { MdArrowBack, MdSchool, MdNotes, MdAdd, MdExpandMore } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
 const CATEGORIES = [
-  { value: 'technique', label: 'Técnica' },
-  { value: 'ear_training', label: 'Percepção musical' },
-  { value: 'harmony', label: 'Harmonia' },
-  { value: 'history', label: 'História da música' },
+  { value: 'technique',     label: 'Técnica' },
+  { value: 'ear_training',  label: 'Percepção musical' },
+  { value: 'harmony',       label: 'Harmonia' },
+  { value: 'history',       label: 'História da música' },
   { value: 'improvisation', label: 'Improvisação' },
-  { value: 'other', label: 'Outro' },
+  { value: 'other',         label: 'Outro' },
 ]
 
 const DEFAULT_EXERCISE_CHECKLIST = [
-  { title: 'Compreensão do conceito', category: 'Estudo', position: 0, is_optional: false },
-  { title: 'Execução lenta e consciente', category: 'Prática', position: 1, is_optional: false },
-  { title: 'Execução em andamento de estudo', category: 'Prática', position: 2, is_optional: false },
-  { title: 'Aplicação em contexto musical', category: 'Aplicação', position: 3, is_optional: false },
-  { title: 'Execução em andamento final', category: 'Aplicação', position: 4, is_optional: false },
+  { title: 'Compreensão do conceito',           category: 'Estudo',    position: 0, is_optional: false },
+  { title: 'Execução lenta e consciente',       category: 'Prática',   position: 1, is_optional: false },
+  { title: 'Execução em andamento de estudo',   category: 'Prática',   position: 2, is_optional: false },
+  { title: 'Aplicação em contexto musical',     category: 'Aplicação', position: 3, is_optional: false },
+  { title: 'Execução em andamento final',       category: 'Aplicação', position: 4, is_optional: false },
 ]
+
+const DEFAULT_ITEMS = () => DEFAULT_EXERCISE_CHECKLIST.map((item, i) => ({ ...item, tempId: i }))
 
 export default function NewExercisePage() {
   const { studentId } = useParams()
   const navigate = useNavigate()
 
-  const [title, setTitle] = useState('')
-  const [category, setCategory] = useState('technique')
+  // ── Form fields ───────────────────────────────────────────────────────────
+  const [title, setTitle]         = useState('')
+  const [category, setCategory]   = useState('technique')
   const [objective, setObjective] = useState('')
   const [difficulty, setDifficulty] = useState<number>(5)
-  const [notes, setNotes] = useState('')
-  const [checklistItems, setChecklistItems] = useState(
-    DEFAULT_EXERCISE_CHECKLIST.map((item, i) => ({ ...item, tempId: i }))
-  )
-  const [newChecklistTitle, setNewChecklistTitle] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [notes, setNotes]         = useState('')
 
-  function removeChecklistItem(tempId: number) {
+  // ── Checklist state ───────────────────────────────────────────────────────
+  const [checklistItems, setChecklistItems] = useState(DEFAULT_ITEMS)
+  const [checklistOpen, setChecklistOpen]   = useState(false)
+  const [editingId, setEditingId]           = useState<number | null>(null)
+  const [editingValue, setEditingValue]     = useState('')
+  const [newItemTitle, setNewItemTitle]     = useState('')
+
+  // ── Submit state ──────────────────────────────────────────────────────────
+  const [keepCreating, setKeepCreating] = useState(false)
+  const [loading, setLoading]           = useState(false)
+  const [error, setError]               = useState('')
+
+  // ── Checklist helpers ─────────────────────────────────────────────────────
+
+  function removeItem(tempId: number) {
     setChecklistItems(prev => prev.filter(i => i.tempId !== tempId))
   }
 
-  function addChecklistItem() {
-    if (!newChecklistTitle.trim()) return
+  function updateItem(tempId: number, newTitle: string) {
+    const trimmed = newTitle.trim()
+    setChecklistItems(prev =>
+      prev.map(i => i.tempId === tempId ? { ...i, title: trimmed || i.title } : i)
+    )
+    setEditingId(null)
+  }
+
+  function toggleOptional(tempId: number) {
+    setChecklistItems(prev =>
+      prev.map(i => i.tempId === tempId ? { ...i, is_optional: !i.is_optional } : i)
+    )
+  }
+
+  function addItem() {
+    if (!newItemTitle.trim()) return
     setChecklistItems(prev => [...prev, {
-      title: newChecklistTitle.trim(),
+      title: newItemTitle.trim(),
       category: 'Personalizado',
       position: prev.length,
       is_optional: false,
       tempId: Date.now(),
     }])
-    setNewChecklistTitle('')
+    setNewItemTitle('')
   }
+
+  function resetForm() {
+    setTitle('')
+    setCategory('technique')
+    setObjective('')
+    setDifficulty(5)
+    setNotes('')
+    setChecklistItems(DEFAULT_ITEMS())
+    setChecklistOpen(false)
+    setEditingId(null)
+    setNewItemTitle('')
+  }
+
+  // ── Submit ────────────────────────────────────────────────────────────────
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
-
     try {
       const { data: exercise, error: exerciseError } = await supabase
         .from('exercises')
@@ -77,7 +115,6 @@ export default function NewExercisePage() {
 
       if (exerciseError || !exercise) throw new Error('Erro ao criar exercício.')
 
-      // Checklist do exercício
       await supabase.from('checklist_items').insert(
         checklistItems.map((item, idx) => ({
           exercise_id: exercise.id,
@@ -89,14 +126,22 @@ export default function NewExercisePage() {
         }))
       )
 
-      toast.success('Exercício criado!')
-      navigate(`/professor/alunos/${studentId}?tab=exercises`)
+      if (keepCreating) {
+        resetForm()
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        toast.success('Exercício criado! Formulário pronto para novo exercício.')
+      } else {
+        toast.success('Exercício criado!')
+        navigate(`/professor/alunos/${studentId}?tab=exercises`)
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')
     } finally {
       setLoading(false)
     }
   }
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <TeacherLayout>
@@ -109,8 +154,11 @@ export default function NewExercisePage() {
 
       <form onSubmit={handleSubmit} className="space-y-5 max-w-xl mx-auto">
 
+        {/* Identificação */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdSchool size={15} />Identificação</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600">
+            <MdSchool size={15} /> Identificação
+          </h2>
 
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Nome do exercício</label>
@@ -153,51 +201,140 @@ export default function NewExercisePage() {
           </div>
         </div>
 
+        {/* Observações */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdNotes size={15} />Observações</h2>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600">
+            <MdNotes size={15} /> Observações
+          </h2>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
             placeholder="Anotações sobre o exercício..."
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
         </div>
 
-        {/* Checklist editável */}
-        <div className="bg-[#F5F7FA] rounded-2xl border border-gray-100 p-5">
-          <h2 className="text-sm font-semibold text-gray-600 mb-3">Checklist</h2>
-          <div className="space-y-1.5 mb-4">
-            {checklistItems.map(item => (
-              <div key={item.tempId} className="flex items-center gap-2 group">
-                <div className="w-3.5 h-3.5 rounded border border-gray-300 shrink-0" />
-                <span className="text-xs flex-1 text-gray-600">{item.title}</span>
+        {/* Checklist colapsável */}
+        <div className="bg-[#F5F7FA] rounded-2xl border border-gray-100 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setChecklistOpen(v => !v)}
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-100/60 transition"
+          >
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-600">
+              Checklist
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">{checklistItems.length} itens</span>
+              <MdExpandMore
+                size={18}
+                className={`text-gray-400 transition-transform duration-200 ${checklistOpen ? 'rotate-180' : ''}`}
+              />
+            </div>
+          </button>
+
+          {checklistOpen && (
+            <div className="px-5 pb-5 border-t border-gray-200">
+              <div className="mt-3 space-y-1">
+                {checklistItems.map(item => (
+                  <div key={item.tempId} className="flex items-center gap-2 group py-1">
+                    <div className="w-3.5 h-3.5 rounded border border-gray-300 shrink-0" />
+
+                    {editingId === item.tempId ? (
+                      <input
+                        autoFocus
+                        value={editingValue}
+                        onChange={e => setEditingValue(e.target.value)}
+                        onBlur={() => updateItem(item.tempId, editingValue)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') { e.preventDefault(); updateItem(item.tempId, editingValue) }
+                          if (e.key === 'Escape') setEditingId(null)
+                        }}
+                        className="flex-1 px-2 py-0.5 text-xs rounded-md border border-[#4A90C4] outline-none bg-white"
+                      />
+                    ) : (
+                      <span
+                        onClick={() => { setEditingId(item.tempId); setEditingValue(item.title) }}
+                        title="Clique para editar"
+                        className={`flex-1 text-xs cursor-text select-none ${item.is_optional ? 'italic text-gray-400' : 'text-gray-600'}`}
+                      >
+                        {item.title}
+                      </span>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => toggleOptional(item.tempId)}
+                      title={item.is_optional ? 'Marcar como obrigatório' : 'Marcar como opcional'}
+                      className={`text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0 transition opacity-0 group-hover:opacity-100 ${
+                        item.is_optional
+                          ? 'bg-gray-200 text-gray-500'
+                          : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100'
+                      }`}
+                    >
+                      opt
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.tempId)}
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition shrink-0 text-xs"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2 mt-4 pt-3 border-t border-gray-200">
+                <input
+                  value={newItemTitle}
+                  onChange={e => setNewItemTitle(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addItem())}
+                  placeholder="Adicionar item ao checklist..."
+                  className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs outline-none focus:border-[#4A90C4] transition bg-white"
+                />
                 <button
                   type="button"
-                  onClick={() => removeChecklistItem(item.tempId)}
-                  className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition text-xs shrink-0"
-                >✕</button>
+                  onClick={addItem}
+                  className="px-3 py-1.5 rounded-lg bg-[#1E3A5F] text-white hover:bg-[#1E3A5F]/90 transition flex items-center"
+                >
+                  <MdAdd size={14} />
+                </button>
               </div>
-            ))}
-          </div>
-          <div className="flex gap-2 pt-3 border-t border-gray-200">
-            <input
-              value={newChecklistTitle}
-              onChange={e => setNewChecklistTitle(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addChecklistItem())}
-              placeholder="Adicionar item ao checklist..."
-              className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs outline-none focus:border-[#4A90C4] transition"
-            />
-            <button
-              type="button"
-              onClick={addChecklistItem}
-              className="px-3 py-1.5 rounded-lg bg-[#1E3A5F] text-white text-xs hover:bg-[#1E3A5F]/90 transition"
-            >+</button>
-          </div>
+            </div>
+          )}
         </div>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
-        <Button type="submit" disabled={loading}
-          className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10">
-          {loading ? 'Criando...' : <span className="flex items-center gap-1.5 justify-center"><MdAdd size={16} />Criar exercício</span>}
-        </Button>
+        {/* Continuar criando + botões */}
+        <div className="space-y-3 pb-6">
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={keepCreating}
+              onChange={e => setKeepCreating(e.target.checked)}
+              className="w-4 h-4 accent-[#4A90C4] rounded"
+            />
+            <span className="text-sm text-gray-500">Continuar criando</span>
+          </label>
+
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(`/professor/alunos/${studentId}?tab=exercises`)}
+              className="flex-1 rounded-xl border-gray-200 text-gray-600"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10"
+            >
+              {loading ? 'Criando...' : keepCreating ? 'Criar e continuar' : 'Criar exercício'}
+            </Button>
+          </div>
+        </div>
 
       </form>
     </TeacherLayout>
