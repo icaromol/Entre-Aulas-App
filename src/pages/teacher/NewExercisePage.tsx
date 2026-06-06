@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { MdArrowBack, MdSchool, MdNotes, MdAdd } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -88,6 +89,7 @@ export default function NewExercisePage() {
         }))
       )
 
+      toast.success('Exercício criado!')
       navigate(`/professor/alunos/${studentId}?tab=exercises`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')

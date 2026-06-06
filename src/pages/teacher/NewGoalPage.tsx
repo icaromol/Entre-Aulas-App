@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { MdArrowBack, MdAdd, MdNotes } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -99,6 +100,7 @@ export default function NewGoalPage() {
 
       if (insertError) throw new Error(insertError.message)
 
+      toast.success('Tarefa criada!')
       navigate(`/professor/alunos/${studentId}?tab=goals`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')

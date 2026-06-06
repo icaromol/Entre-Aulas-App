@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { MdArrowBack, MdPerson, MdMusicNote, MdAccessTime, MdNotes } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -113,6 +114,7 @@ export default function EditStudentPage() {
         }))
       )
 
+      toast.success('Alterações salvas!')
       navigate(`/professor/alunos/${studentId}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar.')

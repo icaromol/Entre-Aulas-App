@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { MdArrowBack, MdPerson, MdMusicNote, MdAccessTime, MdNotes, MdAdd } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -106,6 +107,7 @@ export default function NewStudentPage() {
 
       // 5. Gera link de convite e redireciona
       const inviteLink = `${window.location.origin}/cadastro?invite=${student.id}`
+      toast.success('Aluno cadastrado com sucesso!')
       navigate('/professor/alunos', { state: { inviteLink, studentName: firstName } })
 
     } catch (err: unknown) {

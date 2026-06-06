@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { MdArrowBack, MdTaskAlt, MdDeleteOutline, MdEdit } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -116,6 +117,7 @@ export default function ExerciseDetailPage() {
 
     if (data) {
       setChecklist(prev => [...prev, { ...data, completed: false }])
+      toast.success('Item adicionado')
     }
 
     setNewItemTitle('')
@@ -127,6 +129,7 @@ export default function ExerciseDetailPage() {
     await supabase.from('exercises').update({ status: newStatus }).eq('id', exerciseId!)
     setExercise(prev => prev ? { ...prev, status: newStatus } : prev)
     setSavingStatus(false)
+    toast.success('Status atualizado')
   }
 
   async function deleteItem(itemId: string) {
@@ -137,6 +140,7 @@ export default function ExerciseDetailPage() {
   async function deleteExercise() {
     if (!confirm('Excluir este exercício? Esta ação não pode ser desfeita.')) return
     await supabase.from('exercises').delete().eq('id', exerciseId!)
+    toast.success('Exercício excluído')
     navigate(`/professor/alunos/${studentId}?tab=exercises`)
   }
 

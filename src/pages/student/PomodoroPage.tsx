@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
@@ -262,6 +263,7 @@ export default function PomodoroPage() {
       }
     }
 
+    toast.success('Sessão registrada!')
     navigate('/aluno/hoje')
   }
 

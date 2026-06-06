@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { MdArrowBack, MdMusicNote, MdNotes } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -68,6 +69,7 @@ export default function EditPiecePage() {
         .eq('id', pieceId!)
 
       if (updateError) throw new Error('Erro ao salvar.')
+      toast.success('Peça atualizada!')
       navigate(`/professor/alunos/${studentId}/pecas/${pieceId}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')

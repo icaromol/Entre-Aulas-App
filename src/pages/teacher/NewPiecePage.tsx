@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { MdArrowBack, MdMusicNote, MdNotes, MdTune, MdAdd } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -95,6 +96,7 @@ export default function NewPiecePage() {
 
       await supabase.from('checklist_items').insert(checklistRows)
 
+      toast.success('Peça criada!')
       navigate(`/professor/alunos/${studentId}/pecas/${piece.id}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')
