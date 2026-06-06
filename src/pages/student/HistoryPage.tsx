@@ -91,7 +91,7 @@ export default function HistoryPage() {
       .eq('student_id', student.id)
       .order('started_at', { ascending: false })
 
-    setSessions(data ?? [])
+    setSessions((data ?? []) as unknown as Session[])
     setLoading(false)
   }
 

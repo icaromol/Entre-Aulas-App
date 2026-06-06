@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { MdArrowBack, MdTaskAlt, MdInfoOutline, MdDeleteOutline } from 'react-icons/md'
+import { MdArrowBack, MdTaskAlt, MdDeleteOutline } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'

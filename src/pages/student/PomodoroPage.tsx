@@ -158,7 +158,7 @@ export default function PomodoroPage() {
   }
 
   // ── Fetch items for finish screen ──
-  async function openFinishModal(allCyclesDone: boolean) {
+  async function openFinishModal(_allCyclesDone: boolean) {
     setLoadingItems(true)
     const studentId = nav?.studentId
     if (!studentId) { setLoadingItems(false); return }

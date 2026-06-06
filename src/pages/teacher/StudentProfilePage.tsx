@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { MdArrowBack, MdMusicNote, MdSchool, MdOutlineFlag, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd, MdEdit } from 'react-icons/md'
+import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -47,6 +48,8 @@ interface Goal {
   target_value: string | null
   due_date: string | null
 }
+
+const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -247,6 +250,14 @@ export default function StudentProfilePage() {
         <Link to="/professor/alunos" className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
+        <div className="shrink-0 rounded-full overflow-hidden">
+          <Avatar
+            size={40}
+            name={`${student.first_name} ${student.last_name}`}
+            variant="beam"
+            colors={AVATAR_COLORS}
+          />
+        </div>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-[#1E3A5F]">{student.first_name} {student.last_name}</h1>
           <p className="text-xs text-gray-400 mt-0.5">
@@ -351,6 +362,9 @@ export default function StudentProfilePage() {
                 to={`/professor/alunos/${studentId}/pecas/${piece.id}`}
                 className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
               >
+                <div className="shrink-0 rounded-lg overflow-hidden">
+                  <Avatar size={32} name={piece.title} variant="marble" colors={AVATAR_COLORS} />
+                </div>
                 <div className="relative w-10 h-10 shrink-0">
                   <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
                     <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3"/>
@@ -393,10 +407,13 @@ export default function StudentProfilePage() {
               <Link
                 key={ex.id}
                 to={`/professor/alunos/${studentId}/exercicios/${ex.id}`}
-                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between hover:border-[#4A90C4] transition"
+                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
               >
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">{ex.title}</p>
+                <div className="shrink-0 rounded-lg overflow-hidden">
+                  <Avatar size={36} name={ex.title} variant="pixel" colors={AVATAR_COLORS} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{ex.title}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {exerciseCategoryLabel[ex.category] ?? ex.category} · {exerciseStatusLabel[ex.status] ?? ex.status}
                   </p>
@@ -421,7 +438,11 @@ export default function StudentProfilePage() {
           ) : (
             goals.map(goal => (
               <div key={goal.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4">
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start gap-3 mb-2">
+                  <div className="shrink-0 rounded-lg overflow-hidden mt-0.5">
+                    <Avatar size={36} name={goal.title} variant="bauhaus" colors={AVATAR_COLORS} />
+                  </div>
+                  <div className="flex-1 flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-gray-800 flex-1">{goal.title}</p>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${typeBadge[goal.type] ?? 'bg-gray-100 text-gray-500'}`}>
@@ -434,6 +455,7 @@ export default function StudentProfilePage() {
                     >
                       <MdEdit size={16} />
                     </button>
+                  </div>
                   </div>
                 </div>
                 {(goal.target_value || goal.due_date) && (

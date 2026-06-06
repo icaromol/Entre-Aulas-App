@@ -4,7 +4,6 @@ import { MdArrowBack, MdSchool, MdNotes, MdAdd } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
-import { DEFAULT_CHECKLIST } from '@/lib/defaultChecklist'
 
 const CATEGORIES = [
   { value: 'technique', label: 'Técnica' },

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { MdArrowBack, MdOutlineFlag, MdAdd, MdNotes } from 'react-icons/md'
+import { MdArrowBack, MdAdd, MdNotes } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'

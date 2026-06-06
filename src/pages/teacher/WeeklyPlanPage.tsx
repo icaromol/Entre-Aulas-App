@@ -30,7 +30,6 @@ import {
   formatWeekStart,
   addWeeks,
   formatWeekLabel,
-  getDayLabel,
   getDayFullLabel,
 } from '@/lib/weekUtils'
 
@@ -289,7 +288,7 @@ export default function WeeklyPlanPage() {
     setLoading(false)
   }
 
-  async function fetchOrCreatePlan(rep: RepertoireItem[]) {
+  async function fetchOrCreatePlan(_rep: RepertoireItem[]) {
     const { data: teacher } = await supabase
       .from('teachers')
       .select('id')
