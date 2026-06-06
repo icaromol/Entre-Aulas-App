@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MdArrowBack, MdMusicNote, MdSchool, MdOutlineFlag, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd, MdEdit } from 'react-icons/md'
+import { MdArrowBack, MdMusicNote, MdSchool, MdOutlineFlag, MdCalendarMonth, MdAccessTime, MdChevronRight, MdAdd, MdEdit, MdCheck } from 'react-icons/md'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -362,11 +362,8 @@ export default function StudentProfilePage() {
                 to={`/professor/alunos/${studentId}/pecas/${piece.id}`}
                 className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
               >
-                <div className="shrink-0 rounded-lg overflow-hidden">
-                  <Avatar size={32} name={piece.title} variant="marble" colors={AVATAR_COLORS} />
-                </div>
                 <div className="relative w-10 h-10 shrink-0">
-                  <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
+                  <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90 absolute inset-0">
                     <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3"/>
                     <circle
                       cx="18" cy="18" r="15" fill="none"
@@ -375,9 +372,11 @@ export default function StudentProfilePage() {
                       strokeLinecap="round"
                     />
                   </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-[#1E3A5F]">
-                    {piece.completion_pct}%
-                  </span>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="rounded-full overflow-hidden">
+                      <Avatar size={24} name={piece.title} variant="marble" colors={AVATAR_COLORS} />
+                    </div>
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{piece.title}</p>
@@ -438,11 +437,7 @@ export default function StudentProfilePage() {
           ) : (
             goals.map(goal => (
               <div key={goal.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4">
-                <div className="flex items-start gap-3 mb-2">
-                  <div className="shrink-0 rounded-lg overflow-hidden mt-0.5">
-                    <Avatar size={36} name={goal.title} variant="bauhaus" colors={AVATAR_COLORS} />
-                  </div>
-                  <div className="flex-1 flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-2 mb-2">
                   <p className="text-sm font-semibold text-gray-800 flex-1">{goal.title}</p>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${typeBadge[goal.type] ?? 'bg-gray-100 text-gray-500'}`}>
@@ -455,7 +450,6 @@ export default function StudentProfilePage() {
                     >
                       <MdEdit size={16} />
                     </button>
-                  </div>
                   </div>
                 </div>
                 {(goal.target_value || goal.due_date) && (
@@ -473,7 +467,9 @@ export default function StudentProfilePage() {
                   disabled={completingGoalId === goal.id}
                   className="w-full py-2 rounded-xl bg-[#D6E4F0] text-sm font-medium text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition disabled:opacity-50 cursor-pointer"
                 >
-                  {completingGoalId === goal.id ? '...' : 'Concluir tarefa'}
+                  {completingGoalId === goal.id ? '...' : (
+                    <span className="flex items-center justify-center gap-1.5"><MdCheck size={16} />Concluir tarefa</span>
+                  )}
                 </button>
               </div>
             ))

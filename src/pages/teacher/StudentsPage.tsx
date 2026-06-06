@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { MdAdd, MdChevronRight } from 'react-icons/md'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { MdAdd, MdChevronRight, MdEdit } from 'react-icons/md'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -20,6 +20,7 @@ interface Student {
 
 export default function StudentsPage() {
   const { profile } = useAuth()
+  const navigate = useNavigate()
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -115,12 +116,12 @@ export default function StudentsPage() {
           {students.map(student => (
             <div
               key={student.id}
-              className="bg-white rounded-2xl border border-gray-100 hover:border-[#4A90C4] transition"
+              className="bg-white rounded-2xl border border-gray-100 hover:border-[#4A90C4] transition px-5 py-4 flex items-center gap-4"
             >
               {/* Área clicável → perfil */}
               <Link
                 to={`/professor/alunos/${student.id}`}
-                className="px-5 pt-4 pb-3 flex items-center gap-4"
+                className="flex items-center gap-4 flex-1 min-w-0"
               >
                 <div className="shrink-0 rounded-full overflow-hidden">
                   <Avatar
@@ -130,30 +131,33 @@ export default function StudentsPage() {
                     colors={AVATAR_COLORS}
                   />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">
                     {student.first_name} {student.last_name}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-400 mt-0.5 truncate">
                     {student.instrument} · {levelLabel[student.level] ?? student.level}
                   </p>
                 </div>
-                <MdChevronRight size={16} className="text-gray-400 shrink-0" />
               </Link>
 
-              {/* Ações inline */}
-              <div className="px-4 pb-4 flex gap-2">
-                <Link to={`/professor/alunos/${student.id}/editar`} className="flex-1">
-                  <button className="w-full py-1.5 rounded-xl border border-gray-200 text-xs text-gray-600 hover:border-[#4A90C4] transition">
-                    Editar
-                  </button>
-                </Link>
-                <Link to={`/professor/alunos/${student.id}/plano`}>
-                  <button className="py-1.5 px-4 rounded-xl bg-[#D6E4F0] text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition flex items-center justify-center gap-1">
-                    <MdAdd size={15} />
-                    <span className="text-xs font-medium">Plano</span>
-                  </button>
-                </Link>
+              {/* Ações inline + chevron */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => navigate(`/professor/alunos/${student.id}/plano`)}
+                  className="w-8 h-8 rounded-lg bg-[#D6E4F0] text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition flex items-center justify-center"
+                  title="Criar plano"
+                >
+                  <MdAdd size={16} />
+                </button>
+                <button
+                  onClick={() => navigate(`/professor/alunos/${student.id}/editar`)}
+                  className="w-8 h-8 rounded-lg text-gray-400 hover:text-[#4A90C4] hover:bg-gray-100 transition flex items-center justify-center"
+                  title="Editar aluno"
+                >
+                  <MdEdit size={16} />
+                </button>
+                <MdChevronRight size={16} className="text-gray-300" />
               </div>
             </div>
           ))}

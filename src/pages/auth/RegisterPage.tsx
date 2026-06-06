@@ -69,10 +69,12 @@ export default function RegisterPage() {
 
     if (data.user) {
       if (inviteStudentId) {
-        await supabase
+        const { error: linkError, count } = await supabase
           .from('students')
           .update({ profile_id: data.user.id })
           .eq('id', inviteStudentId)
+        if (linkError) console.error('[invite] link error:', linkError.message)
+        else if (count === 0) console.warn('[invite] 0 rows updated — RLS may be blocking. Run student_claim_invite policy in Supabase.')
       } else if (role === 'student') {
         // Fallback: vincula por e-mail se já existir um registro sem profile_id
         await supabase
