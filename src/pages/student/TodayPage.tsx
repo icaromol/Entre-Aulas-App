@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { MdChevronLeft, MdChevronRight, MdPlayArrow } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { StudentLayout } from '@/components/layout/StudentLayout'
@@ -13,31 +14,47 @@ export default function TodayPage() {
   const [items, setItems] = useState<PlanItem[]>([])
   const [loading, setLoading] = useState(true)
   const [studentId, setStudentId] = useState<string | null>(null)
-  const today = getTodayDayOfWeek()
+  const [viewDay, setViewDay] = useState(getTodayDayOfWeek())
+
   const weekStart = formatWeekStart(getMonday(new Date()))
 
+  // Calcula a data real do dia visualizado para exibição DD/MM
+  const monday = getMonday(new Date())
+  const viewDate = new Date(monday)
+  viewDate.setDate(viewDate.getDate() + (viewDay === 0 ? 6 : viewDay - 1))
+  const displayDate = viewDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+
   useEffect(() => {
-    if (profile) fetchTodayPlan()
-  }, [profile])
+    if (profile) fetchDayPlan()
+  }, [profile, viewDay])
 
-  async function fetchTodayPlan() {
-    const { data: student } = await supabase
-      .from('students')
-      .select('id')
-      .eq('profile_id', profile!.id)
-      .single()
+  async function fetchDayPlan() {
+    setLoading(true)
 
-    if (!student) { setLoading(false); return }
-    setStudentId(student.id)
+    if (!studentId) {
+      const { data: student } = await supabase
+        .from('students')
+        .select('id')
+        .eq('profile_id', profile!.id)
+        .single()
 
+      if (!student) { setLoading(false); return }
+      setStudentId(student.id)
+      await fetchItems(student.id)
+    } else {
+      await fetchItems(studentId)
+    }
+  }
+
+  async function fetchItems(sid: string) {
     const { data: plan } = await supabase
       .from('weekly_plans')
       .select('id')
-      .eq('student_id', student.id)
+      .eq('student_id', sid)
       .eq('week_start', weekStart)
       .single()
 
-    if (!plan) { setLoading(false); return }
+    if (!plan) { setItems([]); setLoading(false); return }
 
     const { data: planItems } = await supabase
       .from('plan_items')
@@ -47,7 +64,7 @@ export default function TodayPage() {
         exercise:exercises(title, category)
       `)
       .eq('plan_id', plan.id)
-      .eq('day_of_week', today)
+      .eq('day_of_week', viewDay)
       .order('position')
 
     setItems((planItems ?? []).map((item: PlanItem) => ({
@@ -85,12 +102,28 @@ export default function TodayPage() {
 
   return (
     <StudentLayout>
-      {/* Saudação */}
-      <div className="mb-5">
-        <h1 className="text-xl font-bold text-[#1E3A5F]">
-          Olá, {profile?.first_name} 👋
-        </h1>
-        <p className="text-sm text-gray-400 mt-0.5">{getDayFullLabel(today)}</p>
+      {/* Header com navegação de dias */}
+      <div className="flex items-center justify-between mb-5">
+        <button
+          onClick={() => setViewDay(d => (d + 6) % 7)}
+          className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
+        >
+          <MdChevronLeft size={22} className="text-gray-400" />
+        </button>
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-[#1E3A5F]">
+            Olá, {profile?.first_name} 👋
+          </h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            {displayDate} · {getDayFullLabel(viewDay)}
+          </p>
+        </div>
+        <button
+          onClick={() => setViewDay(d => (d + 1) % 7)}
+          className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
+        >
+          <MdChevronRight size={22} className="text-gray-400" />
+        </button>
       </div>
 
       {/* Progresso do dia */}
@@ -114,7 +147,7 @@ export default function TodayPage() {
       {items.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
           <p className="text-4xl mb-3">🎵</p>
-          <p className="text-sm font-semibold text-gray-600">Nenhum item para hoje</p>
+          <p className="text-sm font-semibold text-gray-600">Nenhum item para este dia</p>
           <p className="text-xs text-gray-400 mt-1">
             Seu professor ainda não montou o plano desta semana.
           </p>
@@ -169,7 +202,7 @@ export default function TodayPage() {
                   )}
                 </div>
 
-                {/* Botão pomodoro */}
+                {/* Botão por item */}
                 {!item.is_done && (
                   <div className="px-4 pb-3">
                     <button
@@ -181,13 +214,10 @@ export default function TodayPage() {
                           studentId,
                         }
                       })}
-                      className="w-full py-2 rounded-xl bg-[#D6E4F0] text-[#1E3A5F] text-xs font-semibold hover:bg-[#4A90C4] hover:text-white transition flex items-center justify-center gap-2"
+                      className="w-full py-2 rounded-xl bg-[#D6E4F0] text-[#1E3A5F] text-xs font-semibold hover:bg-[#4A90C4] hover:text-white transition flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <circle cx="12" cy="12" r="9"/>
-                        <path d="M12 7v5l3 3"/>
-                      </svg>
-                      Iniciar pomodoro
+                      <MdPlayArrow size={14} />
+                      Começar estudo!
                     </button>
                   </div>
                 )}
@@ -195,6 +225,24 @@ export default function TodayPage() {
             )
           })}
         </div>
+      )}
+
+      {/* Banner de pomodoro */}
+      {items.length > 0 && !items.every(i => i.is_done) && (
+        <button
+          onClick={() => navigate('/aluno/pomodoro', {
+            state: { title: 'Sessão de hoje', durationMinutes: totalMinutes || 25, studentId }
+          })}
+          className="mt-5 w-full bg-[#1E3A5F] rounded-2xl px-5 py-5 flex items-center justify-center gap-4 hover:bg-[#1E3A5F]/90 transition cursor-pointer"
+        >
+          <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+            <MdPlayArrow size={28} className="text-white ml-1" />
+          </div>
+          <div className="text-left">
+            <p className="text-base font-bold text-white">Iniciar pomodoro</p>
+            <p className="text-xs text-white/60 mt-0.5">Modo Clássico · 25 min foco</p>
+          </div>
+        </button>
       )}
 
       {/* Mensagem de conclusão */}

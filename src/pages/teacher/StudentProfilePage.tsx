@@ -337,13 +337,11 @@ export default function StudentProfilePage() {
       {/* Tab: Peças */}
       {activeTab === 'pieces' && (
         <div className="space-y-3">
-          <div className="flex justify-end">
-            <Link to={`/professor/alunos/${studentId}/pecas/nova`}>
-              <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs">
-                <MdAdd size={15} className="inline -mt-0.5 mr-0.5" />Nova peça
-              </Button>
-            </Link>
-          </div>
+          <Link to={`/professor/alunos/${studentId}/pecas/nova`} className="block">
+            <Button className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm cursor-pointer">
+              <MdAdd size={16} className="inline -mt-0.5 mr-1" />Nova peça
+            </Button>
+          </Link>
           {pieces.length === 0 ? (
             <EmptyState title="Nenhuma peça ainda" description="Adicione a primeira peça do repertório." />
           ) : (
@@ -383,13 +381,11 @@ export default function StudentProfilePage() {
       {/* Tab: Exercícios */}
       {activeTab === 'exercises' && (
         <div className="space-y-3">
-          <div className="flex justify-end">
-            <Link to={`/professor/alunos/${studentId}/exercicios/novo`}>
-              <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs">
-                <MdAdd size={15} className="inline -mt-0.5 mr-0.5" />Novo exercício
-              </Button>
-            </Link>
-          </div>
+          <Link to={`/professor/alunos/${studentId}/exercicios/novo`} className="block">
+            <Button className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm cursor-pointer">
+              <MdAdd size={16} className="inline -mt-0.5 mr-1" />Novo exercício
+            </Button>
+          </Link>
           {exercises.length === 0 ? (
             <EmptyState title="Nenhum exercício ainda" description="Adicione exercícios técnicos ou teóricos." />
           ) : (
@@ -412,26 +408,33 @@ export default function StudentProfilePage() {
         </div>
       )}
 
-      {/* Tab: Metas */}
+      {/* Tab: Tarefas */}
       {activeTab === 'goals' && (
         <div className="space-y-3">
-          <div className="flex justify-end">
-            <Link to={`/professor/alunos/${studentId}/metas/nova`}>
-              <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs">
-                <MdAdd size={15} className="inline -mt-0.5 mr-0.5" />Nova meta
-              </Button>
-            </Link>
-          </div>
+          <Link to={`/professor/alunos/${studentId}/metas/nova`} className="block">
+            <Button className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm cursor-pointer">
+              <MdAdd size={16} className="inline -mt-0.5 mr-1" />Nova tarefa
+            </Button>
+          </Link>
           {goals.length === 0 ? (
-            <EmptyState title="Nenhuma meta ativa" description="Defina metas de repertório, técnica ou progresso." />
+            <EmptyState title="Nenhuma tarefa ativa" description="Defina tarefas de repertório, técnica ou progresso." />
           ) : (
             goals.map(goal => (
               <div key={goal.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <p className="text-sm font-semibold text-gray-800 flex-1">{goal.title}</p>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${typeBadge[goal.type] ?? 'bg-gray-100 text-gray-500'}`}>
-                    {typeLabel[goal.type] ?? goal.type}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${typeBadge[goal.type] ?? 'bg-gray-100 text-gray-500'}`}>
+                      {typeLabel[goal.type] ?? goal.type}
+                    </span>
+                    <button
+                      onClick={() => navigate(`/professor/alunos/${studentId}/metas/${goal.id}/editar`)}
+                      className="text-gray-400 hover:text-[#4A90C4] transition cursor-pointer"
+                      aria-label="Editar tarefa"
+                    >
+                      <MdEdit size={16} />
+                    </button>
+                  </div>
                 </div>
                 {(goal.target_value || goal.due_date) && (
                   <div className="flex gap-3 mb-3">
@@ -443,21 +446,13 @@ export default function StudentProfilePage() {
                     )}
                   </div>
                 )}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => navigate(`/professor/alunos/${studentId}/metas/${goal.id}/editar`)}
-                    className="flex-1 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-[#4A90C4] transition"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => completeGoal(goal.id)}
-                    disabled={completingGoalId === goal.id}
-                    className="flex-1 py-1.5 rounded-lg bg-[#D6E4F0] text-xs font-medium text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition disabled:opacity-50"
-                  >
-                    {completingGoalId === goal.id ? '...' : 'Concluir'}
-                  </button>
-                </div>
+                <button
+                  onClick={() => completeGoal(goal.id)}
+                  disabled={completingGoalId === goal.id}
+                  className="w-full py-2 rounded-xl bg-[#D6E4F0] text-sm font-medium text-[#1E3A5F] hover:bg-[#4A90C4] hover:text-white transition disabled:opacity-50 cursor-pointer"
+                >
+                  {completingGoalId === goal.id ? '...' : 'Concluir tarefa'}
+                </button>
               </div>
             ))
           )}
@@ -469,7 +464,7 @@ export default function StudentProfilePage() {
         <div className="space-y-3">
           <button
             onClick={() => navigate(`/professor/alunos/${studentId}/plano`)}
-            className="w-full bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between hover:border-[#4A90C4] transition"
+            className="w-full bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between hover:border-[#4A90C4] transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-[#D6E4F0] flex items-center justify-center shrink-0">
@@ -490,7 +485,7 @@ export default function StudentProfilePage() {
 
           <button
             onClick={() => navigate(`/professor/alunos/${studentId}/plano`)}
-            className="w-full bg-[#1E3A5F] rounded-2xl px-5 py-4 flex items-center justify-between hover:bg-[#1E3A5F]/90 transition"
+            className="w-full bg-[#1E3A5F] rounded-2xl px-5 py-4 flex items-center justify-between hover:bg-[#1E3A5F]/90 transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
