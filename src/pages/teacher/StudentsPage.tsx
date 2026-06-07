@@ -55,13 +55,13 @@ export default function StudentsPage() {
   }
 
   function buildWhatsAppLink() {
-    const msg = `Olá, ${inviteStudentName}! Você foi convidado para o *Entre Aulas* — sua plataforma exclusiva de acompanhamento musical 🎵\n\nLá você vai poder:\n• Ver as tarefas do dia\n• Estudar com o cronômetro Pomodoro\n• Acompanhar seu repertório e progresso\n• Registrar seu histórico de estudos\n\nAcesse o link e crie sua conta: ${inviteLink}`
+    const msg = `Olá, ${inviteStudentName}! Você foi convidado para o *estudamus* — sua plataforma exclusiva de acompanhamento musical 🎵\n\nLá você vai poder:\n• Ver as tarefas do dia\n• Estudar com o cronômetro Pomodoro\n• Acompanhar seu repertório e progresso\n• Registrar seu histórico de estudos\n\nAcesse o link e crie sua conta: ${inviteLink}`
     return `https://wa.me/?text=${encodeURIComponent(msg)}`
   }
 
   function buildMailtoLink() {
-    const subject = `Convite para o Entre Aulas`
-    const body = `Olá, ${inviteStudentName}!\n\nVocê foi convidado para o Entre Aulas — sua plataforma exclusiva de acompanhamento musical.\n\nLá você vai poder:\n- Ver as tarefas do dia\n- Estudar com o cronômetro Pomodoro\n- Acompanhar seu repertório e progresso\n- Registrar seu histórico de estudos\n\nAcesse o link e crie sua conta:\n${inviteLink}`
+    const subject = `Convite para o estudamus`
+    const body = `Olá, ${inviteStudentName}!\n\nVocê foi convidado para o estudamus — sua plataforma exclusiva de acompanhamento musical.\n\nLá você vai poder:\n- Ver as tarefas do dia\n- Estudar com o cronômetro Pomodoro\n- Acompanhar seu repertório e progresso\n- Registrar seu histórico de estudos\n\nAcesse o link e crie sua conta:\n${inviteLink}`
     return `mailto:${inviteStudentEmail ?? ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 

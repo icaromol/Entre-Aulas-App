@@ -1,4 +1,4 @@
-# Entre Aulas — Contexto do Projeto
+# estudamus — Contexto do Projeto
 
 ## O que é
 
