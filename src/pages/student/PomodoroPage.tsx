@@ -8,19 +8,27 @@ import { Button } from '@/components/ui/button'
 interface CyclePreset {
   key: string
   name: string
-  emoji: string
-  hint: string
   workMinutes: number
   breakMinutes: number
   totalCycles: number
 }
 
-const PRESETS: CyclePreset[] = [
-  { key: 'beginner', name: 'Iniciante',     emoji: '🌱', hint: '2 ciclos de 15 min + 5 pausa',  workMinutes: 15, breakMinutes: 5, totalCycles: 2 },
-  { key: 'classic',  name: 'Clássico',      emoji: '🍅', hint: '1 ciclo de 20 min + 5 pausa',   workMinutes: 20, breakMinutes: 5, totalCycles: 1 },
-  { key: 'advanced', name: 'Avançado',      emoji: '🎯', hint: '4 ciclos de 25 min + 5 pausa',  workMinutes: 25, breakMinutes: 5, totalCycles: 4 },
-  { key: 'custom',   name: 'Personalizado', emoji: '⚙️', hint: 'Defina seu ritmo',              workMinutes: 0,  breakMinutes: 0, totalCycles: 0 },
-]
+function autoPreset(durationMinutes: number): CyclePreset {
+  if (durationMinutes <= 15) {
+    return { key: 'auto', name: 'Automático', workMinutes: Math.max(5, durationMinutes), breakMinutes: 3, totalCycles: 1 }
+  }
+  if (durationMinutes <= 30) {
+    return { key: 'auto', name: 'Automático', workMinutes: durationMinutes, breakMinutes: 5, totalCycles: 1 }
+  }
+  if (durationMinutes <= 50) {
+    return { key: 'auto', name: 'Automático', workMinutes: Math.round(durationMinutes / 2), breakMinutes: 5, totalCycles: 2 }
+  }
+  if (durationMinutes <= 80) {
+    return { key: 'auto', name: 'Automático', workMinutes: Math.round(durationMinutes / 3), breakMinutes: 5, totalCycles: 3 }
+  }
+  const cycles = Math.max(4, Math.round(durationMinutes / 25))
+  return { key: 'auto', name: 'Automático', workMinutes: 25, breakMinutes: 5, totalCycles: cycles }
+}
 
 type Phase = 'idle' | 'work' | 'break' | 'finished'
 
@@ -58,8 +66,7 @@ export default function PomodoroPage() {
     planItemId?: string; title?: string; durationMinutes?: number; studentId?: string; autoStart?: boolean
   } | null
 
-  // ── Cycle selection ──
-  const [selectedKey, setSelectedKey] = useState('classic')
+  // ── Custom config ──
   const [customWork,   setCustomWork]   = useState(25)
   const [customBreak,  setCustomBreak]  = useState(5)
   const [customCycles, setCustomCycles] = useState(4)
@@ -84,14 +91,16 @@ export default function PomodoroPage() {
   const [saving, setSaving]             = useState(false)
   const [loadingItems, setLoadingItems] = useState(false)
 
-  // ── Auto-start no modo Clássico ──
+  // ── Auto-start ──
   useEffect(() => {
-    if (!nav?.autoStart) return
-    const classic = PRESETS.find(p => p.key === 'classic')!
-    activeCycle.current = classic
+    if (!nav?.autoStart && !nav?.planItemId) return
+    const preset = nav?.planItemId
+      ? autoPreset(nav.durationMinutes ?? 25)
+      : { key: 'classic', name: 'Clássico', workMinutes: 20, breakMinutes: 5, totalCycles: 1 } as CyclePreset
+    activeCycle.current = preset
     startedAt.current = new Date().toISOString()
     workSecs.current = 0
-    const secs = classic.workMinutes * 60
+    const secs = preset.workMinutes * 60
     setCurrentCycle(1)
     setCompletedCycles(0)
     setPhase('work')
@@ -99,15 +108,6 @@ export default function PomodoroPage() {
     setTotalSecs(secs)
     setIsPaused(false)
   }, [])
-
-  // ── Helpers ──
-  function buildCycle(): CyclePreset {
-    if (selectedKey === 'custom') {
-      return { key: 'custom', name: 'Personalizado', emoji: '⚙️', hint: '',
-        workMinutes: customWork, breakMinutes: customBreak, totalCycles: customCycles }
-    }
-    return PRESETS.find(p => p.key === selectedKey)!
-  }
 
   // ── Timer tick ──
   useEffect(() => {
@@ -154,8 +154,11 @@ export default function PomodoroPage() {
   }, [timeLeft, phase, currentCycle, completedCycles])
 
   // ── Start ──
-  function startSession() {
-    const c = buildCycle()
+  function startSession(preset?: CyclePreset) {
+    const c = preset ?? {
+      key: 'custom', name: 'Personalizado',
+      workMinutes: customWork, breakMinutes: customBreak, totalCycles: customCycles,
+    }
     activeCycle.current = c
     startedAt.current = new Date().toISOString()
     workSecs.current = 0
@@ -276,81 +279,51 @@ export default function PomodoroPage() {
   // ─────────────────────────────────────────────────────
   // IDLE
   // ─────────────────────────────────────────────────────
-  if (phase === 'idle' && nav?.autoStart) {
+  if (phase === 'idle' && (nav?.autoStart || nav?.planItemId)) {
     return <StudentLayout><p className="text-sm text-gray-400 mt-8 text-center">Iniciando...</p></StudentLayout>
   }
 
   if (phase === 'idle') {
     return (
       <StudentLayout>
-        <div className="flex items-center gap-3 mb-5">
+        <div className="flex items-center gap-3 mb-6">
           <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600 transition">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path d="M15 18l-6-6 6-6"/>
             </svg>
           </button>
           <div>
-            <h1 className="text-xl font-bold text-[#1E3A5F]">Pomodoro</h1>
-            {nav?.title && <p className="text-xs text-gray-400 mt-0.5 truncate">{nav.title}</p>}
+            <h1 className="text-xl font-bold text-[#1E3A5F]">Sessão personalizada</h1>
+            <p className="text-xs text-gray-400 mt-0.5">Configure seu próprio ritmo</p>
           </div>
         </div>
 
-        <p className="text-sm font-medium text-gray-600 mb-3">Escolha o modo de estudo</p>
-
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          {PRESETS.map(p => (
-            <button
-              key={p.key}
-              onClick={() => setSelectedKey(p.key)}
-              className={`rounded-2xl border p-4 text-left transition ${
-                selectedKey === p.key
-                  ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white'
-                  : 'bg-white border-gray-100 text-gray-700 hover:border-[#4A90C4]'
-              }`}
-            >
-              <p className="text-2xl mb-1">{p.emoji}</p>
-              <p className="text-sm font-bold">{p.name}</p>
-              <p className={`text-[11px] mt-0.5 ${selectedKey === p.key ? 'text-white/70' : 'text-gray-400'}`}>
-                {p.hint}
-              </p>
-            </button>
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+          {[
+            { label: 'Minutos de estudo', value: customWork,   set: setCustomWork,   min: 1, max: 120 },
+            { label: 'Minutos de pausa',  value: customBreak,  set: setCustomBreak,  min: 1, max: 60  },
+            { label: 'Número de ciclos',  value: customCycles, set: setCustomCycles, min: 1, max: 10  },
+          ].map(f => (
+            <div key={f.label} className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">{f.label}</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => f.set((v: number) => Math.max(f.min, v - 1))}
+                  className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:border-[#4A90C4] transition">−</button>
+                <span className="w-8 text-center text-sm font-semibold text-[#1E3A5F]">{f.value}</span>
+                <button onClick={() => f.set((v: number) => Math.min(f.max, v + 1))}
+                  className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:border-[#4A90C4] transition">+</button>
+              </div>
+            </div>
           ))}
         </div>
 
-        {selectedKey === 'custom' && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-5 space-y-3">
-            <p className="text-xs font-semibold text-gray-500">Configurar ciclo</p>
-            {[
-              { label: 'Minutos de estudo', value: customWork,   set: setCustomWork,   min: 1, max: 120 },
-              { label: 'Minutos de pausa',  value: customBreak,  set: setCustomBreak,  min: 1, max: 60  },
-              { label: 'Número de ciclos',  value: customCycles, set: setCustomCycles, min: 1, max: 10  },
-            ].map(f => (
-              <div key={f.label} className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{f.label}</span>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => f.set((v: number) => Math.max(f.min, v - 1))}
-                    className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#4A90C4] transition">−</button>
-                  <span className="w-8 text-center text-sm font-semibold text-[#1E3A5F]">{f.value}</span>
-                  <button onClick={() => f.set((v: number) => Math.min(f.max, v + 1))}
-                    className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#4A90C4] transition">+</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Botões */}
-        <div className="flex gap-3">
-          <Button
-            onClick={() => navigate(-1)}
-            variant="outline"
-            className="flex-1 h-12 rounded-2xl text-sm border-gray-200"
-          >
+        <div className="flex gap-3 mt-4">
+          <Button onClick={() => navigate(-1)} variant="outline" className="flex-1 h-12 rounded-2xl text-sm border-gray-200">
             Voltar
           </Button>
           <Button
-            onClick={startSession}
-            disabled={selectedKey === 'custom' && (customWork < 1 || customBreak < 1 || customCycles < 1)}
+            onClick={() => startSession()}
+            disabled={customWork < 1 || customBreak < 1 || customCycles < 1}
             className="flex-1 h-12 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-2xl text-sm font-semibold"
           >
             Iniciar sessão

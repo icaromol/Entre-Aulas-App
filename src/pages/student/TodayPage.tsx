@@ -1,127 +1,156 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { MdChevronLeft, MdChevronRight, MdPlayArrow } from 'react-icons/md'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/hooks/useAuth'
-import { StudentLayout } from '@/components/layout/StudentLayout'
-import type { PlanItem } from '@/types/plan'
-import { getMonday, formatWeekStart, getDayFullLabel, getTodayDayOfWeek } from '@/lib/weekUtils'
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { MdChevronLeft, MdChevronRight, MdPlayArrow } from "react-icons/md";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { StudentLayout } from "@/components/layout/StudentLayout";
+import type { PlanItem } from "@/types/plan";
+import {
+  getMonday,
+  formatWeekStart,
+  getDayFullLabel,
+  getTodayDayOfWeek,
+} from "@/lib/weekUtils";
 
-const TYPE_EMOJI: Record<string, string> = {
-  regular: '📚', recital: '🎭', concerto: '🎹', show: '🎤',
-  gravacao: '🎙️', exame: '📋', participacao: '🎵', outro: '📁',
-}
-
-function itemDisplay(item: PlanItem): { title: string; subtitle: string; maintenanceIcon: boolean } {
+function itemDisplay(item: PlanItem): {
+  title: string;
+  subtitle: string;
+  maintenanceIcon: boolean;
+} {
   if (item.is_maintenance) {
-    return { title: 'Manutenção', subtitle: item.piece?.title ?? '—', maintenanceIcon: true }
+    return {
+      title: "Manutenção",
+      subtitle: item.piece?.title ?? "—",
+      maintenanceIcon: true,
+    };
   }
   if (item.exercise_id && item.exercise) {
-    return { title: item.exercise.title, subtitle: item.programa?.title ?? '—', maintenanceIcon: false }
+    return {
+      title: item.exercise.title,
+      subtitle: item.programa?.title ?? "—",
+      maintenanceIcon: false,
+    };
   }
   if (item.piece_id && item.piece) {
-    return { title: item.piece.title, subtitle: item.programa?.title ?? '—', maintenanceIcon: false }
+    return {
+      title: item.piece.title,
+      subtitle: item.programa?.title ?? "—",
+      maintenanceIcon: false,
+    };
   }
-  return { title: '—', subtitle: '', maintenanceIcon: false }
+  return { title: "—", subtitle: "", maintenanceIcon: false };
 }
 
 function itemCardClass(item: PlanItem): string {
-  if (item.is_maintenance) return 'bg-white border-gray-100'
-  if (item.exercise_id)    return 'bg-rose-50 border-rose-100'
-  return 'bg-[#D6E4F0]/30 border-[#D6E4F0]'
+  if (item.is_maintenance) return "bg-white border-gray-100";
+  if (item.exercise_id) return "bg-rose-50 border-rose-100";
+  return "bg-[#D6E4F0]/30 border-[#D6E4F0]";
 }
 
 export default function TodayPage() {
-  const { profile } = useAuth()
-  const navigate = useNavigate()
+  const { profile } = useAuth();
+  const navigate = useNavigate();
 
-  const [items, setItems] = useState<PlanItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [studentId, setStudentId] = useState<string | null>(null)
-  const [viewDay, setViewDay] = useState(getTodayDayOfWeek())
+  const [items, setItems] = useState<PlanItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [studentId, setStudentId] = useState<string | null>(null);
+  const [viewDay, setViewDay] = useState(getTodayDayOfWeek());
 
-  const weekStart = formatWeekStart(getMonday(new Date()))
+  const weekStart = formatWeekStart(getMonday(new Date()));
 
-  const monday = getMonday(new Date())
-  const viewDate = new Date(monday)
-  viewDate.setDate(viewDate.getDate() + (viewDay === 0 ? 6 : viewDay - 1))
-  const displayDate = viewDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  const monday = getMonday(new Date());
+  const viewDate = new Date(monday);
+  viewDate.setDate(viewDate.getDate() + (viewDay === 0 ? 6 : viewDay - 1));
+  const displayDate = viewDate.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
 
   useEffect(() => {
-    if (profile) fetchDayPlan()
-  }, [profile, viewDay])
+    if (profile) fetchDayPlan();
+  }, [profile, viewDay]);
 
   async function fetchDayPlan() {
-    setLoading(true)
+    setLoading(true);
 
     if (!studentId) {
-      const { data: student, error: studentErr } = await supabase
-        .from('students')
-        .select('id')
-        .eq('profile_id', profile!.id)
-        .single()
+      const { data: student } = await supabase
+        .from("students")
+        .select("id")
+        .eq("profile_id", profile!.id)
+        .single();
 
-      console.log('[today] student lookup:', student, studentErr)
-      if (!student) { setLoading(false); return }
-      setStudentId(student.id)
-      await fetchItems(student.id)
+      if (!student) {
+        setLoading(false);
+        return;
+      }
+      setStudentId(student.id);
+      await fetchItems(student.id);
     } else {
-      await fetchItems(studentId)
+      await fetchItems(studentId);
     }
   }
 
   async function fetchItems(sid: string) {
-    console.log('[today] looking for plan — student_id:', sid, 'week_start:', weekStart, 'day:', viewDay)
+    const { data: plan } = await supabase
+      .from("weekly_plans")
+      .select("id")
+      .eq("student_id", sid)
+      .eq("week_start", weekStart)
+      .single();
 
-    const { data: plan, error: planErr } = await supabase
-      .from('weekly_plans')
-      .select('id')
-      .eq('student_id', sid)
-      .eq('week_start', weekStart)
-      .single()
+    if (!plan) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
 
-    console.log('[today] plan:', plan, planErr)
-    if (!plan) { setItems([]); setLoading(false); return }
-
-    const { data: planItems, error: itemsErr } = await supabase
-      .from('plan_items')
-      .select(`
+    const { data: planItems } = await supabase
+      .from("plan_items")
+      .select(
+        `
         id, plan_id, day_of_week, piece_id, exercise_id, program_id,
         duration_minutes, position, is_done, done_at, is_maintenance,
         piece:pieces(title, composer),
         exercise:exercises(title, category),
         programa:programas(title, type)
-      `)
-      .eq('plan_id', plan.id)
-      .eq('day_of_week', viewDay)
-      .order('position')
+      `,
+      )
+      .eq("plan_id", plan.id)
+      .eq("day_of_week", viewDay)
+      .order("position");
 
-    console.log('[today] items:', planItems, itemsErr)
-    setItems((planItems ?? []) as unknown as PlanItem[])
-    setLoading(false)
+    setItems((planItems ?? []) as unknown as PlanItem[]);
+    setLoading(false);
   }
 
   async function toggleDone(item: PlanItem) {
-    const newDone = !item.is_done
+    const newDone = !item.is_done;
     await supabase
-      .from('plan_items')
-      .update({ is_done: newDone, done_at: newDone ? new Date().toISOString() : null })
-      .eq('id', item.id)
+      .from("plan_items")
+      .update({
+        is_done: newDone,
+        done_at: newDone ? new Date().toISOString() : null,
+      })
+      .eq("id", item.id);
 
-    setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_done: newDone } : i))
+    setItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, is_done: newDone } : i)),
+    );
   }
 
-  const done  = items.filter(i => i.is_done).length
-  const total = items.length
-  const pct   = total > 0 ? Math.round((done / total) * 100) : 0
-  const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
+  const done = items.filter((i) => i.is_done).length;
+  const total = items.length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
 
   if (loading) {
     return (
       <StudentLayout>
         <p className="text-sm text-gray-400">Carregando...</p>
       </StudentLayout>
-    )
+    );
   }
 
   return (
@@ -129,7 +158,7 @@ export default function TodayPage() {
       {/* Header com navegação de dias */}
       <div className="flex items-center justify-between mb-5">
         <button
-          onClick={() => setViewDay(d => (d + 6) % 7)}
+          onClick={() => setViewDay((d) => (d + 6) % 7)}
           className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
         >
           <MdChevronLeft size={22} className="text-gray-400" />
@@ -143,7 +172,7 @@ export default function TodayPage() {
           </p>
         </div>
         <button
-          onClick={() => setViewDay(d => (d + 1) % 7)}
+          onClick={() => setViewDay((d) => (d + 1) % 7)}
           className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
         >
           <MdChevronRight size={22} className="text-gray-400" />
@@ -154,8 +183,12 @@ export default function TodayPage() {
       {total > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-gray-600">Progresso de hoje</span>
-            <span className="text-xs font-bold text-[#1E3A5F]">{done}/{total} itens</span>
+            <span className="text-xs font-semibold text-gray-600">
+              Progresso de hoje
+            </span>
+            <span className="text-xs font-bold text-[#1E3A5F]">
+              {done}/{total} itens
+            </span>
           </div>
           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
@@ -163,7 +196,9 @@ export default function TodayPage() {
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="text-[10px] text-gray-400 mt-1.5">{totalMinutes} min planejados</p>
+          <p className="text-[10px] text-gray-400 mt-1.5">
+            {totalMinutes} min planejados
+          </p>
         </div>
       )}
 
@@ -171,22 +206,23 @@ export default function TodayPage() {
       {items.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
           <p className="text-4xl mb-3">🎵</p>
-          <p className="text-sm font-semibold text-gray-700">Nenhum item para hoje</p>
+          <p className="text-sm font-semibold text-gray-700">
+            Nenhum item para hoje
+          </p>
           <p className="text-xs text-gray-400 mt-1 leading-relaxed">
             Pode aproveitar! Que tal fazer um estudo extra com o botão abaixo?
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map(item => {
-            const { title, subtitle, maintenanceIcon } = itemDisplay(item)
-            const prog = item.programa
+          {items.map((item) => {
+            const { title, subtitle, maintenanceIcon } = itemDisplay(item);
 
             return (
               <div
                 key={item.id}
                 className={`rounded-2xl border transition ${itemCardClass(item)} ${
-                  item.is_done ? 'opacity-60' : ''
+                  item.is_done ? "opacity-60" : ""
                 }`}
               >
                 <div className="px-4 py-4 flex items-start gap-3">
@@ -195,31 +231,39 @@ export default function TodayPage() {
                     onClick={() => toggleDone(item)}
                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition ${
                       item.is_done
-                        ? 'bg-[#1E3A5F] border-[#1E3A5F]'
-                        : 'border-gray-300 hover:border-[#4A90C4]'
+                        ? "bg-[#1E3A5F] border-[#1E3A5F]"
+                        : "border-gray-300 hover:border-[#4A90C4]"
                     }`}
                   >
                     {item.is_done && (
-                      <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
-                        <path d="M5 13l4 4L19 7"/>
+                      <svg
+                        width="10"
+                        height="10"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="white"
+                        strokeWidth={3}
+                      >
+                        <path d="M5 13l4 4L19 7" />
                       </svg>
                     )}
                   </button>
 
                   {/* Ícone manutenção */}
-                  {maintenanceIcon && <span className="text-base mt-0.5 shrink-0">🔄</span>}
+                  {maintenanceIcon && (
+                    <span className="text-base mt-0.5 shrink-0">🔄</span>
+                  )}
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold truncate ${item.is_done ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                    <p
+                      className={`text-sm font-semibold truncate ${item.is_done ? "line-through text-gray-400" : "text-gray-800"}`}
+                    >
                       {title}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">{subtitle}</p>
-                    {prog && (
-                      <span className="inline-block mt-1 text-[10px] bg-[#D6E4F0] text-[#1E3A5F] rounded-full px-2 py-0.5 font-medium">
-                        {TYPE_EMOJI[prog.type] ?? '📁'} {prog.title}
-                      </span>
-                    )}
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">
+                      {subtitle}
+                    </p>
                   </div>
 
                   {/* Tempo */}
@@ -234,14 +278,16 @@ export default function TodayPage() {
                 {!item.is_done && (
                   <div className="px-4 pb-3">
                     <button
-                      onClick={() => navigate('/aluno/pomodoro', {
-                        state: {
-                          planItemId: item.id,
-                          title: subtitle ? `${title} — ${subtitle}` : title,
-                          durationMinutes: item.duration_minutes,
-                          studentId,
-                        }
-                      })}
+                      onClick={() =>
+                        navigate("/aluno/pomodoro", {
+                          state: {
+                            planItemId: item.id,
+                            title: subtitle ? `${title} — ${subtitle}` : title,
+                            durationMinutes: item.duration_minutes,
+                            studentId,
+                          },
+                        })
+                      }
                       className="w-full py-2 rounded-xl bg-[#D6E4F0] text-[#1E3A5F] text-xs font-semibold hover:bg-[#4A90C4] hover:text-white transition flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <MdPlayArrow size={14} />
@@ -250,16 +296,23 @@ export default function TodayPage() {
                   </div>
                 )}
               </div>
-            )
+            );
           })}
         </div>
       )}
 
       {/* Banner de início rápido */}
       <button
-        onClick={() => navigate('/aluno/pomodoro', {
-          state: { title: 'Sessão de hoje', durationMinutes: totalMinutes || 25, studentId, autoStart: true }
-        })}
+        onClick={() =>
+          navigate("/aluno/pomodoro", {
+            state: {
+              title: "Sessão de hoje",
+              durationMinutes: totalMinutes || 25,
+              studentId,
+              autoStart: true,
+            },
+          })
+        }
         className="mt-5 w-full bg-[#1E3A5F] rounded-2xl px-5 py-5 flex items-center justify-center gap-4 hover:bg-[#1E3A5F]/90 transition cursor-pointer"
       >
         <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
@@ -267,17 +320,31 @@ export default function TodayPage() {
         </div>
         <div className="text-left">
           <p className="text-base font-bold text-white">Início rápido</p>
-          <p className="text-xs text-white/60 mt-0.5">Modo Clássico · inicia imediatamente</p>
+          <p className="text-xs text-white/60 mt-0.5">
+            Modo Clássico · inicia imediatamente
+          </p>
         </div>
       </button>
+
+      <div className="flex justify-center mt-6">
+        <Button
+          variant="text"
+          onClick={() => navigate("/aluno/pomodoro", { state: { studentId } })}
+          className="text-gray-400 hover:text-gray-600 text-xs"
+        >
+          ou clique para uma sessão personalizada
+        </Button>
+      </div>
 
       {/* Conclusão */}
       {total > 0 && done === total && (
         <div className="mt-5 bg-[#D6E4F0] rounded-2xl p-4 text-center">
           <p className="text-2xl mb-1">🎉</p>
-          <p className="text-sm font-bold text-[#1E3A5F]">Parabéns! Você completou o estudo de hoje.</p>
+          <p className="text-sm font-bold text-[#1E3A5F]">
+            Parabéns! Você completou o estudo de hoje.
+          </p>
         </div>
       )}
     </StudentLayout>
-  )
+  );
 }
