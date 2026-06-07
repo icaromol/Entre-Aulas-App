@@ -21,6 +21,15 @@ import TodayPage from '@/pages/student/TodayPage'
 import PomodoroPage from '@/pages/student/PomodoroPage'
 import RepertoirePage from '@/pages/student/RepertoirePage'
 import HistoryPage from '@/pages/student/HistoryPage'
+import StudentNewPiecePage from '@/pages/student/NewPiecePage'
+import StudentPieceDetailPage from '@/pages/student/PieceDetailPage'
+import StudentEditPiecePage from '@/pages/student/EditPiecePage'
+import StudentNewExercisePage from '@/pages/student/NewExercisePage'
+import StudentExerciseDetailPage from '@/pages/student/ExerciseDetailPage'
+import StudentEditExercisePage from '@/pages/student/EditExercisePage'
+import StudentNewProgramaPage from '@/pages/student/NewProgramaPage'
+import StudentProgramaDetailPage from '@/pages/student/ProgramaDetailPage'
+import StudentEditProgramaPage from '@/pages/student/EditProgramaPage'
 
 export function Router() {
   return (
@@ -54,6 +63,15 @@ export function Router() {
         <Route path="/aluno/hoje" element={<AuthGuard allowedRole="student"><TodayPage /></AuthGuard>} />
         <Route path="/aluno/pomodoro" element={<AuthGuard allowedRole="student"><PomodoroPage /></AuthGuard>} />
         <Route path="/aluno/repertorio" element={<AuthGuard allowedRole="student"><RepertoirePage /></AuthGuard>} />
+        <Route path="/aluno/repertorio/pecas/nova" element={<AuthGuard allowedRole="student"><StudentNewPiecePage /></AuthGuard>} />
+        <Route path="/aluno/repertorio/pecas/:pieceId" element={<AuthGuard allowedRole="student"><StudentPieceDetailPage /></AuthGuard>} />
+        <Route path="/aluno/repertorio/pecas/:pieceId/editar" element={<AuthGuard allowedRole="student"><StudentEditPiecePage /></AuthGuard>} />
+        <Route path="/aluno/repertorio/exercicios/novo" element={<AuthGuard allowedRole="student"><StudentNewExercisePage /></AuthGuard>} />
+        <Route path="/aluno/repertorio/exercicios/:exerciseId" element={<AuthGuard allowedRole="student"><StudentExerciseDetailPage /></AuthGuard>} />
+        <Route path="/aluno/repertorio/exercicios/:exerciseId/editar" element={<AuthGuard allowedRole="student"><StudentEditExercisePage /></AuthGuard>} />
+        <Route path="/aluno/repertorio/programas/novo" element={<AuthGuard allowedRole="student"><StudentNewProgramaPage /></AuthGuard>} />
+        <Route path="/aluno/repertorio/programas/:programId" element={<AuthGuard allowedRole="student"><StudentProgramaDetailPage /></AuthGuard>} />
+        <Route path="/aluno/repertorio/programas/:programId/editar" element={<AuthGuard allowedRole="student"><StudentEditProgramaPage /></AuthGuard>} />
         <Route path="/aluno/historico" element={<AuthGuard allowedRole="student"><HistoryPage /></AuthGuard>} />
 
         <Route path="*" element={<NotFoundPage />} />
