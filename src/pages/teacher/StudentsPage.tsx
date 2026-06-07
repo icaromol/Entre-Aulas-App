@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { MdAdd, MdMoreVert } from 'react-icons/md'
+import { MdAdd, MdMoreVert, MdCheckCircle, MdClose, MdEmail, MdContentCopy, MdCheck } from 'react-icons/md'
+import { FaWhatsapp } from 'react-icons/fa'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -16,6 +17,7 @@ interface Student {
   instrument: string
   level: string
   status: string
+  contact_email: string | null
 }
 
 export default function StudentsPage() {
@@ -27,6 +29,7 @@ export default function StudentsPage() {
   const location = useLocation()
   const [inviteLink, setInviteLink] = useState<string | undefined>(location.state?.inviteLink)
   const [inviteStudentName, setInviteStudentName] = useState<string | undefined>(location.state?.studentName)
+  const [inviteStudentEmail, setInviteStudentEmail] = useState<string | undefined>(location.state?.studentEmail)
   const [copied, setCopied] = useState(false)
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
 
@@ -41,8 +44,25 @@ export default function StudentsPage() {
     const link = `${window.location.origin}/cadastro?invite=${student.id}`
     setInviteLink(link)
     setInviteStudentName(`${student.first_name} ${student.last_name}`)
+    setInviteStudentEmail(student.contact_email ?? undefined)
     setCopied(false)
     setMenuOpenId(null)
+  }
+
+  function closeModal() {
+    setInviteLink(undefined)
+    setCopied(false)
+  }
+
+  function buildWhatsAppLink() {
+    const msg = `Olá, ${inviteStudentName}! Você foi convidado para o *Entre Aulas* — sua plataforma exclusiva de acompanhamento musical 🎵\n\nLá você vai poder:\n• Ver as tarefas do dia\n• Estudar com o cronômetro Pomodoro\n• Acompanhar seu repertório e progresso\n• Registrar seu histórico de estudos\n\nAcesse o link e crie sua conta: ${inviteLink}`
+    return `https://wa.me/?text=${encodeURIComponent(msg)}`
+  }
+
+  function buildMailtoLink() {
+    const subject = `Convite para o Entre Aulas`
+    const body = `Olá, ${inviteStudentName}!\n\nVocê foi convidado para o Entre Aulas — sua plataforma exclusiva de acompanhamento musical.\n\nLá você vai poder:\n- Ver as tarefas do dia\n- Estudar com o cronômetro Pomodoro\n- Acompanhar seu repertório e progresso\n- Registrar seu histórico de estudos\n\nAcesse o link e crie sua conta:\n${inviteLink}`
+    return `mailto:${inviteStudentEmail ?? ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
   async function handleDeleteStudent(student: Student) {
@@ -73,7 +93,7 @@ export default function StudentsPage() {
 
     const { data } = await supabase
       .from('students')
-      .select('id, first_name, last_name, instrument, level, status')
+      .select('id, first_name, last_name, instrument, level, status, contact_email')
       .eq('teacher_id', teacher.id)
       .eq('status', 'active')
       .order('first_name')
@@ -90,27 +110,55 @@ export default function StudentsPage() {
 
   return (
     <TeacherLayout>
-      {/* Banner de convite */}
+      {/* Modal de convite */}
       {inviteLink && (
-        <div className="bg-[#D6E4F0] border border-[#4A90C4]/30 rounded-2xl p-4 mb-5">
-          <p className="text-sm font-semibold text-[#1E3A5F] mb-1">
-            ✅ {inviteStudentName} cadastrado!
-          </p>
-          <p className="text-xs text-[#1E3A5F]/70 mb-3">
-            Compartilhe o link abaixo com o aluno para ele criar a senha de acesso.
-          </p>
-          <div className="flex gap-2">
-            <input
-              readOnly
-              value={inviteLink}
-              className="flex-1 px-3 py-2 rounded-lg border border-[#4A90C4]/30 bg-white text-xs text-gray-600 outline-none"
-            />
-            <button
-              onClick={handleCopy}
-              className="px-4 py-2 rounded-lg bg-[#1E3A5F] text-white text-xs font-medium hover:bg-[#1E3A5F]/90 transition whitespace-nowrap"
-            >
-              {copied ? '✓ Copiado!' : 'Copiar'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModal} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+
+            {/* Fechar */}
+            <button onClick={closeModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
+              <MdClose size={20} />
             </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                <MdCheckCircle size={22} className="text-green-500" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-[#1E3A5F]">{inviteStudentName} cadastrado!</h2>
+                <p className="text-xs text-gray-400">Envie o acesso para o aluno</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              Compartilhe o link abaixo para o aluno criar a senha e acessar a plataforma de acompanhamento musical.
+            </p>
+
+            {/* Link + copiar */}
+            <div className="flex gap-2 mb-5">
+              <input readOnly value={inviteLink}
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-500 outline-none min-w-0" />
+              <button onClick={handleCopy}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#1E3A5F] text-white text-xs font-medium hover:bg-[#1E3A5F]/90 transition">
+                {copied ? <><MdCheck size={14} />Copiado</> : <><MdContentCopy size={14} />Copiar</>}
+              </button>
+            </div>
+
+            {/* Botões de envio */}
+            <div className="grid grid-cols-2 gap-3">
+              <a href={buildWhatsAppLink()} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#1ebe5d] text-white text-sm font-medium transition">
+                <FaWhatsapp size={17} />WhatsApp
+              </a>
+              <a href={buildMailtoLink()}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium transition">
+                <MdEmail size={17} />E-mail
+              </a>
+            </div>
+
           </div>
         </div>
       )}

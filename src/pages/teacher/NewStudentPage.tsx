@@ -33,7 +33,7 @@ export default function NewStudentPage() {
   const [phone, setPhone] = useState('')
   const [notes, setNotes] = useState('')
   const [availability, setAvailability] = useState<DayAvailability[]>(
-    DAYS.map((_, i) => ({ day: i, active: false, minutes: 30 }))
+    DAYS.map((_, i) => ({ day: i, active: false, minutes: 15 }))
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -108,7 +108,7 @@ export default function NewStudentPage() {
       // 5. Gera link de convite e redireciona
       const inviteLink = `${window.location.origin}/cadastro?invite=${student.id}`
       toast.success('Aluno cadastrado com sucesso!')
-      navigate('/professor/alunos', { state: { inviteLink, studentName: firstName } })
+      navigate('/professor/alunos', { state: { inviteLink, studentName: firstName, studentEmail: email } })
 
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')
@@ -244,7 +244,7 @@ export default function NewStudentPage() {
                     <input
                       type="range"
                       min={5}
-                      max={240}
+                      max={270}
                       step={5}
                       value={day.minutes}
                       onChange={e => setMinutes(day.day, Number(e.target.value))}
