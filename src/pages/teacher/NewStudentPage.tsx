@@ -132,53 +132,53 @@ export default function NewStudentPage() {
         <h1 className="text-xl font-bold text-[#1E3A5F]">Novo aluno</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5 max-w-xl mx-auto">
+      <form onSubmit={handleSubmit} className="space-y-5">
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdPerson size={15} />Dados pessoais</h2>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500">Nome</label>
+              <label className="text-xs font-medium text-gray-500">Nome <span className="text-red-400">*</span></label>
               <input
                 value={firstName}
                 onChange={e => setFirstName(e.target.value)}
-                placeholder="João"
+                placeholder="Ex: João"
                 required
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500">Sobrenome</label>
+              <label className="text-xs font-medium text-gray-500">Sobrenome <span className="text-red-400">*</span></label>
               <input
                 value={lastName}
                 onChange={e => setLastName(e.target.value)}
-                placeholder="Silva"
+                placeholder="Ex: Silva"
                 required
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500">E-mail (para convite)</label>
+            <label className="text-xs font-medium text-gray-500">E-mail <span className="text-red-400">*</span></label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="aluno@email.com"
+              placeholder="Ex: joao@email.com"
               required
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500">Telefone (opcional)</label>
+            <label className="text-xs font-medium text-gray-500">Telefone</label>
             <input
               value={phone}
               onChange={e => setPhone(e.target.value)}
-              placeholder="(11) 99999-9999"
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+              placeholder="Ex: (11) 98765-4321"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
             />
           </div>
         </div>
@@ -191,8 +191,7 @@ export default function NewStudentPage() {
             <select
               value={instrument}
               onChange={e => setInstrument(e.target.value)}
-              required
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition bg-white"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition bg-white text-gray-700"
             >
               <option value="">Selecione...</option>
               {INSTRUMENTS.map(i => (
@@ -202,7 +201,7 @@ export default function NewStudentPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500">Nível</label>
+            <label className="text-xs font-medium text-gray-500">Nível <span className="text-red-400">*</span></label>
             <div className="flex gap-2">
               {levelOptions.map(opt => (
                 <button
@@ -225,13 +224,13 @@ export default function NewStudentPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdAccessTime size={15} />Disponibilidade semanal</h2>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {availability.map((day) => (
               <div key={day.day} className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => toggleDay(day.day)}
-                  className={`w-12 text-xs font-semibold py-1.5 rounded-lg border transition ${
+                  className={`w-12 shrink-0 text-xs font-semibold py-1.5 rounded-lg border transition ${
                     day.active
                       ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
                       : 'bg-white text-gray-400 border-gray-200'
@@ -241,17 +240,19 @@ export default function NewStudentPage() {
                 </button>
 
                 {day.active && (
-                  <div className="flex items-center gap-2 flex-1">
+                  <div className="flex items-center gap-3 flex-1">
                     <input
-                      type="number"
-                      value={day.minutes}
-                      onChange={e => setMinutes(day.day, Number(e.target.value))}
+                      type="range"
                       min={5}
                       max={240}
                       step={5}
-                      className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition text-center"
+                      value={day.minutes}
+                      onChange={e => setMinutes(day.day, Number(e.target.value))}
+                      className="flex-1 accent-[#1E3A5F]"
                     />
-                    <span className="text-xs text-gray-400">minutos</span>
+                    <span className="text-xs font-bold text-[#1E3A5F] w-14 text-right shrink-0">
+                      {day.minutes} min
+                    </span>
                   </div>
                 )}
               </div>
@@ -264,9 +265,9 @@ export default function NewStudentPage() {
           <textarea
             value={notes}
             onChange={e => setNotes(e.target.value)}
-            placeholder="Anotações sobre o aluno..."
+            placeholder="Ex: Aluno iniciante, preferência por jazz"
             rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition resize-none"
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition resize-none placeholder:text-gray-300"
           />
         </div>
 

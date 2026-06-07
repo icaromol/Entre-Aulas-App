@@ -468,7 +468,7 @@ export default function PlanejamentoPage() {
             </Button>
           </div>
         ) : (
-          <div className="max-w-xl mx-auto space-y-5">
+          <div className="space-y-5">
 
             {/* Nível do aluno detectado */}
             <div className="bg-[#D6E4F0]/50 border border-[#4A90C4]/20 rounded-2xl px-5 py-3 flex items-center gap-3">

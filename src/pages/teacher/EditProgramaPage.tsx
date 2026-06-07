@@ -92,7 +92,7 @@ export default function EditProgramaPage() {
         <h1 className="text-xl font-bold text-[#1E3A5F]">Editar programa</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5 max-w-xl mx-auto">
+      <form onSubmit={handleSubmit} className="space-y-5">
 
         {/* Tipo */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">

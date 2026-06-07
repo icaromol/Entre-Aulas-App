@@ -78,7 +78,7 @@ export default function EditExercisePage() {
         <h1 className="text-xl font-bold text-[#1E3A5F]">Editar exercício</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5 max-w-xl mx-auto">
+      <form onSubmit={handleSubmit} className="space-y-5">
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdSchool size={15} />Identificação</h2>
