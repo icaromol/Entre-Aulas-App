@@ -12,27 +12,23 @@ const TYPE_EMOJI: Record<string, string> = {
   gravacao: '🎙️', exame: '📋', participacao: '🎵', outro: '📁',
 }
 
-function itemDisplay(item: PlanItem): { title: string; subtitle: string; icon: string } {
+function itemDisplay(item: PlanItem): { title: string; subtitle: string; maintenanceIcon: boolean } {
   if (item.is_maintenance) {
-    return {
-      title: 'Manutenção',
-      subtitle: item.piece?.title ?? '—',
-      icon: '🔄',
-    }
+    return { title: 'Manutenção', subtitle: item.piece?.title ?? '—', maintenanceIcon: true }
   }
-  if (item.checklist_item) {
-    return {
-      title: item.checklist_item.title,
-      subtitle: item.checklist_item.piece?.title ?? item.checklist_item.exercise?.title ?? '—',
-      icon: item.checklist_item.piece ? '🎵' : '🎯',
-    }
+  if (item.exercise_id && item.exercise) {
+    return { title: item.exercise.title, subtitle: item.programa?.title ?? '—', maintenanceIcon: false }
   }
-  // fallback (legacy item without checklist_item)
-  return {
-    title: item.piece?.title ?? '—',
-    subtitle: item.piece?.composer ?? '',
-    icon: '🎵',
+  if (item.piece_id && item.piece) {
+    return { title: item.piece.title, subtitle: item.programa?.title ?? '—', maintenanceIcon: false }
   }
+  return { title: '—', subtitle: '', maintenanceIcon: false }
+}
+
+function itemCardClass(item: PlanItem): string {
+  if (item.is_maintenance) return 'bg-white border-gray-100'
+  if (item.exercise_id)    return 'bg-rose-50 border-rose-100'
+  return 'bg-[#D6E4F0]/30 border-[#D6E4F0]'
 }
 
 export default function TodayPage() {
@@ -86,14 +82,10 @@ export default function TodayPage() {
     const { data: planItems } = await supabase
       .from('plan_items')
       .select(`
-        id, plan_id, day_of_week, piece_id, checklist_item_id, program_id,
+        id, plan_id, day_of_week, piece_id, exercise_id, program_id,
         duration_minutes, position, is_done, done_at, is_maintenance,
-        checklist_item:checklist_items(
-          id, title,
-          piece:pieces(title, composer),
-          exercise:exercises(title, category)
-        ),
         piece:pieces(title, composer),
+        exercise:exercises(title, category),
         programa:programas(title, type)
       `)
       .eq('plan_id', plan.id)
@@ -182,14 +174,14 @@ export default function TodayPage() {
       ) : (
         <div className="space-y-3">
           {items.map(item => {
-            const { title, subtitle, icon } = itemDisplay(item)
+            const { title, subtitle, maintenanceIcon } = itemDisplay(item)
             const prog = item.programa
 
             return (
               <div
                 key={item.id}
-                className={`bg-white rounded-2xl border transition ${
-                  item.is_done ? 'border-gray-100 opacity-60' : 'border-gray-100'
+                className={`rounded-2xl border transition ${itemCardClass(item)} ${
+                  item.is_done ? 'opacity-60' : ''
                 }`}
               >
                 <div className="px-4 py-4 flex items-start gap-3">
@@ -209,8 +201,8 @@ export default function TodayPage() {
                     )}
                   </button>
 
-                  {/* Ícone */}
-                  <span className="text-base mt-0.5 shrink-0">{icon}</span>
+                  {/* Ícone manutenção */}
+                  {maintenanceIcon && <span className="text-base mt-0.5 shrink-0">🔄</span>}
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">

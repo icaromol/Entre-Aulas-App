@@ -1,19 +1,34 @@
-// ─── Input Types ─────────────────────────────────────────────────────────────
+// ─── Pomodoro por nível ───────────────────────────────────────────────────────
+
+const POMODORO = {
+  beginner:     { work: 10, break: 5, cycle: 15 },
+  intermediate: { work: 15, break: 5, cycle: 20 },
+  advanced:     { work: 25, break: 5, cycle: 30 },
+} as const
+
+const EXERCISE_MAX_PCT = 0.20   // cap de exercícios: 20% dos slots
+
+// ─── Input Types ──────────────────────────────────────────────────────────────
 
 export interface DayAvailability {
-  dayOfWeek: number        // 0=Sun, 1=Mon ... 6=Sat
+  dayOfWeek: number          // 0=Dom, 1=Seg … 6=Sáb
   minutesAvailable: number
 }
 
-export interface ResolvedProgramItem {
-  checklistItemId: string
-  checklistItemTitle: string
-  sourceType: 'piece' | 'exercise'
-  sourceId: string
-  sourceTitle: string
-  sourceCompletion: number    // 0–100 (piece.completion_pct, or 0 for exercises)
-  sourceDifficulty: number | null
-  isOptional: boolean
+export interface ProgramPiece {
+  pieceId: string
+  pieceTitle: string
+  difficulty: number | null
+  completionPct: number      // 0–100
+  status: string             // 'in_progress' | 'future' | 'completed'
+  priorityOverride: number | null
+}
+
+export interface ProgramExercise {
+  exerciseId: string
+  exerciseTitle: string
+  difficulty: number | null
+  category: string
   priorityOverride: number | null
 }
 
@@ -22,27 +37,26 @@ export interface ResolvedProgram {
   title: string
   type: string
   deadline: string | null
-  weight: number              // 1–100; sum across all programs must be 100
-  items: ResolvedProgramItem[]
+  weight: number             // 1–100; soma dos selecionados = 100
+  pieces: ProgramPiece[]
+  exercises: ProgramExercise[]
 }
 
 export interface MaintenancePiece {
   pieceId: string
   pieceTitle: string
   difficulty: number | null
-  lastMaintenanceOn: string | null  // YYYY-MM-DD or null (never maintained)
 }
 
 export interface GeneratorInput {
-  weekStart: string                // YYYY-MM-DD (always Monday)
-  horizon: 'week' | 'biweek' | 'month' | number  // number = weeks
-  availability: DayAvailability[]  // only active days (minutesAvailable > 0)
+  studentLevel: 'beginner' | 'intermediate' | 'advanced'
+  weekStart: string          // YYYY-MM-DD (sempre segunda-feira)
+  horizon: 'week' | 'biweek' | 'month' | number
+  availability: DayAvailability[]
   programs: ResolvedProgram[]
-  completedItemIds: Set<string>    // checklist_item_ids already completed
-  includeRevision: boolean
   maintenance: {
     enabled: boolean
-    budgetPercent: number          // default 20 (% of total time for maintenance)
+    budgetPercent: number    // 10–40
     completedPieces: MaintenancePiece[]
   }
 }
@@ -50,16 +64,13 @@ export interface GeneratorInput {
 // ─── Output Types ─────────────────────────────────────────────────────────────
 
 export interface PlannedTask {
-  checklistItemId: string | null   // null for maintenance tasks
-  checklistItemTitle: string
+  pieceId: string | null
+  exerciseId: string | null
   sourceType: 'piece' | 'exercise' | 'maintenance'
-  sourceId: string
   sourceTitle: string
   programId: string | null
   programTitle: string
   durationMinutes: number
-  isRevision: boolean
-  isOptional: boolean
   isMaintenance: boolean
   score: number
 }
@@ -69,6 +80,7 @@ export interface GeneratedDay {
   dayOfWeek: number
   date: string
   minutesAvailable: number
+  slots: number              // quantos ciclos pomodoro cabem no dia
   minutesUsed: number
   tasks: PlannedTask[]
 }
@@ -76,12 +88,12 @@ export interface GeneratedDay {
 export interface GeneratedPlan {
   days: GeneratedDay[]
   unscheduled: PlannedTask[]
+  pomodoroWork: number       // minutos de trabalho por slot (10 | 15 | 25)
   stats: {
     totalTasks: number
     scheduledTasks: number
     periodsGenerated: number
     totalMinutes: number
-    minutesByProgram: Record<string, number>
   }
 }
 
@@ -89,13 +101,11 @@ export interface GeneratedPlan {
 
 type ScoredTask = PlannedTask & { combinedScore: number }
 
-const MIN_TASK_MIN = 5
-
-function resolveHorizon(horizon: GeneratorInput['horizon']): number {
-  if (horizon === 'week')   return 1
-  if (horizon === 'biweek') return 2
-  if (horizon === 'month')  return 4
-  return typeof horizon === 'number' ? Math.max(1, horizon) : 1
+function resolveHorizon(h: GeneratorInput['horizon']): number {
+  if (h === 'week')   return 1
+  if (h === 'biweek') return 2
+  if (h === 'month')  return 4
+  return typeof h === 'number' ? Math.max(1, h) : 1
 }
 
 function addDays(dateStr: string, n: number): string {
@@ -108,37 +118,34 @@ function buildHorizonDays(
   weekStart: string,
   weeks: number,
   availability: DayAvailability[],
+  workMin: number,
 ): GeneratedDay[] {
   const days: GeneratedDay[] = []
-
   for (let w = 0; w < weeks; w++) {
     const monday = addDays(weekStart, w * 7)
-
     for (const avail of availability) {
-      // dayOfWeek 1=Mon ... 6=Sat, 0=Sun
-      // weekStart is always Monday (dayOfWeek=1)
       const offset = avail.dayOfWeek === 0 ? 6 : avail.dayOfWeek - 1
+      // Quantos slots de workMin cabem no tempo disponível
+      const slots = Math.max(0, Math.floor(avail.minutesAvailable / workMin))
       days.push({
         weekStart: monday,
         dayOfWeek: avail.dayOfWeek,
         date: addDays(monday, offset),
         minutesAvailable: avail.minutesAvailable,
+        slots,
         minutesUsed: 0,
         tasks: [],
       })
     }
   }
-
   return days.sort((a, b) => a.date.localeCompare(b.date))
 }
 
 function calcUrgencyBonus(deadline: string | null): number {
   if (!deadline) return 0
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = new Date(); today.setHours(0, 0, 0, 0)
   const target = new Date(deadline + 'T00:00:00')
   const days = Math.ceil((target.getTime() - today.getTime()) / 86_400_000)
-
   if (days < 7)  return 0.40
   if (days < 15) return 0.30
   if (days < 31) return 0.20
@@ -146,204 +153,209 @@ function calcUrgencyBonus(deadline: string | null): number {
   return 0
 }
 
-function calcItemScore(
-  item: ResolvedProgramItem,
+function calcPieceScore(
+  difficulty: number | null,
+  completionPct: number,
   deadline: string | null,
+  priorityOverride: number | null,
 ): number {
-  const difficultyRaw = item.priorityOverride !== null
-    ? item.priorityOverride / 10
-    : (item.sourceDifficulty ?? 5) / 10
-
-  const incompletion = 1 - item.sourceCompletion / 100
-  const urgency = calcUrgencyBonus(deadline)
-
-  let score = 0.50 * difficultyRaw + 0.50 * incompletion + urgency
-
-  if (item.isOptional) score *= 0.30
-
-  return Math.min(score, 1.5)
+  const diff = (priorityOverride !== null ? priorityOverride : (difficulty ?? 5)) / 10
+  const incompletion = 1 - completionPct / 100
+  return Math.min(1.5, 0.5 * diff + 0.5 * incompletion + calcUrgencyBonus(deadline))
 }
 
-function calcFrequencyPerWeek(score: number, daysPerWeek: number): number {
-  return Math.min(daysPerWeek, Math.max(1, Math.round(score * 3)))
+function calcExerciseScore(difficulty: number | null, priorityOverride: number | null): number {
+  const diff = (priorityOverride !== null ? priorityOverride : (difficulty ?? 5)) / 10
+  return Math.min(1.0, 0.5 * diff + 0.5)
 }
 
-// Can this day accept one more task without going below MIN_TASK_MIN per task?
-function canAcceptTask(day: GeneratedDay): boolean {
-  const totalCount = day.tasks.length + 1
-  return day.minutesAvailable / totalCount >= MIN_TASK_MIN
+// Constrói fila com exatamente `budget` ocorrências, distribuídas proporcionalmente ao score.
+// Peças de maior score repetem mais; todos os slots do aluno são preenchidos.
+function buildQueue(items: ScoredTask[], budget: number): ScoredTask[] {
+  if (items.length === 0 || budget === 0) return []
+
+  const sorted     = [...items].sort((a, b) => b.combinedScore - a.combinedScore)
+  const totalScore = sorted.reduce((s, i) => s + i.combinedScore, 0) || sorted.length
+  const reps: ScoredTask[] = []
+
+  // Alocação proporcional ao score
+  for (const item of sorted) {
+    const freq = Math.max(1, Math.round(item.combinedScore / totalScore * budget))
+    for (let i = 0; i < freq; i++) reps.push({ ...item })
+  }
+
+  // Preenche slots restantes ciclando do maior para o menor score
+  let ci = 0
+  while (reps.length < budget) {
+    reps.push({ ...sorted[ci % sorted.length] })
+    ci++
+  }
+
+  reps.sort((a, b) => b.combinedScore - a.combinedScore)
+  return reps.slice(0, budget)
 }
 
-// ─── Main Generator ───────────────────────────────────────────────────────────
+// ─── Gerador principal ────────────────────────────────────────────────────────
 
 export function generatePlan(input: GeneratorInput): GeneratedPlan {
   const weeks = resolveHorizon(input.horizon)
   const activeDays = input.availability.filter(d => d.minutesAvailable > 0)
+  const pomo = POMODORO[input.studentLevel]
 
   if (activeDays.length === 0 || input.programs.length === 0) {
     return {
-      days: [],
-      unscheduled: [],
-      stats: { totalTasks: 0, scheduledTasks: 0, periodsGenerated: weeks, totalMinutes: 0, minutesByProgram: {} },
+      days: [], unscheduled: [], pomodoroWork: pomo.work,
+      stats: { totalTasks: 0, scheduledTasks: 0, periodsGenerated: weeks, totalMinutes: 0 },
     }
   }
 
-  const days = buildHorizonDays(input.weekStart, weeks, activeDays)
+  const days = buildHorizonDays(input.weekStart, weeks, activeDays, pomo.work)
+  const totalSlots = days.reduce((s, d) => s + d.slots, 0)
 
-  // ── 1. Build study task list ──────────────────────────────────────────────
+  if (totalSlots === 0) {
+    return {
+      days, unscheduled: [], pomodoroWork: pomo.work,
+      stats: { totalTasks: 0, scheduledTasks: 0, periodsGenerated: weeks, totalMinutes: 0 },
+    }
+  }
 
-  const studyTasks: ScoredTask[] = []
+  // ── 1. Coletar e pontuar itens ──────────────────────────────────────────────
+
+  // Deduplica por ID mantendo o maior combined score
+  const pieceMap    = new Map<string, ScoredTask>()
+  const exerciseMap = new Map<string, ScoredTask>()
 
   for (const prog of input.programs) {
-    for (const item of prog.items) {
-      const done = input.completedItemIds.has(item.checklistItemId)
-      if (done && !input.includeRevision) continue
+    const progWeight = prog.weight / 100
 
-      const score = calcItemScore(item, prog.deadline)
-      const isRevision = done && input.includeRevision
+    for (const p of prog.pieces) {
+      if (p.status === 'completed') continue   // tratado em manutenção
+      const score         = calcPieceScore(p.difficulty, p.completionPct, prog.deadline, p.priorityOverride)
+      const combinedScore = score * progWeight
+      const existing      = pieceMap.get(p.pieceId)
+      if (!existing || combinedScore > existing.combinedScore) {
+        pieceMap.set(p.pieceId, {
+          pieceId: p.pieceId, exerciseId: null,
+          sourceType: 'piece', sourceTitle: p.pieceTitle,
+          programId: prog.id, programTitle: prog.title,
+          durationMinutes: pomo.work,
+          isMaintenance: false, score, combinedScore,
+        })
+      }
+    }
 
-      // revision items get halved score (less urgent since already completed)
-      const effectiveScore = isRevision ? score * 0.50 : score
-      const freqPerWeek = calcFrequencyPerWeek(effectiveScore, activeDays.length)
-
-      for (let i = 0; i < freqPerWeek * weeks; i++) {
-        studyTasks.push({
-          checklistItemId: item.checklistItemId,
-          checklistItemTitle: item.checklistItemTitle,
-          sourceType: item.sourceType,
-          sourceId: item.sourceId,
-          sourceTitle: item.sourceTitle,
-          programId: prog.id,
-          programTitle: prog.title,
-          durationMinutes: 0,
-          isRevision,
-          isOptional: item.isOptional,
-          isMaintenance: false,
-          score: effectiveScore,
-          combinedScore: effectiveScore * (prog.weight / 100),
+    for (const e of prog.exercises) {
+      const score         = calcExerciseScore(e.difficulty, e.priorityOverride)
+      const combinedScore = score * progWeight
+      const existing      = exerciseMap.get(e.exerciseId)
+      if (!existing || combinedScore > existing.combinedScore) {
+        exerciseMap.set(e.exerciseId, {
+          pieceId: null, exerciseId: e.exerciseId,
+          sourceType: 'exercise', sourceTitle: e.exerciseTitle,
+          programId: prog.id, programTitle: prog.title,
+          durationMinutes: pomo.work,
+          isMaintenance: false, score, combinedScore,
         })
       }
     }
   }
 
-  // Mandatory tasks first, then by combined score DESC
-  studyTasks.sort((a, b) => {
-    if (a.isOptional !== b.isOptional) return a.isOptional ? 1 : -1
-    return b.combinedScore - a.combinedScore
-  })
+  // ── 2. Manutenção ───────────────────────────────────────────────────────────
 
-  // ── 2. Build maintenance task list ────────────────────────────────────────
-
-  const mainTasks: ScoredTask[] = []
-
+  const mainItems: ScoredTask[] = []
   if (input.maintenance.enabled && input.maintenance.completedPieces.length > 0) {
-    const totalMins = days.reduce((s, d) => s + d.minutesAvailable, 0)
-    const mainBudget = totalMins * (input.maintenance.budgetPercent / 100)
-    const totalDiff = input.maintenance.completedPieces.reduce(
-      (s, p) => s + (p.difficulty ?? 5), 0
-    )
-
-    // Sort: never-maintained first, then oldest last_maintenance_on
-    const sorted = [...input.maintenance.completedPieces].sort((a, b) => {
-      if (!a.lastMaintenanceOn && !b.lastMaintenanceOn) return 0
-      if (!a.lastMaintenanceOn) return -1
-      if (!b.lastMaintenanceOn) return 1
-      return a.lastMaintenanceOn.localeCompare(b.lastMaintenanceOn)
-    })
-
-    for (const piece of sorted) {
-      const w = totalDiff > 0 ? (piece.difficulty ?? 5) / totalDiff : 1 / sorted.length
-      const pieceMins = Math.max(MIN_TASK_MIN, Math.round(mainBudget * w))
-      // one session per week for each piece
-      const sessMin = Math.max(MIN_TASK_MIN, Math.round(pieceMins / weeks))
-
-      for (let i = 0; i < weeks; i++) {
-        mainTasks.push({
-          checklistItemId: null,
-          checklistItemTitle: 'Manutenção',
-          sourceType: 'maintenance',
-          sourceId: piece.pieceId,
-          sourceTitle: piece.pieceTitle,
-          programId: null,
-          programTitle: 'Manutenção',
-          durationMinutes: sessMin,
-          isRevision: false,
-          isOptional: false,
-          isMaintenance: true,
-          score: w,
-          combinedScore: w,
-        })
-      }
+    for (const p of input.maintenance.completedPieces) {
+      const score = calcPieceScore(p.difficulty, 100, null, null) * 0.35
+      mainItems.push({
+        pieceId: p.pieceId, exerciseId: null,
+        sourceType: 'maintenance', sourceTitle: p.pieceTitle,
+        programId: null, programTitle: 'Manutenção',
+        durationMinutes: pomo.work,
+        isMaintenance: true, score, combinedScore: score,
+      })
     }
+    mainItems.sort((a, b) => b.combinedScore - a.combinedScore)
   }
 
-  // ── 3. Round-robin assignment ─────────────────────────────────────────────
+  // ── 3. Orçamentos de slots ──────────────────────────────────────────────────
+
+  const exerciseBudget = Math.min(
+    Math.ceil(totalSlots * EXERCISE_MAX_PCT),
+    exerciseMap.size * weeks * activeDays.length,
+  )
+  const mainBudget = input.maintenance.enabled
+    ? Math.min(Math.floor(totalSlots * input.maintenance.budgetPercent / 100), mainItems.length * weeks)
+    : 0
+  const pieceBudget = Math.max(0, totalSlots - exerciseBudget - mainBudget)
+
+  // ── 4. Construir fila de tarefas ────────────────────────────────────────────
+
+  const pieceItems    = [...pieceMap.values()].sort((a, b) => b.combinedScore - a.combinedScore)
+  const exerciseItems = [...exerciseMap.values()].sort((a, b) => b.combinedScore - a.combinedScore)
+
+  const pieceQueue    = buildQueue(pieceItems,    pieceBudget)
+  const exerciseQueue = buildQueue(exerciseItems, exerciseBudget)
+  const mainQueue     = buildQueue(mainItems,     mainBudget)
+
+  // Intercala exercícios uniformemente: peças → exercícios → manutenção
+  const fullQueue: ScoredTask[] = [...pieceQueue, ...exerciseQueue, ...mainQueue]
+  fullQueue.sort((a, b) => b.combinedScore - a.combinedScore)
+
+  // ── 5. Distribuição round-robin ─────────────────────────────────────────────
 
   const result: GeneratedDay[] = days.map(d => ({ ...d, tasks: [], minutesUsed: 0 }))
   const unscheduled: PlannedTask[] = []
 
-  function assignRoundRobin(tasks: ScoredTask[], startIdx: number): number {
-    let dayIdx = startIdx
-    for (const task of tasks) {
-      let placed = false
-      for (let attempt = 0; attempt < result.length; attempt++) {
-        const idx = (dayIdx + attempt) % result.length
-        if (canAcceptTask(result[idx])) {
-          result[idx].tasks.push(task)
-          dayIdx = (idx + 1) % result.length
-          placed = true
-          break
-        }
+  let dayIdx = 0
+  for (const task of fullQueue) {
+    let placed = false
+    for (let attempt = 0; attempt < result.length; attempt++) {
+      const idx = (dayIdx + attempt) % result.length
+      const day = result[idx]
+      if (day.tasks.length < day.slots) {
+        day.tasks.push(task)
+        day.minutesUsed += task.durationMinutes
+        dayIdx = (idx + 1) % result.length
+        placed = true
+        break
       }
-      if (!placed) unscheduled.push(task)
     }
-    return dayIdx
+    if (!placed) unscheduled.push(task)
   }
 
-  let cursor = 0
-  cursor = assignRoundRobin(studyTasks, cursor)
-  assignRoundRobin(mainTasks, cursor)
-
-  // ── 4. Recalculate durations per day ─────────────────────────────────────
-
-  const minutesByProgram: Record<string, number> = {}
+  // ── 6. Aglutinar duplicatas por dia ────────────────────────────────────────
+  // Mesma peça/exercício no mesmo dia → 1 card com a soma dos minutos
 
   for (const day of result) {
-    if (day.tasks.length === 0) continue
-
-    const mainFixed = day.tasks
-      .filter(t => t.isMaintenance)
-      .reduce((s, t) => s + t.durationMinutes, 0)
-
-    const studyBudget = Math.max(0, day.minutesAvailable - mainFixed)
-    const studyCount = day.tasks.filter(t => !t.isMaintenance).length
-    const studyPerTask = studyCount > 0
-      ? Math.max(MIN_TASK_MIN, Math.floor(studyBudget / studyCount))
-      : 0
-
-    day.tasks = day.tasks.map(t => {
-      if (t.isMaintenance) return t
-      const dur = studyPerTask
-      if (t.programId) {
-        minutesByProgram[t.programId] = (minutesByProgram[t.programId] ?? 0) + dur
+    const merged = new Map<string, PlannedTask>()
+    for (const task of day.tasks) {
+      const key = task.isMaintenance
+        ? `maint:${task.pieceId}`
+        : task.pieceId
+          ? `piece:${task.pieceId}`
+          : task.exerciseId
+            ? `ex:${task.exerciseId}`
+            : `custom:${task.sourceTitle}`
+      const existing = merged.get(key)
+      if (existing) {
+        existing.durationMinutes += task.durationMinutes
+      } else {
+        merged.set(key, { ...task })
       }
-      return { ...t, durationMinutes: dur }
-    })
-
+    }
+    day.tasks = [...merged.values()]
     day.minutesUsed = day.tasks.reduce((s, t) => s + t.durationMinutes, 0)
   }
-
-  const scheduledCount = (studyTasks.length + mainTasks.length) - unscheduled.length
 
   return {
     days: result,
     unscheduled,
+    pomodoroWork: pomo.work,
     stats: {
-      totalTasks: studyTasks.length + mainTasks.length,
-      scheduledTasks: scheduledCount,
+      totalTasks: fullQueue.length,
+      scheduledTasks: fullQueue.length - unscheduled.length,
       periodsGenerated: weeks,
       totalMinutes: result.reduce((s, d) => s + d.minutesUsed, 0),
-      minutesByProgram,
     },
   }
 }

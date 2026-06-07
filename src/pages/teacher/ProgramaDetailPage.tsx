@@ -27,9 +27,7 @@ const typeBadgeColor: Record<string, string> = {
 }
 
 const categoryLabel: Record<string, string> = {
-  technique: 'Técnica', ear_training: 'Percepção', harmony: 'Harmonia',
-  history: 'História', improvisation: 'Improvisação',
-  body_awareness: 'Consciência corporal', other: 'Outro',
+  technique: 'Técnica', other: 'Outro',
 }
 
 interface AvailablePiece {

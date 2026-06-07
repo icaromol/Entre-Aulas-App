@@ -7,12 +7,8 @@ import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
 const CATEGORIES = [
-  { value: 'technique',     label: 'Técnica' },
-  { value: 'ear_training',  label: 'Percepção musical' },
-  { value: 'harmony',       label: 'Harmonia' },
-  { value: 'history',       label: 'História da música' },
-  { value: 'improvisation', label: 'Improvisação' },
-  { value: 'other',         label: 'Outro' },
+  { value: 'technique', label: 'Técnica' },
+  { value: 'other',     label: 'Outro' },
 ]
 
 const DEFAULT_EXERCISE_CHECKLIST = [

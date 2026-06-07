@@ -23,8 +23,7 @@ interface PieceItem { id: string; title: string; composer: string | null }
 interface ExerciseItem { id: string; title: string; category: string }
 
 const exerciseCategoryLabel: Record<string, string> = {
-  technique: 'Técnica', ear_training: 'Percepção', harmony: 'Harmonia',
-  history: 'História', improvisation: 'Improvisação', other: 'Outro',
+  technique: 'Técnica', other: 'Outro',
 }
 
 export default function NewProgramaPage() {

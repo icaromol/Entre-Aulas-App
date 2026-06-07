@@ -143,10 +143,6 @@ const pieceStatusLabel: Record<string, string> = {
 
 const exerciseCategoryLabel: Record<string, string> = {
   technique: "Técnica",
-  ear_training: "Percepção",
-  harmony: "Harmonia",
-  history: "História",
-  improvisation: "Improvisação",
   other: "Outro",
 };
 

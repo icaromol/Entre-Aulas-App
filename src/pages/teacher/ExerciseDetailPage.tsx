@@ -27,10 +27,6 @@ interface ChecklistItem {
 
 const categoryLabel: Record<string, string> = {
   technique: 'Técnica',
-  ear_training: 'Percepção musical',
-  harmony: 'Harmonia',
-  history: 'História da música',
-  improvisation: 'Improvisação',
   other: 'Outro',
 }
 

@@ -3,7 +3,7 @@ export interface PlanItem {
   plan_id: string
   day_of_week: number
   piece_id: string | null
-  checklist_item_id: string | null
+  exercise_id: string | null
   program_id: string | null
   duration_minutes: number | null
   position: number
@@ -11,13 +11,8 @@ export interface PlanItem {
   done_at: string | null
   is_maintenance: boolean
   // joined
-  checklist_item?: {
-    id: string
-    title: string
-    piece?: { title: string; composer: string | null } | null
-    exercise?: { title: string; category: string } | null
-  } | null
   piece?: { title: string; composer: string | null } | null
+  exercise?: { title: string; category: string } | null
   programa?: { title: string; type: string } | null
 }
 

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import {
   MdArrowBack, MdAutoAwesome, MdBalance, MdCheck,
   MdCheckBox, MdCheckBoxOutlineBlank, MdWarningAmber, MdAdd, MdClose,
+  MdSchool, MdMusicNote, MdLibraryMusic, MdMic, MdFolder,
 } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
@@ -15,8 +16,6 @@ import {
   type PlannedTask,
   type DayAvailability,
   type ResolvedProgram,
-  type ResolvedProgramItem,
-  type MaintenancePiece,
 } from '@/lib/planGenerator'
 import type { Programa } from '@/types/programs'
 
@@ -33,11 +32,20 @@ const TYPE_EMOJI: Record<string, string> = {
   gravacao: '🎙️', exame: '📋', participacao: '🎵', outro: '📁',
 }
 
-// Mon=1 … Sat=6, Sun=0 — display order Mon→Sun
-const DAY_ORDER   = [1, 2, 3, 4, 5, 6, 0]
-const DAY_LABELS  = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+function programIcon(type: string, size = 18) {
+  const icons: Record<string, React.ElementType> = {
+    regular: MdSchool, recital: MdMusicNote, concerto: MdLibraryMusic,
+    show: MdMic, gravacao: MdMic, exame: MdSchool,
+    participacao: MdMusicNote, outro: MdFolder,
+  }
+  const Icon = icons[type] ?? MdLibraryMusic
+  return <Icon size={size} className="text-white" />
+}
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const DAY_ORDER  = [1, 2, 3, 4, 5, 6, 0]
+const DAY_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function dayDateFromWeekStart(weekStart: string, dayOfWeek: number): string {
   const offset = dayOfWeek === 0 ? 6 : dayOfWeek - 1
@@ -50,22 +58,23 @@ function shortDate(isoDate: string): string {
   return new Date(isoDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 }
 
-function taskIcon(task: PlannedTask) {
-  if (task.isMaintenance)          return '🔄'
-  if (task.sourceType === 'exercise') return '🎯'
-  return '🎵'
+function taskCardClass(task: PlannedTask) {
+  if (task.isMaintenance)             return 'bg-gray-100 hover:bg-gray-200/70'
+  if (task.sourceType === 'exercise') return 'bg-rose-50 hover:bg-rose-100/80'
+  return 'bg-[#D6E4F0]/60 hover:bg-[#D6E4F0]'
 }
 
 function taskTitle(task: PlannedTask) {
-  return task.isMaintenance
-    ? `Manutenção · ${task.sourceTitle}`
-    : task.checklistItemTitle ?? task.sourceTitle
+  return task.isMaintenance ? `Manutenção · ${task.sourceTitle}` : task.sourceTitle
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Picker item type ─────────────────────────────────────────────────────────
 
 interface PickerItem {
-  item: ResolvedProgramItem
+  pieceId: string | null
+  exerciseId: string | null
+  sourceType: 'piece' | 'exercise'
+  title: string
   programId: string
   programTitle: string
 }
@@ -76,54 +85,56 @@ export default function PlanejamentoPage() {
   const { studentId } = useParams()
   const navigate = useNavigate()
 
-  // ── Step ──────────────────────────────────────────────────────────────────
   const [step, setStep] = useState<'config' | 'preview'>('config')
 
-  // ── Config state ──────────────────────────────────────────────────────────
+  // Config state
   const [programs, setPrograms]               = useState<Programa[]>([])
   const [selectedIds, setSelectedIds]         = useState<Set<string>>(new Set())
   const [weights, setWeights]                 = useState<Record<string, number>>({})
   const [horizon, setHorizon]                 = useState<'week' | 'biweek' | 'month'>('week')
-  const [includeRevision, setIncludeRevision] = useState(false)
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false)
   const [maintenanceBudget, setMaintenanceBudget]   = useState(20)
   const [hasCompletedPieces, setHasCompletedPieces] = useState(false)
+  const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
 
-  // ── Preview editable state ────────────────────────────────────────────────
-  const [editableDays, setEditableDays]   = useState<GeneratedDay[]>([])
-  const [unscheduled, setUnscheduled]     = useState<PlannedTask[]>([])
+  // Preview state
+  const [editableDays, setEditableDays]       = useState<GeneratedDay[]>([])
+  const [unscheduled, setUnscheduled]         = useState<PlannedTask[]>([])
   const [selectedWeekIdx, setSelectedWeekIdx] = useState(0)
-  const [pickerItems, setPickerItems]     = useState<PickerItem[]>([])
+  const [pickerItems, setPickerItems]         = useState<PickerItem[]>([])
+  const [pomodoroWork, setPomodoroWork]       = useState(15)
 
   // Edit-task sheet
   const [editingTask, setEditingTask] = useState<{ date: string; idx: number } | null>(null)
 
   // Add-task sheet
-  const [addingToDay, setAddingToDay] = useState<{ date: string; dow: number; weekStart: string } | null>(null)
-  const [addTab, setAddTab]           = useState<'program' | 'custom'>('program')
-  const [addCustomTitle, setAddCustomTitle]     = useState('')
-  const [addCustomDuration, setAddCustomDuration] = useState(15)
+  const [addingToDay, setAddingToDay]               = useState<{ date: string; dow: number; weekStart: string } | null>(null)
+  const [addTab, setAddTab]                         = useState<'program' | 'custom'>('program')
+  const [addCustomTitle, setAddCustomTitle]         = useState('')
+  const [addCustomDuration, setAddCustomDuration]   = useState(15)
 
-  // ── Async state ───────────────────────────────────────────────────────────
-  const [loading, setLoading]     = useState(true)
+  // Async state
+  const [loading, setLoading]       = useState(true)
   const [generating, setGenerating] = useState(false)
-  const [saving, setSaving]       = useState(false)
-  const [error, setError]         = useState('')
+  const [saving, setSaving]         = useState(false)
+  const [error, setError]           = useState('')
 
   const weekStart = formatWeekStart(getMonday(new Date()))
 
   useEffect(() => { if (studentId) fetchPrograms() }, [studentId])
 
-  // ── Data loading ──────────────────────────────────────────────────────────
+  // ── Data loading ────────────────────────────────────────────────────────────
 
   async function fetchPrograms() {
-    const [{ data: progs }, { data: donePieces }] = await Promise.all([
+    const [{ data: progs }, { data: donePieces }, { data: student }] = await Promise.all([
       supabase.from('programas').select('*').eq('student_id', studentId!).neq('status', 'archived').order('created_at'),
-      supabase.from('pieces').select('id').eq('student_id', studentId!).eq('completion_pct', 100),
+      supabase.from('pieces').select('id').eq('student_id', studentId!).eq('status', 'completed'),
+      supabase.from('students').select('level').eq('id', studentId!).single(),
     ])
     const list = progs ?? []
     setPrograms(list)
     setHasCompletedPieces((donePieces ?? []).length > 0)
+    if (student?.level) setStudentLevel(student.level as 'beginner' | 'intermediate' | 'advanced')
     const allIds = new Set(list.map(p => p.id))
     setSelectedIds(allIds)
     distributeWeights(allIds, list)
@@ -151,7 +162,7 @@ export default function PlanejamentoPage() {
   const totalWeight = [...selectedIds].reduce((s, id) => s + (weights[id] ?? 0), 0)
   const weightOk    = totalWeight === 100 && selectedIds.size > 0
 
-  // ── Generate ──────────────────────────────────────────────────────────────
+  // ── Generate ────────────────────────────────────────────────────────────────
 
   async function handleGenerate() {
     setError('')
@@ -169,24 +180,31 @@ export default function PlanejamentoPage() {
 
       if (availability.length === 0) {
         setError('O aluno não tem dias de disponibilidade configurados.')
+        setGenerating(false)
         return
       }
 
-      const selected = programs.filter(p => selectedIds.has(p.id))
+      const selected      = programs.filter(p => selectedIds.has(p.id))
       const nonRegularIds = selected.filter(p => p.type !== 'regular').map(p => p.id)
 
+      // Busca todas as peças e exercícios do aluno
       const [{ data: allPieces }, { data: allExercises }] = await Promise.all([
-        supabase.from('pieces').select('id, title, composer, difficulty, completion_pct, status').eq('student_id', studentId!).in('status', ['in_progress', 'completed']),
-        supabase.from('exercises').select('id, title, category, difficulty').eq('student_id', studentId!),
+        supabase.from('pieces')
+          .select('id, title, difficulty, completion_pct, status')
+          .eq('student_id', studentId!)
+          .in('status', ['in_progress', 'future', 'completed']),
+        supabase.from('exercises')
+          .select('id, title, category, difficulty')
+          .eq('student_id', studentId!)
+          .eq('status', 'active'),
       ])
 
-      type PieceRow    = NonNullable<typeof allPieces>[0]
-      type ExerciseRow = NonNullable<typeof allExercises>[0]
-      const piecesMap: Record<string, PieceRow>    = {}
-      const exercisesMap: Record<string, ExerciseRow> = {}
-      ;(allPieces ?? []).forEach(p => { piecesMap[p.id] = p })
+      const piecesMap:    Record<string, NonNullable<typeof allPieces>[0]>    = {}
+      const exercisesMap: Record<string, NonNullable<typeof allExercises>[0]> = {}
+      ;(allPieces    ?? []).forEach(p => { piecesMap[p.id]    = p })
       ;(allExercises ?? []).forEach(e => { exercisesMap[e.id] = e })
 
+      // Links de programas não-regulares
       let progPieces:    Array<{ program_id: string; piece_id: string;    priority_override: number | null }> = []
       let progExercises: Array<{ program_id: string; exercise_id: string; priority_override: number | null }> = []
       if (nonRegularIds.length > 0) {
@@ -198,110 +216,85 @@ export default function PlanejamentoPage() {
         progExercises = pe ?? []
       }
 
-      const neededPieceIds    = new Set<string>()
-      const neededExerciseIds = new Set<string>()
-      for (const prog of selected) {
-        if (prog.type === 'regular') {
-          ;(allPieces ?? []).filter(p => p.completion_pct < 100).forEach(p => neededPieceIds.add(p.id))
-          ;(allExercises ?? []).forEach(e => neededExerciseIds.add(e.id))
-        } else {
-          progPieces   .filter(x => x.program_id === prog.id).forEach(x => neededPieceIds.add(x.piece_id))
-          progExercises.filter(x => x.program_id === prog.id).forEach(x => neededExerciseIds.add(x.exercise_id))
-        }
-      }
-
-      const pieceIds    = [...neededPieceIds]
-      const exerciseIds = [...neededExerciseIds]
-      const fetchCi: Promise<{ data: any[] | null }>[] = []
-      if (pieceIds.length    > 0) fetchCi.push(supabase.from('checklist_items').select('id, title, is_optional, piece_id, exercise_id').in('piece_id',    pieceIds)    as any)
-      if (exerciseIds.length > 0) fetchCi.push(supabase.from('checklist_items').select('id, title, is_optional, piece_id, exercise_id').in('exercise_id', exerciseIds) as any)
-
-      const ciResults = await Promise.all(fetchCi)
-      const checklistItems: Array<{ id: string; title: string; is_optional: boolean; piece_id: string | null; exercise_id: string | null }> =
-        ciResults.flatMap(r => r.data ?? [])
-
-      const ciByPiece:    Record<string, typeof checklistItems> = {}
-      const ciByExercise: Record<string, typeof checklistItems> = {}
-      for (const ci of checklistItems) {
-        if (ci.piece_id)    { ciByPiece   [ci.piece_id]    ??= []; ciByPiece   [ci.piece_id]   .push(ci) }
-        if (ci.exercise_id) { ciByExercise[ci.exercise_id] ??= []; ciByExercise[ci.exercise_id].push(ci) }
-      }
-
-      const { data: completionData } = await supabase
-        .from('checklist_completions').select('checklist_item_id').eq('student_id', studentId!)
-      const completedIds = new Set((completionData ?? []).map(c => c.checklist_item_id as string))
-
-      function buildItems(
-        sourceType: 'piece' | 'exercise', sourceId: string, sourceTitle: string,
-        completion: number, difficulty: number | null, priorityOverride: number | null,
-        ciList: typeof checklistItems,
-      ): ResolvedProgramItem[] {
-        return ciList.map(ci => ({
-          checklistItemId: ci.id, checklistItemTitle: ci.title,
-          sourceType, sourceId, sourceTitle,
-          sourceCompletion: completion, sourceDifficulty: difficulty,
-          isOptional: ci.is_optional, priorityOverride,
-        }))
-      }
-
+      // Monta ResolvedProgram[] com peças e exercícios diretos (sem checklist)
       const resolvedPrograms: ResolvedProgram[] = selected.map(prog => {
-        const items: ResolvedProgramItem[] = []
+        const pieces    = []
+        const exercises = []
+
         if (prog.type === 'regular') {
-          ;(allPieces ?? []).filter(p => p.completion_pct < 100).forEach(p => {
-            items.push(...buildItems('piece', p.id, p.title, p.completion_pct, p.difficulty, null, ciByPiece[p.id] ?? []))
-          })
-          ;(allExercises ?? []).forEach(e => {
-            items.push(...buildItems('exercise', e.id, e.title, 0, e.difficulty, null, ciByExercise[e.id] ?? []))
-          })
+          // Programa regular: inclui tudo do aluno
+          for (const p of allPieces ?? []) {
+            pieces.push({
+              pieceId: p.id, pieceTitle: p.title,
+              difficulty: p.difficulty, completionPct: p.completion_pct,
+              status: p.status, priorityOverride: null,
+            })
+          }
+          for (const e of allExercises ?? []) {
+            exercises.push({
+              exerciseId: e.id, exerciseTitle: e.title,
+              difficulty: e.difficulty, category: e.category,
+              priorityOverride: null,
+            })
+          }
         } else {
-          progPieces.filter(x => x.program_id === prog.id).forEach(pp => {
+          // Outros tipos: só os itens linkados ao programa
+          for (const pp of progPieces.filter(x => x.program_id === prog.id)) {
             const p = piecesMap[pp.piece_id]
-            if (!p || p.completion_pct >= 100) return
-            items.push(...buildItems('piece', p.id, p.title, p.completion_pct, p.difficulty, pp.priority_override, ciByPiece[p.id] ?? []))
-          })
-          progExercises.filter(x => x.program_id === prog.id).forEach(pe => {
+            if (!p) continue
+            pieces.push({
+              pieceId: p.id, pieceTitle: p.title,
+              difficulty: p.difficulty, completionPct: p.completion_pct,
+              status: p.status, priorityOverride: pp.priority_override,
+            })
+          }
+          for (const pe of progExercises.filter(x => x.program_id === prog.id)) {
             const e = exercisesMap[pe.exercise_id]
-            if (!e) return
-            items.push(...buildItems('exercise', e.id, e.title, 0, e.difficulty, pe.priority_override, ciByExercise[e.id] ?? []))
-          })
+            if (!e) continue
+            exercises.push({
+              exerciseId: e.id, exerciseTitle: e.title,
+              difficulty: e.difficulty, category: e.category,
+              priorityOverride: pe.priority_override,
+            })
+          }
         }
-        return { id: prog.id, title: prog.title, type: prog.type, deadline: prog.deadline, weight: weights[prog.id] ?? 0, items }
+
+        return { id: prog.id, title: prog.title, type: prog.type, deadline: prog.deadline, weight: weights[prog.id] ?? 0, pieces, exercises }
       })
 
-      let maintenancePieces: MaintenancePiece[] = []
-      if (maintenanceEnabled) {
-        const donePieces = (allPieces ?? []).filter(p => p.completion_pct >= 100)
-        if (donePieces.length > 0) {
-          const doneIds = donePieces.map(p => p.id)
-          const { data: maintHistory } = await supabase
-            .from('plan_items').select('piece_id, weekly_plan:weekly_plans!plan_id(week_start)')
-            .eq('is_maintenance', true).in('piece_id', doneIds)
-          const lastMaint: Record<string, string> = {}
-          for (const row of maintHistory ?? []) {
-            const ws = (row.weekly_plan as any)?.week_start as string | undefined
-            if (ws && (!lastMaint[row.piece_id] || ws > lastMaint[row.piece_id])) lastMaint[row.piece_id] = ws
-          }
-          maintenancePieces = donePieces.map(p => ({
-            pieceId: p.id, pieceTitle: p.title, difficulty: p.difficulty,
-            lastMaintenanceOn: lastMaint[p.id] ?? null,
-          }))
-        }
-      }
+      // Peças concluídas para manutenção
+      const completedPieces = (allPieces ?? [])
+        .filter(p => p.status === 'completed')
+        .map(p => ({ pieceId: p.id, pieceTitle: p.title, difficulty: p.difficulty }))
 
       const plan = generatePlan({
-        weekStart, horizon, availability, programs: resolvedPrograms,
-        completedItemIds: completedIds, includeRevision,
-        maintenance: { enabled: maintenanceEnabled, budgetPercent: maintenanceBudget, completedPieces: maintenancePieces },
+        studentLevel,
+        weekStart, horizon, availability,
+        programs: resolvedPrograms,
+        maintenance: {
+          enabled: maintenanceEnabled,
+          budgetPercent: maintenanceBudget,
+          completedPieces,
+        },
       })
 
-      // Build deduplicated picker items for the add-task sheet
+      // Picker para o sheet "Adicionar tarefa"
       const seen = new Set<string>()
-      const picker: PickerItem[] = resolvedPrograms.flatMap(prog =>
-        prog.items
-          .filter(item => { if (seen.has(item.checklistItemId)) return false; seen.add(item.checklistItemId); return true })
-          .map(item => ({ item, programId: prog.id, programTitle: prog.title }))
-      )
+      const picker: PickerItem[] = resolvedPrograms.flatMap(prog => {
+        const items: PickerItem[] = []
+        for (const p of prog.pieces) {
+          if (p.status === 'completed') continue
+          const key = `piece:${p.pieceId}`
+          if (!seen.has(key)) { seen.add(key); items.push({ pieceId: p.pieceId, exerciseId: null, sourceType: 'piece', title: p.pieceTitle, programId: prog.id, programTitle: prog.title }) }
+        }
+        for (const e of prog.exercises) {
+          const key = `ex:${e.exerciseId}`
+          if (!seen.has(key)) { seen.add(key); items.push({ pieceId: null, exerciseId: e.exerciseId, sourceType: 'exercise', title: e.exerciseTitle, programId: prog.id, programTitle: prog.title }) }
+        }
+        return items
+      })
 
+      setPomodoroWork(plan.pomodoroWork)
       setPickerItems(picker)
       setEditableDays(plan.days.map(d => ({ ...d, tasks: [...d.tasks] })))
       setUnscheduled(plan.unscheduled)
@@ -314,7 +307,7 @@ export default function PlanejamentoPage() {
     }
   }
 
-  // ── Task mutation helpers ─────────────────────────────────────────────────
+  // ── Task mutation helpers ───────────────────────────────────────────────────
 
   function updateTaskDuration(date: string, idx: number, duration: number) {
     setEditableDays(prev => prev.map(d => {
@@ -345,15 +338,15 @@ export default function PlanejamentoPage() {
       }
       return [...prev, {
         weekStart: ws, dayOfWeek: dow, date,
-        minutesAvailable: 0, minutesUsed: task.durationMinutes, tasks: [task],
+        minutesAvailable: 0, slots: 0, minutesUsed: task.durationMinutes, tasks: [task],
       }]
     })
     setAddingToDay(null)
     setAddCustomTitle('')
-    setAddCustomDuration(15)
+    setAddCustomDuration(pomodoroWork)
   }
 
-  // ── Save ──────────────────────────────────────────────────────────────────
+  // ── Save ────────────────────────────────────────────────────────────────────
 
   async function handleSave() {
     setSaving(true)
@@ -378,15 +371,15 @@ export default function PlanejamentoPage() {
         for (const day of editableDays.filter(d => d.weekStart === ws)) {
           day.tasks.forEach((task, pos) => {
             rows.push({
-              plan_id: planId,
-              piece_id: task.sourceType !== 'exercise' ? task.sourceId || null : null,
-              checklist_item_id: task.checklistItemId,
-              program_id: task.programId,
-              day_of_week: day.dayOfWeek,
+              plan_id:          planId,
+              piece_id:         task.pieceId,
+              exercise_id:      task.exerciseId,
+              program_id:       task.programId,
+              day_of_week:      day.dayOfWeek,
               duration_minutes: task.durationMinutes,
-              is_done: false,
-              position: pos,
-              is_maintenance: task.isMaintenance,
+              is_done:          false,
+              position:         pos,
+              is_maintenance:   task.isMaintenance,
             })
           })
         }
@@ -404,7 +397,7 @@ export default function PlanejamentoPage() {
     }
   }
 
-  // ── Drag-to-scroll ───────────────────────────────────────────────────────
+  // ── Drag-to-scroll ──────────────────────────────────────────────────────────
 
   const scrollRef    = useRef<HTMLDivElement>(null)
   const isDragging   = useRef(false)
@@ -414,39 +407,35 @@ export default function PlanejamentoPage() {
 
   function onBoardMouseDown(e: React.MouseEvent<HTMLDivElement>) {
     if (!scrollRef.current) return
-    isDragging.current  = true
-    dragStartX.current  = e.clientX
-    dragScrollL.current = scrollRef.current.scrollLeft
-    setGrabbing(true)
+    isDragging.current  = true; dragStartX.current  = e.clientX
+    dragScrollL.current = scrollRef.current.scrollLeft; setGrabbing(true)
   }
   function onBoardMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!isDragging.current || !scrollRef.current) return
     e.preventDefault()
-    const dx = e.clientX - dragStartX.current
-    scrollRef.current.scrollLeft = dragScrollL.current - dx * 1.4
+    scrollRef.current.scrollLeft = dragScrollL.current - (e.clientX - dragStartX.current) * 1.4
   }
   function onBoardMouseUp()    { isDragging.current = false; setGrabbing(false) }
   function onBoardMouseLeave() { isDragging.current = false; setGrabbing(false) }
 
-  // ── Derived preview data ──────────────────────────────────────────────────
+  // ── Derived ─────────────────────────────────────────────────────────────────
 
-  const weekStarts      = [...new Set(editableDays.map(d => d.weekStart))].sort()
-  const currentWS       = weekStarts[selectedWeekIdx] ?? weekStart
-  const totalScheduled  = editableDays.reduce((s, d) => s + d.tasks.length, 0)
-  const totalMinutes    = editableDays.reduce((s, d) => s + d.minutesUsed, 0)
+  const weekStarts     = [...new Set(editableDays.map(d => d.weekStart))].sort()
+  const currentWS      = weekStarts[selectedWeekIdx] ?? weekStart
+  const totalScheduled = editableDays.reduce((s, d) => s + d.tasks.length, 0)
+  const totalMinutes   = editableDays.reduce((s, d) => s + d.minutesUsed, 0)
 
-  // 7 columns Mon→Sun for the current week
   const columns = DAY_ORDER.map((dow, i) => {
     const date = dayDateFromWeekStart(currentWS, dow)
     const day  = editableDays.find(d => d.date === date) ?? null
     return { dow, date, label: DAY_LABELS[i], day }
   })
 
-  // ── Loading ───────────────────────────────────────────────────────────────
+  const levelLabel: Record<string, string> = { beginner: 'Iniciante', intermediate: 'Intermediário', advanced: 'Avançado' }
 
   if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
 
-  // ── Config step ───────────────────────────────────────────────────────────
+  // ── Config step ─────────────────────────────────────────────────────────────
 
   if (step === 'config') {
     return (
@@ -474,6 +463,19 @@ export default function PlanejamentoPage() {
           </div>
         ) : (
           <div className="max-w-xl mx-auto space-y-5">
+
+            {/* Nível do aluno detectado */}
+            <div className="bg-[#D6E4F0]/50 border border-[#4A90C4]/20 rounded-2xl px-5 py-3 flex items-center gap-3">
+              <div>
+                <p className="text-xs font-semibold text-[#1E3A5F]">Ciclo pomodoro · {levelLabel[studentLevel]}</p>
+                <p className="text-xs text-[#1E3A5F]/60 mt-0.5">
+                  {studentLevel === 'beginner' ? '10 min trabalho · 5 min pausa' :
+                   studentLevel === 'intermediate' ? '15 min trabalho · 5 min pausa' :
+                   '25 min trabalho · 5 min pausa'}
+                </p>
+              </div>
+            </div>
+
             {/* Programas */}
             <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
               <div className="flex items-center justify-between">
@@ -492,8 +494,11 @@ export default function PlanejamentoPage() {
                         <button onClick={() => toggleProgram(prog.id)} className="text-[#4A90C4] shrink-0">
                           {sel ? <MdCheckBox size={20} /> : <MdCheckBoxOutlineBlank size={20} className="text-gray-300" />}
                         </button>
+                        <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                          {programIcon(prog.type, 16)}
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">{TYPE_EMOJI[prog.type] ?? '📁'} {prog.title}</p>
+                          <p className="text-sm font-medium text-gray-800 truncate">{prog.title}</p>
                           {prog.deadline && (
                             <p className="text-xs text-gray-400">
                               {new Date(prog.deadline + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
@@ -501,15 +506,27 @@ export default function PlanejamentoPage() {
                           )}
                         </div>
                         {sel && (
-                          <div className="flex items-center gap-1 shrink-0">
-                            <input type="number" min={0} max={100} value={weights[prog.id] ?? 0}
-                              onChange={e => setWeights(w => ({ ...w, [prog.id]: Math.max(0, Math.min(100, Number(e.target.value))) }))}
-                              className="w-12 text-center text-sm border border-gray-200 rounded-lg px-1 py-1 outline-none focus:border-[#4A90C4]"
-                            />
-                            <span className="text-xs text-gray-400">%</span>
-                          </div>
+                          <span className="text-sm font-bold text-[#1E3A5F] shrink-0 w-10 text-right">
+                            {weights[prog.id] ?? 0}%
+                          </span>
                         )}
                       </div>
+                      {sel && (
+                        <div className="px-3 pb-3 flex items-center gap-2">
+                          <input
+                            type="range" min={0} max={100} step={1}
+                            value={weights[prog.id] ?? 0}
+                            onChange={e => setWeights(w => ({ ...w, [prog.id]: Number(e.target.value) }))}
+                            className="flex-1 accent-[#4A90C4] h-2"
+                          />
+                          <input
+                            type="number" min={0} max={100}
+                            value={weights[prog.id] ?? 0}
+                            onChange={e => setWeights(w => ({ ...w, [prog.id]: Math.max(0, Math.min(100, Number(e.target.value))) }))}
+                            className="w-12 text-center text-xs border border-gray-200 rounded-lg px-1 py-1.5 outline-none focus:border-[#4A90C4]"
+                          />
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -535,23 +552,16 @@ export default function PlanejamentoPage() {
               </div>
             </div>
 
-            {/* Opções */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
-              <h2 className="text-sm font-semibold text-gray-600">Opções</h2>
-              <button onClick={() => setIncludeRevision(v => !v)} className="w-full flex items-center gap-3 text-left">
-                {includeRevision ? <MdCheckBox size={20} className="text-[#4A90C4] shrink-0" /> : <MdCheckBoxOutlineBlank size={20} className="text-gray-300 shrink-0" />}
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Incluir revisão</p>
-                  <p className="text-xs text-gray-400">Itens já concluídos entram com menor prioridade</p>
-                </div>
-              </button>
-              {hasCompletedPieces && (
+            {/* Manutenção */}
+            {hasCompletedPieces && (
+              <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+                <h2 className="text-sm font-semibold text-gray-600">Opções</h2>
                 <div className="space-y-2">
                   <button onClick={() => setMaintenanceEnabled(v => !v)} className="w-full flex items-center gap-3 text-left">
                     {maintenanceEnabled ? <MdCheckBox size={20} className="text-[#4A90C4] shrink-0" /> : <MdCheckBoxOutlineBlank size={20} className="text-gray-300 shrink-0" />}
                     <div>
                       <p className="text-sm font-medium text-gray-700">Manutenção de repertório concluído</p>
-                      <p className="text-xs text-gray-400">Peças com 100% revisitadas em ciclo rotativo</p>
+                      <p className="text-xs text-gray-400">Peças concluídas revisitadas em ciclo rotativo</p>
                     </div>
                   </button>
                   {maintenanceEnabled && (
@@ -562,8 +572,8 @@ export default function PlanejamentoPage() {
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {error && <p className="text-sm text-red-500">{error}</p>}
 
@@ -578,7 +588,7 @@ export default function PlanejamentoPage() {
     )
   }
 
-  // ── Preview step ──────────────────────────────────────────────────────────
+  // ── Preview step ─────────────────────────────────────────────────────────────
 
   const editTask = editingTask
     ? editableDays.find(d => d.date === editingTask.date)?.tasks[editingTask.idx] ?? null
@@ -594,7 +604,7 @@ export default function PlanejamentoPage() {
         <h1 className="text-xl font-bold text-[#1E3A5F]">Preview do Planejamento</h1>
       </div>
 
-      {/* Stats */}
+      {/* Stats + pomodoro info */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {[
           { label: 'Tarefas', value: totalScheduled },
@@ -606,6 +616,10 @@ export default function PlanejamentoPage() {
             <p className="text-[10px] text-gray-400">{s.label}</p>
           </div>
         ))}
+      </div>
+
+      <div className="flex items-center gap-2 bg-[#D6E4F0]/50 rounded-xl px-3 py-2 mb-4">
+        <span className="text-xs text-[#1E3A5F]/70">Slots de <span className="font-bold text-[#1E3A5F]">{pomodoroWork} min</span> por tarefa · {levelLabel[studentLevel]}</span>
       </div>
 
       {/* Week tabs */}
@@ -620,8 +634,7 @@ export default function PlanejamentoPage() {
         </div>
       )}
 
-      {/* ── Responsive board ─────────────────────────────────────────────── */}
-      {/* Mobile: vertical stack · Tablet/Desktop: horizontal 7 columns      */}
+      {/* Board */}
       <div
         ref={scrollRef}
         className={`scrollbar-plan mb-4 pb-4 rounded-b-xl ${grabbing ? 'cursor-grabbing select-none' : 'md:cursor-grab'}`}
@@ -632,7 +645,7 @@ export default function PlanejamentoPage() {
       >
         <div className="flex flex-col md:flex-row md:min-w-max gap-3">
           {columns.map(col => {
-            const tasks = col.day?.tasks ?? []
+            const tasks       = col.day?.tasks ?? []
             const minutesUsed = col.day?.minutesUsed ?? 0
             const isAvailable = col.day !== null || tasks.length > 0
 
@@ -640,8 +653,7 @@ export default function PlanejamentoPage() {
               <div key={col.date}
                 className={`w-full md:flex-none md:w-80 rounded-2xl border overflow-hidden flex flex-col ${isAvailable ? 'bg-white border-gray-100' : 'bg-gray-50 border-gray-100'}`}>
 
-                {/* Day header */}
-                <div className={`px-4 py-3 border-b flex items-center justify-between ${isAvailable ? 'bg-gray-50 border-gray-100' : 'bg-gray-50 border-gray-100'}`}>
+                <div className={`px-4 py-3 border-b flex items-center justify-between bg-gray-50 border-gray-100`}>
                   <div>
                     <p className={`text-sm font-bold ${isAvailable ? 'text-gray-700' : 'text-gray-300'}`}>{col.label}</p>
                     <p className="text-xs text-gray-400">{shortDate(col.date)}</p>
@@ -651,16 +663,15 @@ export default function PlanejamentoPage() {
                   )}
                 </div>
 
-                {/* Tasks */}
                 <div className="flex-1 p-3 space-y-2">
                   {tasks.length === 0 && !isAvailable && (
                     <p className="text-xs text-gray-300 text-center py-4">Folga</p>
                   )}
                   {tasks.map((task, i) => (
                     <button key={i} onClick={() => setEditingTask({ date: col.date, idx: i })}
-                      className="w-full text-left bg-[#F5F7FA] hover:bg-[#D6E4F0]/60 rounded-xl p-3 transition group">
+                      className={`w-full text-left rounded-xl p-3 transition group ${taskCardClass(task)}`}>
                       <div className="flex items-start gap-2">
-                        <span className="text-sm shrink-0 mt-0.5">{taskIcon(task)}</span>
+                        {task.isMaintenance && <span className="text-sm shrink-0 mt-0.5">🔄</span>}
                         <p className="text-sm font-medium text-gray-700 flex-1 leading-snug line-clamp-2">
                           {taskTitle(task)}
                         </p>
@@ -670,15 +681,12 @@ export default function PlanejamentoPage() {
                           <MdClose size={14} />
                         </button>
                       </div>
-                      {!task.isMaintenance && (
-                        <p className="text-xs text-gray-400 mt-1 pl-6 truncate">{task.sourceTitle}</p>
-                      )}
-                      <p className="text-xs font-semibold text-[#4A90C4] mt-1 pl-6">{task.durationMinutes} min</p>
+                      <p className="text-xs text-gray-400 mt-1 truncate">{task.programTitle}</p>
+                      <p className="text-xs font-semibold text-[#4A90C4] mt-1">{task.durationMinutes} min</p>
                     </button>
                   ))}
                 </div>
 
-                {/* Add button */}
                 <div className="px-3 pb-3">
                   <button
                     onClick={() => { setAddingToDay({ date: col.date, dow: col.dow, weekStart: currentWS }); setAddTab('program') }}
@@ -705,7 +713,6 @@ export default function PlanejamentoPage() {
 
       {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
 
-      {/* Action buttons */}
       <div className="flex gap-3 pb-8">
         <Button onClick={() => setStep('config')} variant="outline" className="flex-1 rounded-xl border-gray-200 text-gray-600">
           Voltar
@@ -715,20 +722,17 @@ export default function PlanejamentoPage() {
         </Button>
       </div>
 
-      {/* ── Edit-task bottom sheet ─────────────────────────────────────────── */}
+      {/* Edit-task sheet */}
       {editingTask && editTask && (
         <div className="fixed inset-0 bg-black/40 z-30 flex items-end" onClick={() => setEditingTask(null)}>
           <div className="bg-white rounded-t-2xl px-6 pt-6 pb-8 w-full max-w-lg mx-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0 pr-3">
                 <p className="text-base font-bold text-[#1E3A5F] line-clamp-2">{taskTitle(editTask)}</p>
-                {!editTask.isMaintenance && (
-                  <p className="text-sm text-gray-400 mt-1 truncate">{editTask.sourceTitle}</p>
-                )}
+                <p className="text-sm text-gray-400 mt-1 truncate">{editTask.programTitle}</p>
               </div>
               <button onClick={() => setEditingTask(null)} className="text-gray-400 shrink-0"><MdClose size={22} /></button>
             </div>
-
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-8 mb-3">Duração</p>
             <div className="flex items-center gap-4 mb-10">
               <input type="number" min={5} max={180} value={editTask.durationMinutes}
@@ -741,15 +745,12 @@ export default function PlanejamentoPage() {
                 className="flex-1 accent-[#4A90C4] h-2"
               />
             </div>
-
             <div className="flex gap-3">
-              <button
-                onClick={() => deleteTask(editingTask.date, editingTask.idx)}
+              <button onClick={() => deleteTask(editingTask.date, editingTask.idx)}
                 className="flex-1 py-3 rounded-xl border border-red-100 text-red-400 text-sm font-semibold hover:bg-red-50 transition">
                 Excluir tarefa
               </button>
-              <button
-                onClick={() => setEditingTask(null)}
+              <button onClick={() => setEditingTask(null)}
                 className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold">
                 Fechar
               </button>
@@ -758,20 +759,16 @@ export default function PlanejamentoPage() {
         </div>
       )}
 
-      {/* ── Add-task bottom sheet ──────────────────────────────────────────── */}
+      {/* Add-task sheet */}
       {addingToDay && (
         <div className="fixed inset-0 bg-black/40 z-30 flex items-end" onClick={() => setAddingToDay(null)}>
           <div className="bg-white rounded-t-2xl w-full max-w-lg mx-auto max-h-[75vh] flex flex-col" onClick={e => e.stopPropagation()}>
-
-            {/* Sheet header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
               <p className="text-sm font-bold text-[#1E3A5F]">
                 Adicionar tarefa — {DAY_LABELS[DAY_ORDER.indexOf(addingToDay.dow)]} {shortDate(addingToDay.date)}
               </p>
               <button onClick={() => setAddingToDay(null)} className="text-gray-400"><MdClose size={20} /></button>
             </div>
-
-            {/* Tabs */}
             <div className="flex gap-1 px-5 pb-3 shrink-0">
               {(['program', 'custom'] as const).map(tab => (
                 <button key={tab} onClick={() => setAddTab(tab)}
@@ -780,40 +777,32 @@ export default function PlanejamentoPage() {
                 </button>
               ))}
             </div>
-
-            {/* Tab content */}
             {addTab === 'program' ? (
               <div className="overflow-y-auto flex-1 px-5 pb-5 space-y-2">
                 {pickerItems.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-8">Nenhum item disponível.</p>
-                ) : (
-                  pickerItems.map(({ item, programId, programTitle }) => (
-                    <button
-                      key={item.checklistItemId}
-                      onClick={() => addTaskToDay(addingToDay.date, addingToDay.dow, addingToDay.weekStart, {
-                        checklistItemId: item.checklistItemId,
-                        checklistItemTitle: item.checklistItemTitle,
-                        sourceType: item.sourceType,
-                        sourceId: item.sourceId,
-                        sourceTitle: item.sourceTitle,
-                        programId, programTitle,
-                        durationMinutes: 15,
-                        isRevision: false,
-                        isOptional: item.isOptional,
-                        isMaintenance: false,
-                        score: 0,
-                      })}
-                      className="w-full text-left p-3 rounded-xl border border-gray-100 hover:border-[#4A90C4] transition"
-                    >
-                      <p className="text-sm font-medium text-gray-800 truncate">
-                        {item.sourceType === 'exercise' ? '🎯' : '🎵'} {item.checklistItemTitle}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate mt-0.5">
-                        {item.sourceTitle} · {TYPE_EMOJI[programTitle] ?? ''} {programTitle}
-                      </p>
-                    </button>
-                  ))
-                )}
+                ) : pickerItems.map((item, idx) => (
+                  <button key={idx}
+                    onClick={() => addTaskToDay(addingToDay.date, addingToDay.dow, addingToDay.weekStart, {
+                      pieceId: item.pieceId,
+                      exerciseId: item.exerciseId,
+                      sourceType: item.sourceType,
+                      sourceTitle: item.title,
+                      programId: item.programId,
+                      programTitle: item.programTitle,
+                      durationMinutes: pomodoroWork,
+                      isMaintenance: false,
+                      score: 0,
+                    })}
+                    className="w-full text-left p-3 rounded-xl border border-gray-100 hover:border-[#4A90C4] transition">
+                    <p className="text-sm font-medium text-gray-800 truncate">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate mt-0.5">
+                      {TYPE_EMOJI[item.programTitle] ?? ''} {item.programTitle}
+                    </p>
+                  </button>
+                ))}
               </div>
             ) : (
               <div className="px-6 pb-8 shrink-0 space-y-5">
@@ -836,18 +825,12 @@ export default function PlanejamentoPage() {
                 <Button
                   disabled={!addCustomTitle.trim()}
                   onClick={() => addTaskToDay(addingToDay.date, addingToDay.dow, addingToDay.weekStart, {
-                    checklistItemId: null,
-                    checklistItemTitle: addCustomTitle.trim(),
+                    pieceId: null, exerciseId: null,
                     sourceType: 'piece',
-                    sourceId: '',
-                    sourceTitle: 'Personalizado',
-                    programId: null,
-                    programTitle: 'Personalizado',
+                    sourceTitle: addCustomTitle.trim(),
+                    programId: null, programTitle: 'Personalizado',
                     durationMinutes: addCustomDuration,
-                    isRevision: false,
-                    isOptional: false,
-                    isMaintenance: false,
-                    score: 0,
+                    isMaintenance: false, score: 0,
                   })}
                   className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10">
                   Adicionar tarefa
