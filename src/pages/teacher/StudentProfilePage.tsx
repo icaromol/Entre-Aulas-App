@@ -593,43 +593,6 @@ export default function StudentProfilePage() {
         </div>
       </div>
 
-      {/* Disponibilidade — 7 dias */}
-      <div className="flex gap-2 mb-5">
-        {[
-          { label: "SEG", dow: 1 },
-          { label: "TER", dow: 2 },
-          { label: "QUA", dow: 3 },
-          { label: "QUI", dow: 4 },
-          { label: "SEX", dow: 5 },
-          { label: "SÁB", dow: 6 },
-          { label: "DOM", dow: 0 },
-        ].map(({ label, dow }) => {
-          const day = availability.find((d) => d.day_of_week === dow);
-          const active = day?.is_active ?? false;
-          return (
-            <div
-              key={dow}
-              className={`flex-1 rounded-lg border py-2.5 flex flex-col items-center justify-center gap-1 ${
-                active
-                  ? "bg-[#D6E4F0] border-[#4A90C4]/30"
-                  : "bg-gray-100 border-gray-100"
-              }`}
-            >
-              <span
-                className={`text-[10px] font-medium leading-none ${active ? "text-[#1E3A5F]" : "text-gray-400"}`}
-              >
-                {label}
-              </span>
-              <span
-                className={`text-[9px] leading-none ${active ? "text-[#4A90C4]" : "text-gray-300"}`}
-              >
-                {active ? `${day!.minutes_available}m` : "·"}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
         {(
@@ -988,6 +951,13 @@ export default function StudentProfilePage() {
           <MdAccessTime size={16} className="mx-auto mb-1 text-[#4A90C4]" />
           <p className="text-2xl font-bold text-[#1E3A5F]">{totalMinutes}</p>
           <p className="text-xs text-gray-400 mt-1">min/semana</p>
+          <div className="flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mt-1.5">
+            {activeDays.map(d => (
+              <span key={d.day_of_week} className="text-[10px] text-gray-400">
+                {DAYS[d.day_of_week]} {d.minutes_available}m
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </TeacherLayout>
