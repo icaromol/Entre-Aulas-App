@@ -7,6 +7,7 @@ import {
   MdSchool, MdMusicNote, MdLibraryMusic, MdMic, MdFolder,
 } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 import { getMonday, formatWeekStart, formatWeekLabel } from '@/lib/weekUtils'
@@ -84,6 +85,7 @@ interface PickerItem {
 export default function PlanejamentoPage() {
   const { studentId } = useParams()
   const navigate = useNavigate()
+  const { profile } = useAuth()
 
   const [step, setStep] = useState<'config' | 'preview'>('config')
 
@@ -352,6 +354,10 @@ export default function PlanejamentoPage() {
     setSaving(true)
     setError('')
     try {
+      const { data: teacher } = await supabase
+        .from('teachers').select('id').eq('profile_id', profile!.id).single()
+      if (!teacher) throw new Error('Professor não encontrado.')
+
       const weekStarts = [...new Set(editableDays.map(d => d.weekStart))]
       for (const ws of weekStarts) {
         let planId: string
@@ -362,7 +368,7 @@ export default function PlanejamentoPage() {
           await supabase.from('plan_items').delete().eq('plan_id', planId)
         } else {
           const { data: created, error: err } = await supabase
-            .from('weekly_plans').insert({ student_id: studentId!, week_start: ws }).select('id').single()
+            .from('weekly_plans').insert({ student_id: studentId!, week_start: ws, teacher_id: teacher.id }).select('id').single()
           if (err || !created) throw err ?? new Error('Erro ao criar plano semanal.')
           planId = created.id
         }
