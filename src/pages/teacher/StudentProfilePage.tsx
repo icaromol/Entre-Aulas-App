@@ -705,12 +705,12 @@ export default function StudentProfilePage() {
                 <p className="text-sm text-gray-400">Nenhuma disponibilidade cadastrada.</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:overflow-x-auto pb-1">
                 {activeDays.map(avail => {
                   const dayTasks = planItems.filter(i => i.day_of_week === avail.day_of_week);
                   const totalMin = dayTasks.reduce((s, t) => s + (t.duration_minutes ?? 0), 0);
                   return (
-                    <div key={avail.day_of_week} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                    <div key={avail.day_of_week} className="bg-white rounded-2xl border border-gray-100 overflow-hidden md:flex-1 md:min-w-48">
                       <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
                         <div>
                           <p className="text-sm font-bold text-gray-700">{DAY_SHORT[avail.day_of_week]}</p>

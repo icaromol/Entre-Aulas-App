@@ -52,7 +52,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
 
       {/* Header */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
 
           {/* Logo */}
           <Link to="/professor/alunos" className="flex items-center">
@@ -113,7 +113,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
       </header>
 
       {/* Conteúdo */}
-      <main className="max-w-5xl mx-auto px-4 py-6">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
         {children}
       </main>
     </div>
