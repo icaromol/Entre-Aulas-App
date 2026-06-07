@@ -63,9 +63,18 @@ export default function StudentsPage() {
   }, [profile])
 
   async function fetchStudents() {
+    const { data: teacher } = await supabase
+      .from('teachers')
+      .select('id')
+      .eq('profile_id', profile!.id)
+      .single()
+
+    if (!teacher) { setLoading(false); return }
+
     const { data } = await supabase
       .from('students')
       .select('id, first_name, last_name, instrument, level, status')
+      .eq('teacher_id', teacher.id)
       .eq('status', 'active')
       .order('first_name')
 
