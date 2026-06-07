@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
 import {
   useParams,
   Link,
@@ -12,7 +13,9 @@ import {
   MdLibraryMusic,
   MdCalendarMonth,
   MdAccessTime,
+  MdChevronLeft,
   MdChevronRight,
+  MdClose,
   MdAdd,
   MdMic,
   MdFolder,
@@ -23,6 +26,7 @@ import {
 } from "react-icons/md";
 import Avatar from "boring-avatars";
 import { supabase } from "@/lib/supabase";
+import { getMonday, formatWeekStart, formatWeekLabel } from "@/lib/weekUtils";
 import { TeacherLayout } from "@/components/layout/TeacherLayout";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -65,6 +69,21 @@ interface Programa {
   type: string;
   deadline: string | null;
   status: string;
+}
+
+interface PlanItemLocal {
+  id: string;
+  day_of_week: number;
+  piece_id: string | null;
+  exercise_id: string | null;
+  program_id: string | null;
+  duration_minutes: number | null;
+  position: number;
+  is_done: boolean;
+  is_maintenance: boolean;
+  piece?: { title: string; composer: string | null } | null;
+  exercise?: { title: string; category: string } | null;
+  programa?: { title: string; type: string } | null;
 }
 
 const AVATAR_COLORS = ["#1E3A5F", "#4A90C4", "#D6E4F0", "#F5F7FA", "#FFFFFF"];
@@ -178,6 +197,19 @@ function daysUntilLabel(date: string) {
   return `em ${days} dias`;
 }
 
+function getPlanWeekStart(offset: number): string {
+  const d = getMonday(new Date());
+  d.setDate(d.getDate() + offset * 7);
+  return formatWeekStart(d);
+}
+
+function planDayDate(weekStart: string, dayOfWeek: number): string {
+  const offset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const d = new Date(weekStart + "T00:00:00");
+  d.setDate(d.getDate() + offset);
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
+
 type TabKey = "plans" | "repertoire" | "programs";
 type RepertoireTab = "pieces" | "exercises";
 
@@ -208,6 +240,15 @@ export default function StudentProfilePage() {
   const [inviteCopied, setInviteCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Plans tab
+  const [planWeekOffset, setPlanWeekOffset] = useState(0);
+  const [planItems, setPlanItems] = useState<PlanItemLocal[]>([]);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [hasPlan, setHasPlan] = useState(false);
+  const [editingPlanItem, setEditingPlanItem] = useState<PlanItemLocal | null>(null);
+  const [editDuration, setEditDuration] = useState(0);
+  const [savingPlanItem, setSavingPlanItem] = useState(false);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -221,6 +262,32 @@ export default function StudentProfilePage() {
   useEffect(() => {
     if (studentId) fetchAll();
   }, [studentId]);
+
+  useEffect(() => {
+    if (activeTab !== "plans" || !studentId) return;
+    let cancelled = false;
+    async function load() {
+      setPlanLoading(true);
+      const ws = getPlanWeekStart(planWeekOffset);
+      const { data: plan } = await supabase
+        .from("weekly_plans").select("id")
+        .eq("student_id", studentId!).eq("week_start", ws).maybeSingle();
+      if (cancelled) return;
+      if (!plan) {
+        setHasPlan(false); setPlanItems([]); setPlanLoading(false); return;
+      }
+      setHasPlan(true);
+      const { data: items } = await supabase
+        .from("plan_items")
+        .select("id, day_of_week, piece_id, exercise_id, program_id, duration_minutes, position, is_done, is_maintenance, piece:pieces(title, composer), exercise:exercises(title, category), programa:programas(title, type)")
+        .eq("plan_id", plan.id).order("position");
+      if (cancelled) return;
+      setPlanItems((items ?? []) as unknown as PlanItemLocal[]);
+      setPlanLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [activeTab, planWeekOffset, studentId]);
 
   async function fetchAll() {
     const [studentRes, availRes, piecesRes, exercisesRes, programasRes] =
@@ -255,6 +322,22 @@ export default function StudentProfilePage() {
     setExercises(exercisesRes.data ?? []);
     setProgramas(programasRes.data ?? []);
     setLoading(false);
+  }
+
+  async function savePlanItemDuration(id: string, duration: number) {
+    setSavingPlanItem(true);
+    await supabase.from("plan_items").update({ duration_minutes: duration }).eq("id", id);
+    setPlanItems(prev => prev.map(i => i.id === id ? { ...i, duration_minutes: duration } : i));
+    setSavingPlanItem(false);
+    setEditingPlanItem(null);
+    toast.success("Duração atualizada");
+  }
+
+  async function deletePlanItem(id: string) {
+    await supabase.from("plan_items").delete().eq("id", id);
+    setPlanItems(prev => prev.filter(i => i.id !== id));
+    setEditingPlanItem(null);
+    toast.success("Tarefa removida");
   }
 
   async function handleDelete() {
@@ -572,30 +655,164 @@ export default function StudentProfilePage() {
       </div>
 
       {/* Tab: Planejamentos */}
-      {activeTab === "plans" && (
-        <div className="space-y-3">
-          <button
-            onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
-            className="w-full bg-[#4A90C4] hover:bg-[#4A90C4]/90 rounded-2xl px-5 py-4 flex items-center justify-between transition group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-                <MdCalendarMonth size={22} className="text-white" />
+      {activeTab === "plans" && (() => {
+        const ws = getPlanWeekStart(planWeekOffset);
+        const DAY_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+        return (
+          <div>
+            {/* Navegação de semana */}
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setPlanWeekOffset(o => o - 1)}
+                className="p-2 rounded-xl hover:bg-gray-100 transition">
+                <MdChevronLeft size={20} className="text-gray-400" />
+              </button>
+              <div className="text-center">
+                <p className="text-sm font-bold text-[#1E3A5F]">{formatWeekLabel(ws)}</p>
+                {planWeekOffset === 0 && (
+                  <p className="text-[10px] text-[#4A90C4] font-semibold uppercase tracking-wide mt-0.5">semana atual</p>
+                )}
               </div>
-              <div className="text-left">
-                <p className="text-white font-bold text-sm">Gerar planejamento de estudos</p>
-                <p className="text-white/70 text-xs mt-0.5">Plano semanal personalizado para {student.first_name}</p>
-              </div>
+              <button onClick={() => setPlanWeekOffset(o => o + 1)}
+                className="p-2 rounded-xl hover:bg-gray-100 transition">
+                <MdChevronRight size={20} className="text-gray-400" />
+              </button>
             </div>
-            <MdChevronRight size={20} className="text-white/60 group-hover:text-white transition" />
-          </button>
-          <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
-            <MdCalendarMonth size={28} className="mx-auto mb-3 text-gray-300" />
-            <p className="text-sm font-semibold text-gray-500">Visualização de planejamentos</p>
-            <p className="text-xs text-gray-400 mt-1 leading-relaxed">Em breve: visão semanal de todos os planos gerados para {student.first_name}.</p>
+
+            {/* Botão gerar */}
+            <button
+              onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
+              className={`w-full mb-4 rounded-2xl px-4 py-3 flex items-center justify-between transition group ${
+                hasPlan
+                  ? "bg-gray-50 border border-gray-200 hover:border-[#4A90C4]"
+                  : "bg-[#4A90C4] hover:bg-[#4A90C4]/90"
+              }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${hasPlan ? "bg-[#D6E4F0]" : "bg-white/15"}`}>
+                  <MdCalendarMonth size={18} className={hasPlan ? "text-[#4A90C4]" : "text-white"} />
+                </div>
+                <p className={`font-semibold text-sm ${hasPlan ? "text-[#1E3A5F]" : "text-white"}`}>
+                  {hasPlan ? "Regerar planejamento" : "Gerar planejamento de estudos"}
+                </p>
+              </div>
+              <MdChevronRight size={18} className={hasPlan ? "text-gray-400 group-hover:text-[#4A90C4]" : "text-white/60 group-hover:text-white"} />
+            </button>
+
+            {/* Board de dias */}
+            {planLoading ? (
+              <p className="text-sm text-gray-400 text-center py-8">Carregando...</p>
+            ) : activeDays.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
+                <p className="text-sm text-gray-400">Nenhuma disponibilidade cadastrada.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activeDays.map(avail => {
+                  const dayTasks = planItems.filter(i => i.day_of_week === avail.day_of_week);
+                  const totalMin = dayTasks.reduce((s, t) => s + (t.duration_minutes ?? 0), 0);
+                  return (
+                    <div key={avail.day_of_week} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                      <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-gray-700">{DAY_SHORT[avail.day_of_week]}</p>
+                          <p className="text-xs text-gray-400">{planDayDate(ws, avail.day_of_week)}</p>
+                        </div>
+                        {totalMin > 0 && (
+                          <span className="text-xs font-semibold text-[#4A90C4]">{totalMin} min</span>
+                        )}
+                      </div>
+                      <div className="p-3 space-y-2">
+                        {dayTasks.length === 0 ? (
+                          <p className="text-xs text-gray-300 text-center py-3">
+                            {hasPlan ? "Nenhuma tarefa" : "Sem planejamento"}
+                          </p>
+                        ) : (
+                          dayTasks.map(task => {
+                            const title = task.is_maintenance
+                              ? `Manutenção · ${task.piece?.title ?? "—"}`
+                              : task.piece?.title ?? task.exercise?.title ?? "—";
+                            const cardBg = task.is_maintenance
+                              ? "bg-gray-100 hover:bg-gray-200/70"
+                              : task.exercise_id
+                                ? "bg-rose-50 hover:bg-rose-100/80"
+                                : "bg-[#D6E4F0]/60 hover:bg-[#D6E4F0]";
+                            return (
+                              <button key={task.id}
+                                onClick={() => { setEditingPlanItem(task); setEditDuration(task.duration_minutes ?? 15); }}
+                                className={`w-full text-left rounded-xl p-3 transition group ${cardBg}`}>
+                                <div className="flex items-start gap-2">
+                                  {task.is_maintenance && <span className="text-sm shrink-0">🔄</span>}
+                                  <p className="text-sm font-medium text-gray-700 flex-1 leading-snug line-clamp-2">{title}</p>
+                                  {task.is_done && (
+                                    <span className="shrink-0 w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center mt-0.5">
+                                      <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                                        <path d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </span>
+                                  )}
+                                </div>
+                                {task.programa && (
+                                  <p className="text-xs text-gray-400 mt-1 truncate">{task.programa.title}</p>
+                                )}
+                                <p className="text-xs font-semibold text-[#4A90C4] mt-1">{task.duration_minutes} min</p>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Sheet de edição de tarefa */}
+            {editingPlanItem && (
+              <div className="fixed inset-0 bg-black/40 z-30 flex items-end" onClick={() => setEditingPlanItem(null)}>
+                <div className="bg-white rounded-t-2xl px-6 pt-6 pb-8 w-full max-w-lg mx-auto" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0 pr-3">
+                      <p className="text-base font-bold text-[#1E3A5F] line-clamp-2">
+                        {editingPlanItem.is_maintenance
+                          ? `Manutenção · ${editingPlanItem.piece?.title ?? "—"}`
+                          : editingPlanItem.piece?.title ?? editingPlanItem.exercise?.title ?? "—"}
+                      </p>
+                      {editingPlanItem.programa && (
+                        <p className="text-sm text-gray-400 mt-1 truncate">{editingPlanItem.programa.title}</p>
+                      )}
+                    </div>
+                    <button onClick={() => setEditingPlanItem(null)} className="text-gray-400 shrink-0">
+                      <MdClose size={22} />
+                    </button>
+                  </div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-8 mb-3">Duração</p>
+                  <div className="flex items-center gap-4 mb-10">
+                    <input type="number" min={5} max={180} value={editDuration}
+                      onChange={e => setEditDuration(Number(e.target.value))}
+                      className="w-20 text-center border border-gray-200 rounded-xl px-2 py-2.5 text-base font-semibold text-[#1E3A5F] outline-none focus:border-[#4A90C4]"
+                    />
+                    <span className="text-sm text-gray-400">min</span>
+                    <input type="range" min={5} max={180} step={5} value={editDuration}
+                      onChange={e => setEditDuration(Number(e.target.value))}
+                      className="flex-1 accent-[#4A90C4] h-2"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => deletePlanItem(editingPlanItem.id)}
+                      className="flex-1 py-3 rounded-xl border border-red-100 text-red-400 text-sm font-semibold hover:bg-red-50 transition">
+                      Remover tarefa
+                    </button>
+                    <button onClick={() => savePlanItemDuration(editingPlanItem.id, editDuration)}
+                      disabled={savingPlanItem}
+                      className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold disabled:opacity-50">
+                      {savingPlanItem ? "..." : "Salvar"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Tab: Repertório (Peças + Exercícios) */}
       {activeTab === "repertoire" && (
