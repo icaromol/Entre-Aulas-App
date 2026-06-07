@@ -395,7 +395,7 @@ export default function PlanejamentoPage() {
         }
       }
       toast.success('Planejamento salvo!')
-      navigate(`/professor/alunos/${studentId}?tab=programs`)
+      navigate(`/professor/alunos/${studentId}?tab=plans`)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erro ao salvar.')
     } finally {
@@ -447,7 +447,7 @@ export default function PlanejamentoPage() {
     return (
       <TeacherLayout>
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate(`/professor/alunos/${studentId}?tab=programs`)} className="text-gray-400 hover:text-gray-600 transition">
+          <button onClick={() => navigate(`/professor/alunos/${studentId}?tab=plans`)} className="text-gray-400 hover:text-gray-600 transition">
             <MdArrowBack size={20} />
           </button>
           <h1 className="text-xl font-bold text-[#1E3A5F]">Planejamento de Estudos</h1>

@@ -156,7 +156,7 @@ export default function PieceDetailPage() {
     if (!confirm('Excluir esta peça? Esta ação não pode ser desfeita.')) return
     await supabase.from('pieces').delete().eq('id', pieceId!)
     toast.success('Peça excluída')
-    navigate(`/professor/alunos/${studentId}`)
+    navigate(`/professor/alunos/${studentId}?tab=repertoire`)
   }
 
   if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
@@ -174,7 +174,7 @@ export default function PieceDetailPage() {
     <TeacherLayout>
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Link to={`/professor/alunos/${studentId}`} className="text-gray-400 hover:text-gray-600 transition">
+        <Link to={`/professor/alunos/${studentId}?tab=repertoire`} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
         <div className="flex-1">

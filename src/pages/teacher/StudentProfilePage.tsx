@@ -178,7 +178,8 @@ function daysUntilLabel(date: string) {
   return `em ${days} dias`;
 }
 
-type TabKey = "pieces" | "exercises" | "programs";
+type TabKey = "plans" | "repertoire" | "programs";
+type RepertoireTab = "pieces" | "exercises";
 
 export default function StudentProfilePage() {
   const { studentId } = useParams();
@@ -192,8 +193,15 @@ export default function StudentProfilePage() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [programas, setProgramas] = useState<Programa[]>([]);
   const [loading, setLoading] = useState(true);
-  const initialTab = (searchParams.get("tab") as TabKey) ?? "pieces";
+  const rawTab = searchParams.get("tab");
+  const initialTab: TabKey =
+    rawTab === "programs" ? "programs" :
+    rawTab === "repertoire" ? "repertoire" :
+    rawTab === "plans" ? "plans" : "plans";
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+  const [subTab, setSubTab] = useState<RepertoireTab>(
+    rawTab === "exercises" ? "exercises" : "pieces"
+  );
   const [showMenu, setShowMenu] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
@@ -502,30 +510,6 @@ export default function StudentProfilePage() {
         </div>
       </div>
 
-      {/* Banner: Gerar planejamento */}
-      <button
-        onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
-        className="w-full mb-5 bg-[#4A90C4] hover:bg-[#4A90C4]/90 rounded-2xl px-5 py-4 flex items-center justify-between transition group"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-            <MdCalendarMonth size={22} className="text-white" />
-          </div>
-          <div className="text-left">
-            <p className="text-white font-bold text-sm">
-              Gerar planejamento de estudos
-            </p>
-            <p className="text-white/70 text-xs mt-0.5">
-              Plano semanal personalizado para {student.first_name}
-            </p>
-          </div>
-        </div>
-        <MdChevronRight
-          size={20}
-          className="text-white/60 group-hover:text-white transition"
-        />
-      </button>
-
       {/* Disponibilidade — 7 dias */}
       <div className="flex gap-2 mb-5">
         {[
@@ -567,9 +551,9 @@ export default function StudentProfilePage() {
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
         {(
           [
-            { key: "pieces", label: "Peças", Icon: MdMusicNote },
-            { key: "exercises", label: "Exercícios", Icon: MdSchool },
-            { key: "programs", label: "Programas", Icon: MdLibraryMusic },
+            { key: "plans",      label: "Planejamentos", Icon: MdCalendarMonth },
+            { key: "repertoire", label: "Repertório",    Icon: MdMusicNote     },
+            { key: "programs",   label: "Programas",     Icon: MdLibraryMusic  },
           ] as const
         ).map((tab) => (
           <button
@@ -587,122 +571,116 @@ export default function StudentProfilePage() {
         ))}
       </div>
 
-      {/* Tab: Peças */}
-      {activeTab === "pieces" && (
+      {/* Tab: Planejamentos */}
+      {activeTab === "plans" && (
         <div className="space-y-3">
-          {pieces.length === 0 ? (
-            <EmptyState
-              title="Nenhuma peça ainda"
-              description="Adicione a primeira peça do repertório."
-            />
-          ) : (
-            pieces.map((piece) => (
-              <Link
-                key={piece.id}
-                to={`/professor/alunos/${studentId}/pecas/${piece.id}`}
-                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
-              >
-                <div className="relative w-10 h-10 shrink-0">
-                  <svg
-                    viewBox="0 0 36 36"
-                    className="w-10 h-10 -rotate-90 absolute inset-0"
-                  >
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="15"
-                      fill="none"
-                      stroke="#F3F4F6"
-                      strokeWidth="3"
-                    />
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="15"
-                      fill="none"
-                      stroke="#4A90C4"
-                      strokeWidth="3"
-                      strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="rounded-full overflow-hidden">
-                      <Avatar
-                        size={24}
-                        name={piece.title}
-                        variant="marble"
-                        colors={AVATAR_COLORS}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">
-                    {piece.title}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {piece.composer ?? "—"} ·{" "}
-                    {pieceStatusLabel[piece.status] ?? piece.status}
-                  </p>
-                </div>
-                <MdChevronRight size={16} className="text-gray-400 shrink-0" />
-              </Link>
-            ))
-          )}
-          <Link
-            to={`/professor/alunos/${studentId}/pecas/nova`}
-            className="flex items-center justify-center gap-2 w-full py-24 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition"
+          <button
+            onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
+            className="w-full bg-[#4A90C4] hover:bg-[#4A90C4]/90 rounded-2xl px-5 py-4 flex items-center justify-between transition group"
           >
-            <MdAdd size={22} />
-            Nova peça
-          </Link>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                <MdCalendarMonth size={22} className="text-white" />
+              </div>
+              <div className="text-left">
+                <p className="text-white font-bold text-sm">Gerar planejamento de estudos</p>
+                <p className="text-white/70 text-xs mt-0.5">Plano semanal personalizado para {student.first_name}</p>
+              </div>
+            </div>
+            <MdChevronRight size={20} className="text-white/60 group-hover:text-white transition" />
+          </button>
+          <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
+            <MdCalendarMonth size={28} className="mx-auto mb-3 text-gray-300" />
+            <p className="text-sm font-semibold text-gray-500">Visualização de planejamentos</p>
+            <p className="text-xs text-gray-400 mt-1 leading-relaxed">Em breve: visão semanal de todos os planos gerados para {student.first_name}.</p>
+          </div>
         </div>
       )}
 
-      {/* Tab: Exercícios */}
-      {activeTab === "exercises" && (
-        <div className="space-y-3">
-          {exercises.length === 0 ? (
-            <EmptyState
-              title="Nenhum exercício ainda"
-              description="Adicione exercícios técnicos ou teóricos."
-            />
-          ) : (
-            exercises.map((ex) => (
-              <Link
-                key={ex.id}
-                to={`/professor/alunos/${studentId}/exercicios/${ex.id}`}
-                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
-              >
-                <div className="shrink-0 rounded-lg overflow-hidden">
-                  <Avatar
-                    size={36}
-                    name={ex.title}
-                    variant="pixel"
-                    colors={AVATAR_COLORS}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">
-                    {ex.title}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {exerciseCategoryLabel[ex.category] ?? ex.category} ·{" "}
-                    {exerciseStatusLabel[ex.status] ?? ex.status}
-                  </p>
-                </div>
-                <MdChevronRight size={16} className="text-gray-400 shrink-0" />
+      {/* Tab: Repertório (Peças + Exercícios) */}
+      {activeTab === "repertoire" && (
+        <div>
+          {/* Sub-tabs */}
+          <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-4">
+            {([
+              { key: "pieces" as const,    label: "Peças",      Icon: MdMusicNote },
+              { key: "exercises" as const, label: "Exercícios", Icon: MdSchool    },
+            ]).map((t) => (
+              <button key={t.key} onClick={() => setSubTab(t.key)}
+                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${
+                  subTab === t.key ? "bg-white text-[#1E3A5F] shadow-sm" : "text-gray-400 hover:text-gray-600"
+                }`}>
+                <t.Icon size={13} />{t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Peças */}
+          {subTab === "pieces" && (
+            <div className="space-y-3">
+              {pieces.length === 0 ? (
+                <EmptyState title="Nenhuma peça ainda" description="Adicione a primeira peça do repertório." />
+              ) : (
+                pieces.map((piece) => (
+                  <Link key={piece.id} to={`/professor/alunos/${studentId}/pecas/${piece.id}`}
+                    className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition">
+                    <div className="relative w-10 h-10 shrink-0">
+                      <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90 absolute inset-0">
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3" />
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="#4A90C4" strokeWidth="3"
+                          strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`} strokeLinecap="round" />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="rounded-full overflow-hidden">
+                          <Avatar size={24} name={piece.title} variant="marble" colors={AVATAR_COLORS} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{piece.title}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {piece.composer ?? "—"} · {pieceStatusLabel[piece.status] ?? piece.status}
+                      </p>
+                    </div>
+                    <MdChevronRight size={16} className="text-gray-400 shrink-0" />
+                  </Link>
+                ))
+              )}
+              <Link to={`/professor/alunos/${studentId}/pecas/nova`}
+                className="flex items-center justify-center gap-2 w-full py-16 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
+                <MdAdd size={22} />Nova peça
               </Link>
-            ))
+            </div>
           )}
-          <Link
-            to={`/professor/alunos/${studentId}/exercicios/novo`}
-            className="flex items-center justify-center gap-2 w-full py-24 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition"
-          >
-            <MdAdd size={22} />
-            Novo exercício
-          </Link>
+
+          {/* Exercícios */}
+          {subTab === "exercises" && (
+            <div className="space-y-3">
+              {exercises.length === 0 ? (
+                <EmptyState title="Nenhum exercício ainda" description="Adicione exercícios técnicos ou teóricos." />
+              ) : (
+                exercises.map((ex) => (
+                  <Link key={ex.id} to={`/professor/alunos/${studentId}/exercicios/${ex.id}`}
+                    className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition">
+                    <div className="shrink-0 rounded-lg overflow-hidden">
+                      <Avatar size={36} name={ex.title} variant="pixel" colors={AVATAR_COLORS} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{ex.title}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {exerciseCategoryLabel[ex.category] ?? ex.category} · {exerciseStatusLabel[ex.status] ?? ex.status}
+                      </p>
+                    </div>
+                    <MdChevronRight size={16} className="text-gray-400 shrink-0" />
+                  </Link>
+                ))
+              )}
+              <Link to={`/professor/alunos/${studentId}/exercicios/novo`}
+                className="flex items-center justify-center gap-2 w-full py-16 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
+                <MdAdd size={22} />Novo exercício
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

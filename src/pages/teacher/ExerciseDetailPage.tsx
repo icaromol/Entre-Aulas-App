@@ -137,7 +137,7 @@ export default function ExerciseDetailPage() {
     if (!confirm('Excluir este exercício? Esta ação não pode ser desfeita.')) return
     await supabase.from('exercises').delete().eq('id', exerciseId!)
     toast.success('Exercício excluído')
-    navigate(`/professor/alunos/${studentId}?tab=exercises`)
+    navigate(`/professor/alunos/${studentId}?tab=repertoire`)
   }
 
   if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
@@ -158,7 +158,7 @@ export default function ExerciseDetailPage() {
     <TeacherLayout>
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Link to={`/professor/alunos/${studentId}?tab=exercises`} className="text-gray-400 hover:text-gray-600 transition">
+        <Link to={`/professor/alunos/${studentId}?tab=repertoire`} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
         <div className="flex-1">

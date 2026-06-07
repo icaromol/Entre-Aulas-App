@@ -128,7 +128,7 @@ export default function NewExercisePage() {
         toast.success('Exercício criado! Formulário pronto para novo exercício.')
       } else {
         toast.success('Exercício criado!')
-        navigate(`/professor/alunos/${studentId}?tab=exercises`)
+        navigate(`/professor/alunos/${studentId}?tab=repertoire`)
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')
@@ -142,7 +142,7 @@ export default function NewExercisePage() {
   return (
     <TeacherLayout>
       <div className="flex items-center gap-3 mb-6">
-        <Link to={`/professor/alunos/${studentId}?tab=exercises`} className="text-gray-400 hover:text-gray-600 transition">
+        <Link to={`/professor/alunos/${studentId}?tab=repertoire`} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
         <h1 className="text-xl font-bold text-[#1E3A5F]">Novo exercício</h1>
@@ -317,7 +317,7 @@ export default function NewExercisePage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate(`/professor/alunos/${studentId}?tab=exercises`)}
+              onClick={() => navigate(`/professor/alunos/${studentId}?tab=repertoire`)}
               className="flex-1 rounded-xl border-gray-200 text-gray-600"
             >
               Cancelar
