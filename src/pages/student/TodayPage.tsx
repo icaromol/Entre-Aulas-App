@@ -55,12 +55,13 @@ export default function TodayPage() {
     setLoading(true)
 
     if (!studentId) {
-      const { data: student } = await supabase
+      const { data: student, error: studentErr } = await supabase
         .from('students')
         .select('id')
         .eq('profile_id', profile!.id)
         .single()
 
+      console.log('[today] student lookup:', student, studentErr)
       if (!student) { setLoading(false); return }
       setStudentId(student.id)
       await fetchItems(student.id)
@@ -70,16 +71,19 @@ export default function TodayPage() {
   }
 
   async function fetchItems(sid: string) {
-    const { data: plan } = await supabase
+    console.log('[today] looking for plan — student_id:', sid, 'week_start:', weekStart, 'day:', viewDay)
+
+    const { data: plan, error: planErr } = await supabase
       .from('weekly_plans')
       .select('id')
       .eq('student_id', sid)
       .eq('week_start', weekStart)
       .single()
 
+    console.log('[today] plan:', plan, planErr)
     if (!plan) { setItems([]); setLoading(false); return }
 
-    const { data: planItems } = await supabase
+    const { data: planItems, error: itemsErr } = await supabase
       .from('plan_items')
       .select(`
         id, plan_id, day_of_week, piece_id, exercise_id, program_id,
@@ -92,6 +96,7 @@ export default function TodayPage() {
       .eq('day_of_week', viewDay)
       .order('position')
 
+    console.log('[today] items:', planItems, itemsErr)
     setItems((planItems ?? []) as unknown as PlanItem[])
     setLoading(false)
   }
