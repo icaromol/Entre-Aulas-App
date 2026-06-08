@@ -5,7 +5,7 @@ import { MdArrowBack, MdPerson, MdMusicNote, MdAccessTime, MdNotes, MdAdd } from
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { grantTeacherXp } from '@/lib/teacherXpHelpers'
-import { fireBasic, fireStars, hasRankUp } from '@/lib/confettiEffects'
+import { fireBasic, fireStars } from '@/lib/confettiEffects'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
@@ -126,7 +126,7 @@ export default function NewStudentPage() {
 
       // 5. XP do professor + confetti
       const { newAchievements } = await grantTeacherXp(teacher.id, 'new_student', student.id)
-      if (hasRankUp(newAchievements)) fireStars()
+      if (newAchievements.length > 0) fireStars()
       else fireBasic()
 
       // 6. Gera link de convite e redireciona

@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { grantTeacherXp } from '@/lib/teacherXpHelpers'
-import { fireBasic, fireStars, hasRankUp } from '@/lib/confettiEffects'
+import { fireBasic, fireStars } from '@/lib/confettiEffects'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 import type { ProgramaType } from '@/types/programs'
@@ -132,7 +132,7 @@ export default function NewProgramaPage() {
       }
 
       const { newAchievements } = await grantTeacherXp(teacher.id, 'new_program', data.id)
-      if (hasRankUp(newAchievements)) fireStars()
+      if (newAchievements.length > 0) fireStars()
       else fireBasic()
       toast.success('Programa criado!')
       navigate(`/professor/alunos/${studentId}/programas/${data.id}`)

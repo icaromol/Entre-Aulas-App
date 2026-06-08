@@ -120,15 +120,15 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
       sessionsResult,
       piecesResult,
       programasResult,
+      completedProgramasResult,
       weekPlanResult,
       weekSessionsResult,
       weekItemsResult,
-      xpHistoryResult,
       minutesHistoryResult,
     ] = await Promise.all([
       supabase
         .from('student_xp_events')
-        .select('amount, attribute, reason, created_at')
+        .select('amount, attribute, reason, created_at, source_id')
         .eq('student_id', sid),
 
       supabase
@@ -140,7 +140,8 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
         .from('study_sessions')
         .select('started_at')
         .eq('student_id', sid)
-        .order('started_at', { ascending: false }),
+        .order('started_at', { ascending: false })
+        .limit(35),
 
       supabase
         .from('pieces')
@@ -158,6 +159,12 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
         .not('deadline', 'is', null)
         .neq('type', 'regular')
         .order('deadline', { ascending: true }),
+
+      supabase
+        .from('programas')
+        .select('id')
+        .eq('student_id', sid)
+        .eq('status', 'completed'),
 
       supabase
         .from('weekly_plans')
@@ -180,12 +187,6 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
         .eq('reason', 'checklist_item')
         .gte('created_at', weekStart + 'T00:00:00')
         .lt('created_at', weekEndIso),
-
-      supabase
-        .from('student_xp_events')
-        .select('amount, created_at')
-        .eq('student_id', sid)
-        .gte('created_at', eightWeeksAgo + 'T00:00:00'),
 
       supabase
         .from('study_sessions')
@@ -311,8 +312,33 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
       },
     ]
 
-    // ─── Grant XP de missões semanais (só na sessão do próprio aluno) ─────
+    // ─── Grant XP de programas concluídos, missão diária e semanais ─────────
     if (!overrideSid) {
+      const today = new Date().toISOString().slice(0, 10)
+
+      // Programas concluídos pelo professor: +1000 XP por programa ainda não concedido
+      const alreadyGrantedProgramIds = new Set(
+        xpEvents
+          .filter(e => e.reason === 'program_completed')
+          .map(e => e.source_id)
+      )
+      for (const prog of (completedProgramasResult.data ?? [])) {
+        if (!alreadyGrantedProgramIds.has(prog.id)) {
+          grantXp(sid, 'program_completed', prog.id, 'performance')
+        }
+      }
+
+      // Missão diária: completar todas as tarefas do dia
+      if (todayMission.completed) {
+        const alreadyGrantedToday = xpEvents.some(
+          e => e.reason === 'daily_mission' && e.created_at.startsWith(today)
+        )
+        if (!alreadyGrantedToday) {
+          grantXp(sid, 'daily_mission')
+        }
+      }
+
+      // Missões semanais
       const grantedThisWeek = new Set(
         xpEvents
           .filter(e => e.created_at >= weekStart + 'T00:00:00' &&
@@ -339,9 +365,11 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
 
     // ─── Histórico de XP e minutos (8 semanas) ───────────────────────────
     const xpByWeek: Record<string, number> = {}
-    for (const e of (xpHistoryResult.data ?? [])) {
-      const w = formatWeekStart(getMonday(new Date(e.created_at)))
-      xpByWeek[w] = (xpByWeek[w] ?? 0) + e.amount
+    for (const e of xpEvents) {
+      if (e.created_at >= eightWeeksAgo + 'T00:00:00') {
+        const w = formatWeekStart(getMonday(new Date(e.created_at)))
+        xpByWeek[w] = (xpByWeek[w] ?? 0) + e.amount
+      }
     }
     const minByWeek: Record<string, number> = {}
     for (const s of (minutesHistoryResult.data ?? [])) {

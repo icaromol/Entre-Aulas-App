@@ -151,10 +151,15 @@ export default function ProgramaDetailPage() {
   }
 
   async function archivePrograma() {
-    if (!confirm('Arquivar este programa? Ele deixará de aparecer na lista ativa.')) return
-    await supabase.from('programas').update({ status: 'archived' }).eq('id', programId!)
-    setPrograma(prev => prev ? { ...prev, status: 'archived' } : prev)
-    toast.success('Programa arquivado')
+    const isEvent = programa?.type !== 'regular'
+    const newStatus = isEvent ? 'completed' : 'archived'
+    const msg = isEvent
+      ? 'Marcar este programa como concluído? Ele sairá da lista ativa.'
+      : 'Arquivar este programa? Ele deixará de aparecer na lista ativa.'
+    if (!confirm(msg)) return
+    await supabase.from('programas').update({ status: newStatus }).eq('id', programId!)
+    setPrograma(prev => prev ? { ...prev, status: newStatus as 'completed' | 'archived' } : prev)
+    toast.success(isEvent ? 'Programa concluído!' : 'Programa arquivado')
   }
 
   async function deletePrograma() {
@@ -414,7 +419,7 @@ export default function ProgramaDetailPage() {
           onClick={archivePrograma}
           className="w-full py-3 rounded-2xl border border-gray-200 text-sm text-gray-400 hover:border-gray-300 hover:text-gray-600 transition mb-2"
         >
-          Arquivar programa
+          {programa.type !== 'regular' ? 'Concluir programa' : 'Arquivar programa'}
         </button>
       )}
       <button

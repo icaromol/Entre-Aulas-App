@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { grantTeacherXp } from '@/lib/teacherXpHelpers'
-import { fireBasic, fireStars, hasRankUp } from '@/lib/confettiEffects'
+import { fireBasic, fireStars } from '@/lib/confettiEffects'
 import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -405,7 +405,7 @@ export default function PlanejamentoPage() {
         const { newAchievements } = await grantTeacherXp(teacher.id, 'new_plan', ws)
         allAchievements.push(...newAchievements)
       }
-      if (hasRankUp(allAchievements)) fireStars()
+      if (allAchievements.length > 0) fireStars()
       else fireBasic()
       toast.success('Planejamento salvo!')
       navigate(`/professor/alunos/${studentId}?tab=plans`)

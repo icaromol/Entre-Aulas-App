@@ -60,7 +60,7 @@ export function useTeacherProgress(): { progress: TeacherProgress | null; loadin
   const { profile } = useAuth()
   const [progress, setProgress] = useState<TeacherProgress | null>(null)
   const [loading, setLoading] = useState(true)
-  const prevMissionsDone = useRef(0)
+  const grantedMissionsRef = useRef(new Set<string>())
 
   useEffect(() => {
     if (!profile || profile.role !== 'teacher') {
@@ -105,7 +105,6 @@ export function useTeacherProgress(): { progress: TeacherProgress | null; loadin
       allPlansResult,
       thisWeekPlansResult,
       sessionsResult,
-      xpHistoryResult,
       studentXpResult,
     ] = await Promise.all([
       supabase
@@ -120,13 +119,13 @@ export function useTeacherProgress(): { progress: TeacherProgress | null; loadin
 
       supabase
         .from('weekly_plans')
-        .select('id, week_start, created_at, students!inner(teacher_id)')
-        .eq('students.teacher_id', tid),
+        .select('id, week_start, created_at')
+        .eq('teacher_id', tid),
 
       supabase
         .from('weekly_plans')
-        .select('id, students!inner(teacher_id)')
-        .eq('students.teacher_id', tid)
+        .select('id')
+        .eq('teacher_id', tid)
         .gte('created_at', weekStart + 'T00:00:00')
         .lt('created_at', weekEndIso),
 
@@ -138,12 +137,6 @@ export function useTeacherProgress(): { progress: TeacherProgress | null; loadin
           .gte('started_at', weekStart + 'T00:00:00')
           .lt('started_at', weekEndIso)
         : Promise.resolve({ data: [] }),
-
-      supabase
-        .from('teacher_xp_events')
-        .select('amount, created_at')
-        .eq('teacher_id', tid)
-        .gte('created_at', eightWeeksAgo + 'T00:00:00'),
 
       studentIds.length > 0
         ? supabase
@@ -211,9 +204,11 @@ export function useTeacherProgress(): { progress: TeacherProgress | null; loadin
 
     // ─── Histórico 8 semanas ──────────────────────────────────────────────
     const xpByWeek: Record<string, number> = {}
-    for (const e of (xpHistoryResult.data ?? [])) {
-      const w = formatWeekStart(getMonday(new Date(e.created_at)))
-      xpByWeek[w] = (xpByWeek[w] ?? 0) + e.amount
+    for (const e of xpEvents) {
+      if (e.created_at >= eightWeeksAgo + 'T00:00:00') {
+        const w = formatWeekStart(getMonday(new Date(e.created_at)))
+        xpByWeek[w] = (xpByWeek[w] ?? 0) + e.amount
+      }
     }
     const plansByWeek: Record<string, number> = {}
     for (const p of allPlans) {
@@ -266,13 +261,12 @@ export function useTeacherProgress(): { progress: TeacherProgress | null; loadin
       },
     ]
 
-    // Grant missões recém-concluídas (com dedup por semana via source_id=weekStart)
-    const doneMissions = weeklyMissions.filter(m => m.completed)
-    if (doneMissions.length > prevMissionsDone.current) {
-      for (const m of doneMissions) {
+    // Grant missões recém-concluídas — só as que ainda não foram concedidas in-memory
+    for (const m of weeklyMissions) {
+      if (m.completed && !grantedMissionsRef.current.has(`${weekStart}_${m.key}`)) {
         await grantTeacherXp(tid, 'weekly_mission', `${weekStart}_${m.key}`)
+        grantedMissionsRef.current.add(`${weekStart}_${m.key}`)
       }
-      prevMissionsDone.current = doneMissions.length
     }
 
     setProgress({

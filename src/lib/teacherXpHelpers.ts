@@ -146,8 +146,8 @@ export async function checkAndGrantTeacherAchievements(
     await Promise.all([
       supabase
         .from('weekly_plans')
-        .select('id, week_start, students!inner(teacher_id)')
-        .eq('students.teacher_id', teacherId),
+        .select('id, week_start')
+        .eq('teacher_id', teacherId),
 
       studentIds.length > 0
         ? supabase.from('pieces').select('id').in('student_id', studentIds).eq('completion_pct', 100)
