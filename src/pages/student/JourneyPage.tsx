@@ -1,8 +1,11 @@
-import { useAuth } from '@/hooks/useAuth'
+import { useState, useEffect } from 'react'
 import { useStudentProgress } from '@/hooks/useStudentProgress'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
-import { MdLock, MdStar, MdEmojiEvents, MdMusicNote, MdTimer, MdWhatshot } from 'react-icons/md'
+import {
+  MdLock, MdStar, MdEmojiEvents, MdMusicNote, MdTimer, MdWhatshot,
+  MdClose, MdArrowForward, MdStars, MdBolt, MdLeaderboard, MdTune, MdFlag,
+} from 'react-icons/md'
 import type { XpAttribute } from '@/lib/xpHelpers'
 
 // ─── Constantes de exibição ────────────────────────────────────────────────
@@ -42,18 +45,131 @@ const ALL_ACHIEVEMENTS: { key: string; label: string; category: 'session' | 'pie
   { key: 'rank_mestre',          label: 'Mestre',             category: 'rank'    },
 ]
 
+// ─── Onboarding steps ─────────────────────────────────────────────────────────
+
+const ONBOARDING_KEY = 'estudamus_jornada_intro_seen'
+
+const STEPS = [
+  {
+    Icon: MdStars,
+    title: 'Bem-vindo à Jornada Musical',
+    body: 'Aqui você acompanha seu crescimento como músico de forma visual e gamificada. Cada hora de estudo conta — e o app transforma isso em progresso real.',
+    extra: null,
+  },
+  {
+    Icon: MdBolt,
+    title: 'Como ganhar XP',
+    body: 'XP é a moeda do seu progresso. Você ganha pontos ao completar atividades de estudo:',
+    extra: [
+      { label: 'Marcar uma tarefa',        xp: '+15 XP' },
+      { label: 'Sessão de estudo',         xp: '+5 XP'  },
+      { label: 'Concluir uma peça',        xp: '+300 XP'},
+      { label: 'Missão do dia completa',   xp: '+20 XP' },
+      { label: 'Missões semanais',         xp: 'até +75 XP'},
+    ],
+  },
+  {
+    Icon: MdLeaderboard,
+    title: 'Ranks e Progressão',
+    body: 'Você começa como Aprendiz IV e pode chegar ao Mestre. São 22 níveis que refletem sua dedicação ao longo do tempo. Cada região tem 4 sub-níveis: IV, III, II e I.',
+    extra: null,
+  },
+  {
+    Icon: MdTune,
+    title: 'Atributos Musicais',
+    body: 'Seu XP é distribuído entre 9 atributos: Técnica, Ritmo, Musicalidade, Percepção e mais. Cada tipo de atividade fortalece atributos diferentes — conforme o que você pratica.',
+    extra: null,
+  },
+  {
+    Icon: MdFlag,
+    title: 'Missões e Conquistas',
+    body: 'Complete missões diárias e semanais para ganhar XP extra. Desbloqueie conquistas especiais ao atingir marcos na sua jornada — como streak de 7 dias ou concluir 5 peças.',
+    extra: null,
+  },
+] as const
+
+function OnboardingModal({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState(0)
+  const isLast = step === STEPS.length - 1
+  const { Icon, title, body, extra } = STEPS[step]
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-6 sm:pb-0">
+      <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+
+        {/* Topo com botão fechar */}
+        <div className="flex justify-end px-4 pt-4">
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-500 transition">
+            <MdClose size={20} />
+          </button>
+        </div>
+
+        {/* Conteúdo */}
+        <div className="px-6 pb-2">
+          <div className="flex justify-center mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#D6E4F0] flex items-center justify-center">
+              <Icon size={28} className="text-[#1E3A5F]" />
+            </div>
+          </div>
+
+          <h2 className="text-base font-bold text-[#1E3A5F] text-center mb-2">{title}</h2>
+          <p className="text-sm text-gray-500 text-center leading-relaxed">{body}</p>
+
+          {extra && (
+            <div className="mt-4 space-y-2">
+              {extra.map(item => (
+                <div key={item.label} className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-[#F5F7FA]">
+                  <span className="text-xs text-gray-600">{item.label}</span>
+                  <span className="text-xs font-bold text-[#4A90C4]">{item.xp}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Dots + botões */}
+        <div className="px-6 pt-4 pb-6 space-y-4">
+          <div className="flex justify-center gap-1.5">
+            {STEPS.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === step ? 'w-5 bg-[#1E3A5F]' : 'w-1.5 bg-gray-200'
+                }`}
+              />
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:border-gray-300 transition"
+            >
+              Pular
+            </button>
+            <button
+              onClick={() => isLast ? onClose() : setStep(s => s + 1)}
+              className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition flex items-center justify-center gap-1.5"
+            >
+              {isLast ? 'Entendi!' : 'Próximo'}
+              {!isLast && <MdArrowForward size={15} />}
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function AchievementIcon({ category, size = 16 }: { category: string; size?: number }) {
   if (category === 'streak') return <MdWhatshot size={size} />
   if (category === 'piece')  return <MdMusicNote size={size} />
   if (category === 'session') return <MdTimer size={size} />
   if (category === 'rank')   return <MdEmojiEvents size={size} />
   return <MdStar size={size} />
-}
-
-function greeting(name: string) {
-  const h = new Date().getHours()
-  const part = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'
-  return `${part}, ${name}`
 }
 
 function fmtXp(n: number) {
@@ -63,8 +179,20 @@ function fmtXp(n: number) {
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function JourneyPage() {
-  const { profile } = useAuth()
   const { progress, loading } = useStudentProgress()
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  useEffect(() => {
+    if (!loading && progress?.studentId) {
+      const seen = localStorage.getItem(ONBOARDING_KEY)
+      if (!seen) setShowOnboarding(true)
+    }
+  }, [loading, progress?.studentId])
+
+  function closeOnboarding() {
+    localStorage.setItem(ONBOARDING_KEY, '1')
+    setShowOnboarding(false)
+  }
 
   if (loading) {
     return (
@@ -86,33 +214,28 @@ export default function JourneyPage() {
     )
   }
 
-  const { rank, xpTotal, xpByAttribute, streak, activeMissions, todayMission, nextEvent, weeklyMissions, achievements } = progress
+  const { rank, xpByAttribute, streak, activeMissions, todayMission, nextEvent, weeklyMissions, achievements } = progress
   const unlockedSet = new Set(achievements)
-  const firstName = profile?.first_name ?? ''
 
-  // Atributos — ordenados, normalizados pelo maior valor
   const attrValues = ATTRIBUTE_ORDER.map(k => ({ key: k, xp: xpByAttribute[k] ?? 0 }))
   const maxAttr = Math.max(1, ...attrValues.map(a => a.xp))
 
   return (
     <StudentLayout>
 
-      {/* Saudação */}
+      {showOnboarding && <OnboardingModal onClose={closeOnboarding} />}
+
+      {/* Título da página */}
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-[#1E3A5F]">{greeting(firstName)}</h1>
-        <p className="text-xs text-gray-400 mt-0.5">{rank.current.display} · {fmtXp(xpTotal)} XP</p>
+        <h1 className="text-xl font-bold text-[#1E3A5F]">Jornada Musical</h1>
+        <p className="text-xs text-gray-400 mt-0.5">Acompanhe seu crescimento como músico</p>
       </div>
 
       {/* Card de rank */}
       <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rank atual</p>
-            <p className="text-lg font-bold text-[#1E3A5F] mt-0.5">{rank.current.display}</p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-[#D6E4F0] flex items-center justify-center">
-            <MdEmojiEvents size={22} className="text-[#1E3A5F]" />
-          </div>
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rank atual</p>
+          <p className="text-lg font-bold text-[#1E3A5F] mt-0.5">{rank.current.display}</p>
         </div>
 
         {/* Barra de progresso */}
@@ -123,19 +246,9 @@ export default function JourneyPage() {
           />
         </div>
 
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400">
-            {fmtXp(rank.xpIntoRank)} / {rank.next ? fmtXp(rank.next.xpMin - rank.current.xpMin) : '—'} XP
-          </p>
-          {rank.next ? (
-            <p className="text-xs text-gray-400">
-              Próximo: <span className="font-semibold text-[#1E3A5F]">{rank.next.display}</span>
-              {rank.xpNeeded > 0 && <span> · faltam {fmtXp(rank.xpNeeded)} XP</span>}
-            </p>
-          ) : (
-            <p className="text-xs font-semibold text-[#4A90C4]">Rank máximo</p>
-          )}
-        </div>
+        <p className="text-xs text-gray-400">
+          {fmtXp(rank.xpIntoRank)} / {rank.next ? fmtXp(rank.next.xpMin - rank.current.xpMin) : '—'} XP
+        </p>
       </div>
 
       {/* Streak + Próximo evento */}

@@ -173,14 +173,9 @@ export function StudentJornadaTab({ studentId }: Props) {
 
       {/* Rank + XP */}
       <div className="bg-white rounded-2xl border border-gray-100 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rank atual</p>
-            <p className="text-lg font-bold text-[#1E3A5F] mt-0.5">{rank.current.display}</p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-[#D6E4F0] flex items-center justify-center">
-            <MdEmojiEvents size={22} className="text-[#1E3A5F]" />
-          </div>
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rank atual</p>
+          <p className="text-lg font-bold text-[#1E3A5F] mt-0.5">{rank.current.display}</p>
         </div>
         <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2">
           <div
@@ -192,16 +187,8 @@ export function StudentJornadaTab({ studentId }: Props) {
           <p className="text-xs text-gray-400">
             {fmtXp(rank.xpIntoRank)} / {rank.next ? fmtXp(rank.next.xpMin - rank.current.xpMin) : '—'} XP
           </p>
-          {rank.next ? (
-            <p className="text-xs text-gray-400">
-              Próximo: <span className="font-semibold text-[#1E3A5F]">{rank.next.display}</span>
-              {rank.xpNeeded > 0 && <span> · faltam {fmtXp(rank.xpNeeded)} XP</span>}
-            </p>
-          ) : (
-            <p className="text-xs font-semibold text-[#4A90C4]">Rank máximo</p>
-          )}
+          <p className="text-xs text-gray-400">Total: <span className="font-semibold text-[#1E3A5F]">{fmtXp(xpTotal)} XP</span></p>
         </div>
-        <p className="text-xs text-gray-400 mt-2">Total: <span className="font-semibold text-[#1E3A5F]">{fmtXp(xpTotal)} XP</span></p>
       </div>
 
       {/* Streak + Conquistas */}
