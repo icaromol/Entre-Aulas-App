@@ -17,7 +17,7 @@ export function AuthGuard({ children, allowedRole }: AuthGuardProps) {
     )
   }
 
-  if (!user) {
+  if (!user || !profile) {
     return <Navigate to="/login" replace />
   }
 

@@ -1,21 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 import { MdPeople, MdLogout } from 'react-icons/md'
 
 interface TeacherLayoutProps {
   children: React.ReactNode
 }
 
-const navItems = [
-  { label: 'Alunos', path: '/professor/alunos', Icon: MdPeople },
-]
-
 export function TeacherLayout({ children }: TeacherLayoutProps) {
   const { profile, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [showConfirm, setShowConfirm] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
+
+  useEffect(() => {
+    if (!profile) return
+    supabase
+      .from('teachers')
+      .select('id')
+      .eq('profile_id', profile.id)
+      .single()
+      .then(({ data: teacher }) => {
+        if (!teacher) return
+        supabase
+          .from('students')
+          .select('id', { count: 'exact', head: true })
+          .eq('teacher_id', teacher.id)
+          .eq('status', 'pending')
+          .then(({ count }) => setPendingCount(count ?? 0))
+      })
+  }, [profile, location.pathname])
 
   async function handleSignOut() {
     setShowConfirm(false)
@@ -61,20 +77,20 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
 
           {/* Nav central */}
           <nav className="hidden sm:flex items-center gap-1">
-            {navItems.map(({ label, path, Icon }) => (
-              <Link
-                key={path}
-                to={path}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                  location.pathname.startsWith(path)
-                    ? 'bg-[#D6E4F0] text-[#1E3A5F]'
-                    : 'text-gray-500 hover:bg-gray-100'
-                }`}
-              >
-                <Icon size={15} />
-                {label}
-              </Link>
-            ))}
+            <Link
+              to="/professor/alunos"
+              className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                location.pathname.startsWith('/professor/alunos')
+                  ? 'bg-[#D6E4F0] text-[#1E3A5F]'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              <MdPeople size={15} />
+              Alunos
+              {pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#4A90C4]" />
+              )}
+            </Link>
           </nav>
 
           {/* Usuário */}
@@ -95,20 +111,20 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
 
         {/* Nav mobile */}
         <div className="sm:hidden flex border-t border-gray-100">
-          {navItems.map(({ label, path, Icon }) => (
-            <Link
-              key={path}
-              to={path}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition ${
-                location.pathname.startsWith(path)
-                  ? 'text-[#1E3A5F] border-b-2 border-[#1E3A5F]'
-                  : 'text-gray-400'
-              }`}
-            >
-              <Icon size={14} />
-              {label}
-            </Link>
-          ))}
+          <Link
+            to="/professor/alunos"
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition ${
+              location.pathname.startsWith('/professor/alunos')
+                ? 'text-[#1E3A5F] border-b-2 border-[#1E3A5F]'
+                : 'text-gray-400'
+            }`}
+          >
+            <MdPeople size={14} />
+            Alunos
+            {pendingCount > 0 && (
+              <span className="absolute top-1 right-[calc(50%-20px)] w-2.5 h-2.5 rounded-full bg-[#4A90C4]" />
+            )}
+          </Link>
         </div>
       </header>
 

@@ -1,0 +1,196 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import Avatar from 'boring-avatars'
+import { toast } from 'sonner'
+import { MdArrowBack, MdSchool } from 'react-icons/md'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
+import { StudentLayout } from '@/components/layout/StudentLayout'
+
+const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
+
+interface TeacherInfo {
+  first_name: string
+  last_name: string
+  avatar_url: string | null
+  email?: string
+}
+
+type ConnectionState = 'loading' | 'none' | 'pending' | 'connected'
+
+export default function MyTeacherPage() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+
+  const [connState, setConnState]   = useState<ConnectionState>('loading')
+  const [studentId, setStudentId]   = useState<string | null>(null)
+  const [teacher, setTeacher]       = useState<TeacherInfo | null>(null)
+  const [teacherEmail, setTeacherEmail] = useState('')
+  const [requesting, setRequesting] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    load()
+  }, [user])
+
+  async function load() {
+    setConnState('loading')
+    const { data, error } = await supabase.rpc('get_my_teacher_info')
+    if (error) { setConnState('none'); return }
+
+    const res = data as { state: string; student_id?: string; first_name?: string; last_name?: string; avatar_url?: string | null }
+    setStudentId(res.student_id ?? null)
+
+    if (res.state === 'pending') {
+      setConnState('pending')
+    } else if (res.state === 'connected') {
+      setTeacher({ first_name: res.first_name ?? '', last_name: res.last_name ?? '', avatar_url: res.avatar_url ?? null })
+      setConnState('connected')
+    } else {
+      setConnState('none')
+    }
+  }
+
+  async function handleRequest() {
+    if (!teacherEmail.trim()) return
+    setRequesting(true)
+    const { data, error } = await supabase.rpc('request_teacher_connection', {
+      p_teacher_email: teacherEmail.trim(),
+    })
+    setRequesting(false)
+    if (error || (data as { error?: string })?.error) {
+      const code = (data as { error?: string })?.error
+      const msg = code === 'professor_not_found' ? 'Professor não encontrado nesta plataforma.'
+                : code === 'not_a_teacher'       ? 'Este e-mail não pertence a um professor.'
+                : code === 'already_connected'   ? 'Você já enviou uma solicitação para este professor.'
+                : 'Erro ao enviar. Tente novamente.'
+      toast.error(msg)
+      return
+    }
+    setTeacherEmail('')
+    setConnState('pending')
+    toast.success('Solicitação enviada!')
+  }
+
+  async function handleDisconnect() {
+    if (!confirm('Desconectar do professor? Seu histórico e repertório serão preservados.')) return
+    setDisconnecting(true)
+    await supabase.rpc('disconnect_from_teacher')
+    setDisconnecting(false)
+    setTeacher(null)
+    setStudentId(null)
+    setConnState('none')
+    toast.success('Desconectado do professor.')
+  }
+
+  async function handleCancelRequest() {
+    if (!confirm('Cancelar a solicitação?')) return
+    await supabase.rpc('disconnect_from_teacher')
+    setStudentId(null)
+    setConnState('none')
+  }
+
+  return (
+    <StudentLayout>
+      {/* Cabeçalho da página */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:border-[#4A90C4] hover:text-[#1E3A5F] transition"
+        >
+          <MdArrowBack size={18} />
+        </button>
+        <h1 className="text-lg font-bold text-[#1E3A5F]">Meu professor</h1>
+      </div>
+
+      {/* Loading */}
+      {connState === 'loading' && (
+        <p className="text-sm text-gray-400">Carregando...</p>
+      )}
+
+      {/* Sem professor */}
+      {connState === 'none' && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-8">
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="w-16 h-16 rounded-full bg-[#D6E4F0] flex items-center justify-center mb-4">
+              <MdSchool size={32} className="text-[#1E3A5F]" />
+            </div>
+            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Nenhum professor vinculado</h2>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Digite o e-mail do seu professor para enviar uma solicitação de conexão.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-xs text-gray-400 font-medium">E-mail do professor</label>
+            <input
+              type="email"
+              value={teacherEmail}
+              onChange={e => setTeacherEmail(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleRequest()}
+              placeholder="professor@email.com"
+              className="w-full px-3 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
+            />
+            <button
+              onClick={handleRequest}
+              disabled={requesting || !teacherEmail.trim()}
+              className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-40"
+            >
+              {requesting ? 'Enviando...' : 'Solicitar conexão'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Solicitação pendente */}
+      {connState === 'pending' && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-8 flex flex-col items-center text-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-[#D6E4F0] flex items-center justify-center">
+            <MdSchool size={32} className="text-[#4A90C4]" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Solicitação enviada</h2>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Aguardando o professor aceitar sua solicitação de conexão.
+            </p>
+          </div>
+          <button
+            onClick={handleCancelRequest}
+            className="text-sm text-red-400 hover:text-red-600 transition underline"
+          >
+            Cancelar solicitação
+          </button>
+        </div>
+      )}
+
+      {/* Professor conectado */}
+      {connState === 'connected' && teacher && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-8 flex flex-col items-center text-center gap-5">
+          <div className="rounded-full overflow-hidden">
+            <Avatar
+              size={72}
+              name={`${teacher.first_name} ${teacher.last_name}`}
+              variant="beam"
+              colors={AVATAR_COLORS}
+            />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-[#1E3A5F]">
+              {teacher.first_name} {teacher.last_name}
+            </h2>
+            <p className="text-xs text-gray-400 mt-1">Professor</p>
+          </div>
+
+          <button
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="mt-2 px-6 py-2.5 rounded-xl border border-red-200 text-red-500 text-sm font-medium hover:bg-red-50 transition disabled:opacity-40"
+          >
+            {disconnecting ? 'Desconectando...' : 'Desconectar'}
+          </button>
+        </div>
+      )}
+    </StudentLayout>
+  )
+}

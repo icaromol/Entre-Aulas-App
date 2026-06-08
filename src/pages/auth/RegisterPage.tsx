@@ -1,96 +1,105 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { MdEmail, MdLock } from 'react-icons/md'
+import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom'
+import { FcGoogle } from 'react-icons/fc'
+import { MdPerson, MdSchool } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 
-export default function RegisterPage() {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const inviteStudentId = searchParams.get('invite')
+type Role = 'teacher' | 'student'
 
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [role, setRole] = useState<'teacher' | 'student'>(
-    inviteStudentId ? 'student' : 'teacher'
-  )
+const ROLES: { value: Role; label: string; desc: string; Icon: typeof MdPerson }[] = [
+  { value: 'teacher', label: 'Professor', desc: 'Gerencio alunos e repertório', Icon: MdSchool },
+  { value: 'student', label: 'Aluno',     desc: 'Acompanho meu estudo',        Icon: MdPerson },
+]
+
+export default function RegisterPage() {
+  const [searchParams] = useSearchParams()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const inviteStudentId = searchParams.get('invite')
+  const autoSignup = (location.state as { autoSignup?: boolean } | null)?.autoSignup ?? false
+
   const [inviteStudent, setInviteStudent] = useState<{ first_name: string; last_name: string } | null>(null)
-  const [error, setError] = useState('')
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!inviteStudentId) return
     supabase
       .from('students')
-      .select('first_name, last_name, contact_email')
+      .select('first_name, last_name')
       .eq('id', inviteStudentId)
+      .is('profile_id', null)
       .single()
-      .then(({ data }) => {
-        if (data) {
-          setInviteStudent(data)
-          setFirstName(data.first_name)
-          setLastName(data.last_name)
-          setEmail(data.contact_email ?? '')
-        }
-      })
+      .then(({ data }) => { if (data) setInviteStudent(data) })
   }, [inviteStudentId])
 
-  async function handleRegister(e: React.FormEvent) {
-    e.preventDefault()
+  // Fluxo: usuário já autenticado via Google mas sem profile → escolhe role aqui
+  async function handleDirectSignup() {
+    if (!selectedRole) return
     setError('')
-
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem.')
-      return
-    }
-
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          role,
-        },
-      },
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) { navigate('/login', { replace: true }); return }
+
+    const user = session.user
+    const googleName = user.user_metadata?.full_name ?? ''
+    const firstName = user.user_metadata?.given_name || googleName.split(' ')[0] || ''
+    const lastName  = user.user_metadata?.family_name || googleName.split(' ').slice(1).join(' ') || ''
+
+    const { error: rpcErr } = await supabase.rpc('complete_user_profile', {
+      p_role:       selectedRole,
+      p_first_name: firstName,
+      p_last_name:  lastName,
+      p_avatar_url: user.user_metadata?.avatar_url ?? null,
     })
 
-    if (error) {
-      setError(error.message)
+    if (rpcErr) {
+      setError('Erro ao criar perfil. Tente novamente.')
       setLoading(false)
       return
     }
 
-    if (data.user) {
-      if (inviteStudentId) {
-        const { error: linkError, count } = await supabase
-          .from('students')
-          .update({ profile_id: data.user.id })
-          .eq('id', inviteStudentId)
-        if (linkError) console.error('[invite] link error:', linkError.message)
-        else if (count === 0) console.warn('[invite] 0 rows updated — RLS may be blocking. Run student_claim_invite policy in Supabase.')
-      } else if (role === 'student') {
-        // Fallback: vincula por e-mail se já existir um registro sem profile_id
-        await supabase
-          .from('students')
-          .update({ profile_id: data.user.id })
-          .eq('contact_email', email)
-          .is('profile_id', null)
-      }
-    }
+    navigate(selectedRole === 'teacher' ? '/professor/alunos' : '/aluno/hoje', { replace: true })
+  }
 
-    if (role === 'teacher') {
-      navigate('/professor')
-    } else {
-      navigate('/aluno')
+  // Fluxo normal: OAuth Google
+  async function handleGoogleSignup() {
+    if (!inviteStudentId && !selectedRole) return
+    setError('')
+    setLoading(true)
+
+    const role: Role = inviteStudentId ? 'student' : selectedRole!
+    const pending = inviteStudentId
+      ? { type: 'signup' as const, role, inviteStudentId, firstName: inviteStudent?.first_name, lastName: inviteStudent?.last_name }
+      : { type: 'signup' as const, role }
+
+    sessionStorage.setItem('pending_signup', JSON.stringify(pending))
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    })
+
+    if (error) {
+      setError('Não foi possível conectar com o Google. Tente novamente.')
+      setLoading(false)
     }
   }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+
+  const subtitle = autoSignup
+    ? 'Sua conta Google foi conectada. Como quer usar o estudamus?'
+    : inviteStudentId
+      ? inviteStudent
+        ? `Olá, ${inviteStudent.first_name}! Crie sua conta para acessar o estudamus.`
+        : 'Verificando convite...'
+      : 'Criar conta'
+
+  const canProceed = inviteStudentId ? !!inviteStudent : !!selectedRole
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -98,146 +107,66 @@ export default function RegisterPage() {
 
         <div className="text-center mb-8">
           <img src="/estudamus_logo.png" alt="estudamus" className="h-10 mx-auto mb-3" />
-          {inviteStudent ? (
-            <p className="text-sm text-gray-500 mt-1">
-              Olá, {inviteStudent.first_name}! Crie sua senha de acesso.
-            </p>
+          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-4">
+          {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+
+          {/* Seleção de role — cadastro normal ou autoSignup */}
+          {!inviteStudentId && (
+            <div className="grid grid-cols-2 gap-3">
+              {ROLES.map(({ value, label, desc, Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectedRole(value)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition text-center ${
+                    selectedRole === value
+                      ? 'border-[#1E3A5F] bg-[#D6E4F0]'
+                      : 'border-gray-200 bg-white hover:border-[#4A90C4]'
+                  }`}
+                >
+                  <Icon size={28} className={selectedRole === value ? 'text-[#1E3A5F]' : 'text-gray-400'} />
+                  <span className={`text-sm font-semibold ${selectedRole === value ? 'text-[#1E3A5F]' : 'text-gray-600'}`}>{label}</span>
+                  <span className="text-xs text-gray-400 leading-tight">{desc}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Botão */}
+          {inviteStudentId && !inviteStudent ? (
+            <p className="text-sm text-gray-400 text-center py-2">Carregando...</p>
+          ) : autoSignup ? (
+            <Button
+              onClick={handleDirectSignup}
+              disabled={loading || !canProceed}
+              className="w-full h-11 rounded-xl bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white disabled:opacity-40"
+            >
+              {loading
+                ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />
+                : 'Continuar'}
+            </Button>
           ) : (
-            <p className="text-sm text-gray-500 mt-1">Crie sua conta</p>
+            <Button
+              onClick={handleGoogleSignup}
+              disabled={loading || !canProceed}
+              variant="outline"
+              className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40"
+            >
+              {loading
+                ? <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                : <FcGoogle size={20} />}
+              {loading ? 'Redirecionando...' : 'Continuar com Google'}
+            </Button>
           )}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <form onSubmit={handleRegister} className="space-y-4">
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Nome</label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={e => setFirstName(e.target.value)}
-                  placeholder="João"
-                  required
-                  readOnly={!!inviteStudentId}
-                  className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition ${
-                    inviteStudentId
-                      ? 'bg-gray-50 border-gray-200 text-gray-400'
-                      : 'border-gray-200 focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20'
-                  }`}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Sobrenome</label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={e => setLastName(e.target.value)}
-                  placeholder="Silva"
-                  required
-                  readOnly={!!inviteStudentId}
-                  className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition ${
-                    inviteStudentId
-                      ? 'bg-gray-50 border-gray-200 text-gray-400'
-                      : 'border-gray-200 focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20'
-                  }`}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">E-mail</label>
-              <div className="relative">
-                <MdEmail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  required
-                  readOnly={!!inviteStudentId}
-                  className={`w-full pl-9 pr-3 py-2 rounded-lg border text-sm outline-none transition ${
-                    inviteStudentId
-                      ? 'bg-gray-50 border-gray-200 text-gray-400'
-                      : 'border-gray-200 focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20'
-                  }`}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Senha</label>
-              <div className="relative">
-                <MdLock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="mínimo 6 caracteres"
-                  required
-                  minLength={6}
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Confirmar senha</label>
-              <div className="relative">
-                <MdLock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="repita a senha"
-                  required
-                  minLength={6}
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
-                />
-              </div>
-            </div>
-
-            {!inviteStudentId && (
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Você é</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['teacher', 'student'] as const).map(r => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setRole(r)}
-                      className={`py-2 rounded-lg border text-sm font-medium transition ${
-                        role === r
-                          ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
-                      }`}
-                    >
-                      {r === 'teacher' ? 'Professor' : 'Aluno'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {error && <p className="text-sm text-red-500">{error}</p>}
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-lg h-9"
-            >
-              {loading ? 'Criando conta...' : inviteStudentId ? 'Criar minha senha' : 'Criar conta'}
-            </Button>
-
-          </form>
-        </div>
-
-        {!inviteStudentId && (
+        {!inviteStudentId && !autoSignup && (
           <p className="text-center text-sm text-gray-500 mt-6">
             Já tem conta?{' '}
-            <Link to="/login" className="text-[#4A90C4] font-medium hover:underline">
-              Entrar
-            </Link>
+            <Link to="/login" className="text-[#4A90C4] font-medium hover:underline">Entrar</Link>
           </p>
         )}
 

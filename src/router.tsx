@@ -3,6 +3,7 @@ import NotFoundPage from '@/pages/NotFoundPage'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import LoginPage from '@/pages/auth/LoginPage'
 import RegisterPage from '@/pages/auth/RegisterPage'
+import AuthCallbackPage from '@/pages/auth/AuthCallbackPage'
 import StudentsPage from '@/pages/teacher/StudentsPage'
 import NewStudentPage from '@/pages/teacher/NewStudentPage'
 import StudentProfilePage from '@/pages/teacher/StudentProfilePage'
@@ -21,6 +22,7 @@ import TodayPage from '@/pages/student/TodayPage'
 import PomodoroPage from '@/pages/student/PomodoroPage'
 import RepertoirePage from '@/pages/student/RepertoirePage'
 import HistoryPage from '@/pages/student/HistoryPage'
+import MyTeacherPage from '@/pages/student/MyTeacherPage'
 import StudentNewPiecePage from '@/pages/student/NewPiecePage'
 import StudentPieceDetailPage from '@/pages/student/PieceDetailPage'
 import StudentEditPiecePage from '@/pages/student/EditPiecePage'
@@ -40,6 +42,7 @@ export function Router() {
         {/* Públicas */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cadastro" element={<RegisterPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         {/* Professor */}
         <Route path="/professor" element={<AuthGuard allowedRole="teacher"><Navigate to="/professor/alunos" replace /></AuthGuard>} />
@@ -73,6 +76,7 @@ export function Router() {
         <Route path="/aluno/repertorio/programas/:programId" element={<AuthGuard allowedRole="student"><StudentProgramaDetailPage /></AuthGuard>} />
         <Route path="/aluno/repertorio/programas/:programId/editar" element={<AuthGuard allowedRole="student"><StudentEditProgramaPage /></AuthGuard>} />
         <Route path="/aluno/historico" element={<AuthGuard allowedRole="student"><HistoryPage /></AuthGuard>} />
+        <Route path="/aluno/professor" element={<AuthGuard allowedRole="student"><MyTeacherPage /></AuthGuard>} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
