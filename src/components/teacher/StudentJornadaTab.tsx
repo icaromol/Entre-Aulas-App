@@ -7,6 +7,16 @@ import {
 } from 'react-icons/md'
 import type { XpAttribute } from '@/lib/xpHelpers'
 import { supabase } from '@/lib/supabase'
+import {
+  Bar, BarChart, CartesianGrid, XAxis, YAxis,
+  Area, AreaChart,
+} from 'recharts'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 
 // ─── Constantes de exibição ────────────────────────────────────────────────
 
@@ -62,82 +72,13 @@ function shortWeekLabel(isoMonday: string): string {
   return `${d}/${m}`
 }
 
-// ─── Gráfico de barras responsivo (SVG) ──────────────────────────────────────
+const minutesChartConfig = {
+  minutes: { label: 'Minutos', color: '#4A90C4' },
+} satisfies ChartConfig
 
-function BarChart({ data, color }: { data: { label: string; value: number }[]; color: string }) {
-  const CHART_H = 56
-  const maxVal = Math.max(1, ...data.map(d => d.value))
-  const barW   = 20
-  const gap    = 6
-  const totalW = data.length * (barW + gap) - gap
-  const viewH  = CHART_H + 24
-
-  return (
-    <svg
-      viewBox={`0 0 ${totalW} ${viewH}`}
-      width="100%"
-      style={{ display: 'block' }}
-      preserveAspectRatio="xMidYMid meet"
-    >
-      {data.map((d, i) => {
-        const h   = Math.max(d.value > 0 ? 3 : 0, Math.round((d.value / maxVal) * CHART_H))
-        const x   = i * (barW + gap)
-        const y   = CHART_H - h
-        const isMax = d.value === maxVal && d.value > 0
-        return (
-          <g key={i}>
-            <rect x={x} y={y} width={barW} height={h} rx={3} fill={color} />
-            {isMax && (
-              <text x={x + barW / 2} y={y - 3} textAnchor="middle" fontSize={8} fill="#6B7280">
-                {d.value}
-              </text>
-            )}
-            <text x={x + barW / 2} y={CHART_H + 13} textAnchor="middle" fontSize={6} fill="#9CA3AF">
-              {d.label}
-            </text>
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
-// ─── Gráfico de área responsivo (SVG) ─────────────────────────────────────────
-
-function AreaChart({ data }: { data: { label: string; value: number }[] }) {
-  const CHART_H = 56
-  const CHART_W = 200
-  const maxVal  = Math.max(1, ...data.map(d => d.value))
-  const n       = data.length
-  const lastVal = data[data.length - 1].value
-
-  const points = data.map((d, i) => ({
-    x: Math.round((i / (n - 1)) * CHART_W),
-    y: Math.round(CHART_H - (d.value / maxVal) * CHART_H),
-  }))
-
-  const polyline = points.map(p => `${p.x},${p.y}`).join(' ')
-  const polygon  = `0,${CHART_H} ${polyline} ${CHART_W},${CHART_H}`
-
-  return (
-    <div>
-      <svg
-        viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-        width="100%"
-        style={{ display: 'block' }}
-        preserveAspectRatio="xMidYMid meet"
-      >
-        <polygon points={polygon} fill="#D6E4F0" />
-        <polyline points={polyline} fill="none" stroke="#1E3A5F" strokeWidth={2} strokeLinejoin="round" />
-      </svg>
-      {lastVal > 0 && (
-        <p className="text-[10px] font-semibold text-[#1E3A5F] text-right mt-1.5">
-          {fmtXp(lastVal)} XP acumulado
-        </p>
-      )}
-    </div>
-  )
-}
+const xpChartConfig = {
+  xp: { label: 'XP', color: '#1E3A5F' },
+} satisfies ChartConfig
 
 // ─── Tipos e helpers de sessões ──────────────────────────────────────────────
 
@@ -234,12 +175,12 @@ export function StudentJornadaTab({ studentId }: Props) {
 
   const minutesChartData = minutesHistory.map(h => ({
     label: shortWeekLabel(h.week),
-    value: h.minutes,
+    minutes: h.minutes,
   }))
 
   const xpChartData = xpHistory.map(h => ({
     label: shortWeekLabel(h.week),
-    value: h.xp,
+    xp: h.xp,
   }))
 
   const pendingItems = weekStats.totalItems - weekStats.doneItems
@@ -293,11 +234,32 @@ export function StudentJornadaTab({ studentId }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <p className="text-xs font-semibold text-gray-500 mb-3">Minutos / semana</p>
-          <BarChart data={minutesChartData} color="#4A90C4" />
+          <ChartContainer config={minutesChartConfig} className="h-[130px] w-full">
+            <BarChart data={minutesChartData} margin={{ left: -24, right: 4 }}>
+              <CartesianGrid vertical={false} stroke="#F3F4F6" />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={4} tick={{ fontSize: 9, fill: '#9CA3AF' }} />
+              <YAxis hide />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="minutes" fill="var(--color-minutes)" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ChartContainer>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <p className="text-xs font-semibold text-gray-500 mb-3">XP acumulado</p>
-          <AreaChart data={xpChartData} />
+          <ChartContainer config={xpChartConfig} className="h-[130px] w-full">
+            <AreaChart data={xpChartData} margin={{ left: -24, right: 4 }}>
+              <CartesianGrid vertical={false} stroke="#F3F4F6" />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={4} tick={{ fontSize: 9, fill: '#9CA3AF' }} />
+              <YAxis hide />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Area dataKey="xp" type="monotone" stroke="var(--color-xp)" fill="#D6E4F0" strokeWidth={2} dot={false} />
+            </AreaChart>
+          </ChartContainer>
+          {xpChartData.length > 0 && xpChartData[xpChartData.length - 1].xp > 0 && (
+            <p className="text-[10px] font-semibold text-[#1E3A5F] text-right mt-1">
+              {fmtXp(xpChartData[xpChartData.length - 1].xp)} XP acumulado
+            </p>
+          )}
         </div>
       </div>
 

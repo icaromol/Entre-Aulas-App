@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { grantXp, EXERCISE_ATTRIBUTE_MAP } from '@/lib/xpHelpers'
 import type { XpAttribute } from '@/lib/xpHelpers'
+import { fireBasic, fireStars, hasRankUp } from '@/lib/confettiEffects'
 import type { PlanItem } from "@/types/plan";
 import {
   getMonday,
@@ -90,6 +91,7 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [studentId, setStudentId] = useState<string | null>(null);
   const [viewDay, setViewDay] = useState(getTodayDayOfWeek());
+  const [pendingItem, setPendingItem] = useState<PlanItem | null>(null);
 
   const weekStart = formatWeekStart(getMonday(new Date()));
 
@@ -184,6 +186,9 @@ export default function TodayPage() {
       toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
     }
 
+    if (hasRankUp(newAchievements)) fireStars()
+    else fireBasic()
+
     // Missão do dia: todos os itens de hoje concluídos
     const totalNow = updatedItems.length
     const doneNow  = updatedItems.filter(i => i.is_done).length
@@ -193,6 +198,14 @@ export default function TodayPage() {
       for (const key of mAch) {
         toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
       }
+    }
+  }
+
+  function handleItemClick(item: PlanItem) {
+    if (item.is_done) {
+      toggleDone(item)
+    } else {
+      setPendingItem(item)
     }
   }
 
@@ -284,7 +297,7 @@ export default function TodayPage() {
                 <div className="px-4 py-4 flex items-start gap-3">
                   {/* Checkbox */}
                   <button
-                    onClick={() => toggleDone(item)}
+                    onClick={() => handleItemClick(item)}
                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition ${
                       item.is_done
                         ? "bg-[#1E3A5F] border-[#1E3A5F]"
@@ -399,6 +412,35 @@ export default function TodayPage() {
           <p className="text-sm font-bold text-[#1E3A5F]">
             Parabéns! Você completou o estudo de hoje.
           </p>
+        </div>
+      )}
+
+      {/* Modal de confirmação manual */}
+      {pendingItem && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 pb-8 px-4">
+          <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-xl">
+            <p className="text-sm font-bold text-gray-800 mb-1">Concluir sem pomodoro?</p>
+            <p className="text-xs font-medium text-gray-600 mb-1 truncate">
+              {pendingItem.exercise?.title ?? pendingItem.piece?.title ?? 'Item'}
+            </p>
+            <p className="text-xs text-gray-400 mb-4">
+              Você não fez uma sessão de estudo. Deseja marcar como concluído manualmente?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPendingItem(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#4A90C4] transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { toggleDone(pendingItem); setPendingItem(null) }}
+                className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition"
+              >
+                Sim, concluir
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </StudentLayout>

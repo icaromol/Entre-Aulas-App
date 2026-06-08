@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import {
-  MdCalendarToday, MdLibraryMusic, MdHistory, MdStars,
+  MdCalendarToday, MdLibraryMusic, MdHistory, MdStars, MdBarChart,
   MdMenu, MdClose, MdEdit, MdSchool, MdLogout, MdChevronRight,
 } from 'react-icons/md'
 
@@ -16,10 +16,10 @@ interface StudentLayoutProps {
 }
 
 const navItems = [
-  { label: 'Hoje',       path: '/aluno/hoje',      Icon: MdCalendarToday },
-  { label: 'Repertório', path: '/aluno/repertorio', Icon: MdLibraryMusic },
-  { label: 'Histórico',  path: '/aluno/historico',  Icon: MdHistory },
-  { label: 'Jornada',    path: '/aluno/jornada',    Icon: MdStars },
+  { label: 'Hoje',         path: '/aluno/hoje',         Icon: MdCalendarToday },
+  { label: 'Repertório',   path: '/aluno/repertorio',   Icon: MdLibraryMusic  },
+  { label: 'Jornada',      path: '/aluno/jornada',      Icon: MdStars         },
+  { label: 'Estatísticas', path: '/aluno/estatisticas', Icon: MdBarChart      },
 ]
 
 export function StudentLayout({ children }: StudentLayoutProps) {
@@ -125,6 +125,16 @@ export function StudentLayout({ children }: StudentLayoutProps) {
           >
             <MdSchool size={20} className="text-[#4A90C4] shrink-0" />
             <span className="text-sm font-medium text-gray-700 flex-1">Meu professor</span>
+            <MdChevronRight size={18} className="text-gray-300" />
+          </button>
+
+          {/* Histórico */}
+          <button
+            onClick={() => { setShowMenu(false); navigate('/aluno/historico') }}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
+          >
+            <MdHistory size={20} className="text-[#4A90C4] shrink-0" />
+            <span className="text-sm font-medium text-gray-700 flex-1">Histórico de sessões</span>
             <MdChevronRight size={18} className="text-gray-300" />
           </button>
 

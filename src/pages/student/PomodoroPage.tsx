@@ -7,6 +7,7 @@ import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 import { grantXp } from '@/lib/xpHelpers'
 import { formatWeekStart, getMonday } from '@/lib/weekUtils'
+import { fireBasic, fireSideCannons, fireStars, hasRankUp } from '@/lib/confettiEffects'
 
 interface CyclePreset {
   key: string
@@ -270,6 +271,8 @@ export default function PomodoroPage() {
       for (const key of newAchievements) {
         toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
       }
+      if (hasRankUp(newAchievements)) fireStars()
+      else fireBasic()
     }
 
     const checklistIds = [...workedIds]
@@ -307,6 +310,8 @@ export default function PomodoroPage() {
             for (const key of pAch) {
               toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
             }
+            if (hasRankUp(pAch)) fireStars()
+            fireSideCannons()
           }
         }
       }
