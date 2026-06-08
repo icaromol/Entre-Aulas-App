@@ -27,22 +27,14 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
   const [pendingCount, setPendingCount]   = useState(0)
 
   useEffect(() => {
-    if (!profile) return
+    if (!profile?.teacherId) return
     supabase
-      .from('teachers')
-      .select('id')
-      .eq('profile_id', profile.id)
-      .single()
-      .then(({ data: teacher }) => {
-        if (!teacher) return
-        supabase
-          .from('students')
-          .select('id', { count: 'exact', head: true })
-          .eq('teacher_id', teacher.id)
-          .eq('status', 'pending')
-          .then(({ count }) => setPendingCount(count ?? 0))
-      })
-  }, [profile, location.pathname])
+      .from('students')
+      .select('id', { count: 'exact', head: true })
+      .eq('teacher_id', profile.teacherId)
+      .eq('status', 'pending')
+      .then(({ count }) => setPendingCount(count ?? 0))
+  }, [profile?.teacherId, location.pathname])
 
   function openEdit() {
     setEditFirst(nameOverride?.first ?? profile?.first_name ?? '')

@@ -131,29 +131,23 @@ export default function StudentsPage() {
   }, [])
 
   useEffect(() => {
-    if (profile) fetchStudents()
-  }, [profile])
+    if (profile?.teacherId) fetchStudents()
+  }, [profile?.teacherId])
 
   async function fetchStudents() {
-    const { data: teacher } = await supabase
-      .from('teachers')
-      .select('id')
-      .eq('profile_id', profile!.id)
-      .single()
-
-    if (!teacher) { setLoading(false); return }
+    const teacherId = profile!.teacherId!
 
     const [activeRes, pendingRes] = await Promise.all([
       supabase
         .from('students')
         .select('id, first_name, last_name, instrument, level, status, contact_email, invite_token')
-        .eq('teacher_id', teacher.id)
+        .eq('teacher_id', teacherId)
         .eq('status', 'active')
         .order('first_name'),
       supabase
         .from('students')
         .select('id, first_name, last_name, instrument, level, status, contact_email, invite_token')
-        .eq('teacher_id', teacher.id)
+        .eq('teacher_id', teacherId)
         .eq('status', 'pending')
         .order('created_at', { ascending: false }),
     ])

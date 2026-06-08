@@ -7,6 +7,7 @@ import Clarity from '@microsoft/clarity'
 import { reactErrorHandler } from '@sentry/react'
 import './index.css'
 import { Router } from './router'
+import { AuthProvider } from './hooks/useAuth'
 
 Clarity.init('x4109xdyb0')
 
@@ -16,7 +17,9 @@ createRoot(document.getElementById('root')!, {
   onRecoverableError: reactErrorHandler(),
 }).render(
   <StrictMode>
-    <Router />
-    <Toaster position="bottom-center" richColors />
+    <AuthProvider>
+      <Router />
+      <Toaster position="bottom-center" richColors />
+    </AuthProvider>
   </StrictMode>,
 )
