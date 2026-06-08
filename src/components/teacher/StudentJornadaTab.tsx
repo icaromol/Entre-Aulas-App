@@ -90,7 +90,7 @@ function BarChart({ data, color }: { data: { label: string; value: number }[]; c
                 {d.value}
               </text>
             )}
-            <text x={x + barW / 2} y={CHART_H + 13} textAnchor="middle" fontSize={8} fill="#9CA3AF">
+            <text x={x + barW / 2} y={CHART_H + 13} textAnchor="middle" fontSize={6} fill="#9CA3AF">
               {d.label}
             </text>
           </g>
@@ -107,6 +107,7 @@ function AreaChart({ data }: { data: { label: string; value: number }[] }) {
   const CHART_W = 200
   const maxVal  = Math.max(1, ...data.map(d => d.value))
   const n       = data.length
+  const lastVal = data[data.length - 1].value
 
   const points = data.map((d, i) => ({
     x: Math.round((i / (n - 1)) * CHART_W),
@@ -115,24 +116,24 @@ function AreaChart({ data }: { data: { label: string; value: number }[] }) {
 
   const polyline = points.map(p => `${p.x},${p.y}`).join(' ')
   const polygon  = `0,${CHART_H} ${polyline} ${CHART_W},${CHART_H}`
-  const lastPt   = points[points.length - 1]
-  const lastVal  = data[data.length - 1].value
 
   return (
-    <svg
-      viewBox={`0 0 ${CHART_W} ${CHART_H + 16}`}
-      width="100%"
-      style={{ display: 'block' }}
-      preserveAspectRatio="xMidYMid meet"
-    >
-      <polygon points={polygon} fill="#D6E4F0" />
-      <polyline points={polyline} fill="none" stroke="#1E3A5F" strokeWidth={2} strokeLinejoin="round" />
+    <div>
+      <svg
+        viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+        width="100%"
+        style={{ display: 'block' }}
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <polygon points={polygon} fill="#D6E4F0" />
+        <polyline points={polyline} fill="none" stroke="#1E3A5F" strokeWidth={2} strokeLinejoin="round" />
+      </svg>
       {lastVal > 0 && (
-        <text x={lastPt.x} y={Math.max(10, lastPt.y - 4)} textAnchor="end" fontSize={8} fill="#1E3A5F" fontWeight="600">
-          {fmtXp(lastVal)} XP
-        </text>
+        <p className="text-[10px] font-semibold text-[#1E3A5F] text-right mt-1.5">
+          {fmtXp(lastVal)} XP acumulado
+        </p>
       )}
-    </svg>
+    </div>
   )
 }
 
