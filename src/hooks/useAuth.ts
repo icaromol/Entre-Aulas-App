@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import Clarity from '@microsoft/clarity'
 import type { User } from '@supabase/supabase-js'
 
 interface Profile {
@@ -57,7 +58,10 @@ export function useAuth() {
     if (error || !data) {
       setState({ user, profile: null, loading: false })
     } else {
-      setState({ user, profile: data as Profile, loading: false })
+      const profile = data as Profile
+      Clarity.identify(user.id, undefined, undefined, `${profile.first_name} ${profile.last_name}`)
+      Clarity.setTag('role', profile.role)
+      setState({ user, profile, loading: false })
     }
   }
 
