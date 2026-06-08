@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
-import { Button } from '@/components/ui/button'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
 
@@ -145,12 +144,6 @@ export default function RepertoirePage() {
       {/* Tab: Peças */}
       {activeTab === 'pieces' && (
         <div className="space-y-3">
-          <div className="flex justify-end">
-            <Button variant="text" onClick={() => navigate('/aluno/repertorio/pecas/nova')}
-              className="flex items-center gap-1 text-xs">
-              <MdAdd size={15} />Nova peça
-            </Button>
-          </div>
           {pieces.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
               <p className="text-4xl mb-3">🎼</p>
@@ -240,18 +233,16 @@ export default function RepertoirePage() {
               )
             })
           )}
+          <button onClick={() => navigate('/aluno/repertorio/pecas/nova')}
+            className="flex items-center justify-center gap-2 w-full py-16 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
+            <MdAdd size={22} />Nova peça
+          </button>
         </div>
       )}
 
       {/* Tab: Exercícios */}
       {activeTab === 'exercises' && (
         <div className="space-y-3">
-          <div className="flex justify-end">
-            <Button variant="text" onClick={() => navigate('/aluno/repertorio/exercicios/novo')}
-              className="flex items-center gap-1 text-xs">
-              <MdAdd size={15} />Novo exercício
-            </Button>
-          </div>
           {exercises.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
               <p className="text-4xl mb-3">🎹</p>
@@ -277,18 +268,16 @@ export default function RepertoirePage() {
               </button>
             ))
           )}
+          <button onClick={() => navigate('/aluno/repertorio/exercicios/novo')}
+            className="flex items-center justify-center gap-2 w-full py-16 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
+            <MdAdd size={22} />Novo exercício
+          </button>
         </div>
       )}
 
       {/* Tab: Programas */}
       {activeTab === 'programs' && (
         <div className="space-y-3">
-          <div className="flex justify-end">
-            <Button variant="text" onClick={() => navigate('/aluno/repertorio/programas/novo')}
-              className="flex items-center gap-1 text-xs">
-              <MdAdd size={15} />Novo programa
-            </Button>
-          </div>
           {programas.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
               <p className="text-4xl mb-3">🎭</p>
@@ -326,6 +315,10 @@ export default function RepertoirePage() {
               )
             })
           )}
+          <button onClick={() => navigate('/aluno/repertorio/programas/novo')}
+            className="flex items-center justify-center gap-2 w-full py-24 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
+            <MdAdd size={22} />Novo programa
+          </button>
         </div>
       )}
     </StudentLayout>

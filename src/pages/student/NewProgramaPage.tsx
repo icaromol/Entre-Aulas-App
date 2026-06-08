@@ -51,8 +51,11 @@ export default function StudentNewProgramaPage() {
   useEffect(() => {
     if (!profile) return
     supabase.from('students').select('id, teacher_id').eq('profile_id', profile.id).single()
-      .then(({ data }) => {
-        if (!data) return
+      .then(({ data, error }) => {
+        if (!data) {
+          if (error) setError('Não foi possível carregar seu perfil de aluno. Tente recarregar a página.')
+          return
+        }
         setStudentId(data.id)
         setTeacherId(data.teacher_id)
         Promise.all([
@@ -85,7 +88,7 @@ export default function StudentNewProgramaPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (!studentId) return
+    if (!studentId) { setError('Perfil de aluno não encontrado. Tente recarregar a página.'); return }
     if (selected.needsDeadline && !deadline) {
       setError('Informe a data do evento para este tipo de programa.'); return
     }
@@ -266,7 +269,7 @@ export default function StudentNewProgramaPage() {
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
-        <Button type="submit" disabled={saving || !studentId}
+        <Button type="submit" disabled={saving}
           className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10">
           {saving ? 'Salvando...' : 'Criar programa'}
         </Button>

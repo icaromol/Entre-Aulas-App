@@ -50,7 +50,10 @@ export default function StudentNewExercisePage() {
   useEffect(() => {
     if (!profile) return
     supabase.from('students').select('id').eq('profile_id', profile.id).single()
-      .then(({ data }) => { if (data) setStudentId(data.id) })
+      .then(({ data, error }) => {
+        if (data) setStudentId(data.id)
+        else if (error) setError('Não foi possível carregar seu perfil de aluno. Tente recarregar a página.')
+      })
   }, [profile])
 
   function removeItem(tempId: number) {
@@ -87,7 +90,7 @@ export default function StudentNewExercisePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!studentId) return
+    if (!studentId) { setError('Perfil de aluno não encontrado. Tente recarregar a página.'); return }
     setError(''); setLoading(true)
     try {
       const { data: exercise, error: exerciseError } = await supabase
@@ -255,7 +258,7 @@ export default function StudentNewExercisePage() {
             <Button type="button" variant="outline"
               onClick={() => navigate('/aluno/repertorio?tab=exercises')}
               className="flex-1 rounded-xl border-gray-200 text-gray-600">Cancelar</Button>
-            <Button type="submit" disabled={loading || !studentId}
+            <Button type="submit" disabled={loading}
               className="flex-1 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10">
               {loading ? 'Criando...' : keepCreating ? 'Criar e continuar' : 'Criar exercício'}
             </Button>
