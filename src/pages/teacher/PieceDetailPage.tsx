@@ -87,7 +87,7 @@ export default function PieceDetailPage() {
         .delete()
         .eq('checklist_item_id', item.id)
         .eq('student_id', studentId!)
-      if (error) console.error('[checklist] delete error:', error.message)
+      if (error) if (import.meta.env.DEV) console.error('[checklist] delete error', error.code)
     } else {
       const { error } = await supabase
         .from('checklist_completions')
@@ -95,7 +95,7 @@ export default function PieceDetailPage() {
           checklist_item_id: item.id,
           student_id: studentId!,
         })
-      if (error) console.error('[checklist] insert error:', error.message)
+      if (error) if (import.meta.env.DEV) console.error('[checklist] insert error', error.code)
     }
 
     // Atualiza local

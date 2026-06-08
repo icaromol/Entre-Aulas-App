@@ -250,7 +250,7 @@ export default function PomodoroPage() {
         notes: comment || null,
       })
 
-    if (error) console.error('[pomodoro] save error:', error.message)
+    if (error) if (import.meta.env.DEV) console.error('[pomodoro] save error', error.code)
 
     if (workedIds.size > 0) {
       const checklistIds = [...workedIds].filter(id => dayItems.find(i => i.id === id)?.kind === 'checklist')
