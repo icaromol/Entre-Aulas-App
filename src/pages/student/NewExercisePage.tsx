@@ -17,11 +17,10 @@ const CATEGORIES = [
 ]
 
 const DEFAULT_EXERCISE_CHECKLIST = [
-  { title: 'Compreensão do conceito',         category: 'Estudo',    position: 0, is_optional: false },
-  { title: 'Execução lenta e consciente',     category: 'Prática',   position: 1, is_optional: false },
-  { title: 'Execução em andamento de estudo', category: 'Prática',   position: 2, is_optional: false },
-  { title: 'Aplicação em contexto musical',   category: 'Aplicação', position: 3, is_optional: false },
-  { title: 'Execução em andamento final',     category: 'Aplicação', position: 4, is_optional: false },
+  { title: 'Compreensão e execução lenta',      category: 'Etapas', position: 0, is_optional: false },
+  { title: 'Domínio das dificuldades técnicas', category: 'Etapas', position: 1, is_optional: false },
+  { title: 'Fluência no estudo',                category: 'Etapas', position: 2, is_optional: false },
+  { title: 'Integrado ao repertório / musical', category: 'Etapas', position: 3, is_optional: false },
 ]
 
 const DEFAULT_ITEMS = () => DEFAULT_EXERCISE_CHECKLIST.map((item, i) => ({ ...item, tempId: i }))
