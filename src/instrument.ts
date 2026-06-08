@@ -5,6 +5,7 @@ import { useLocation, useNavigationType, createRoutesFromChildren, matchRoutes }
 Sentry.init({
   dsn: 'https://3505589dc5ef8e4c50abb02eb72c0890@o4511532107235328.ingest.de.sentry.io/4511532111560784',
   environment: import.meta.env.MODE,
+  debug: true,
 
   integrations: [
     Sentry.reactRouterV6BrowserTracingIntegration({
@@ -21,3 +22,6 @@ Sentry.init({
 
   sendDefaultPii: false,
 })
+
+// expõe para teste no console
+;(window as unknown as Record<string, unknown>)['Sentry'] = Sentry
