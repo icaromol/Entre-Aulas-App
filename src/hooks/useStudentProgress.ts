@@ -4,9 +4,11 @@ import { useAuth } from './useAuth'
 import {
   getRankFromXp,
   computeStreak,
+  grantXp,
   RANKS,
   type Rank,
   type XpAttribute,
+  type XpReason,
 } from '@/lib/xpHelpers'
 import { getMonday, formatWeekStart, getTodayDayOfWeek } from '@/lib/weekUtils'
 
@@ -126,7 +128,7 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
     ] = await Promise.all([
       supabase
         .from('student_xp_events')
-        .select('amount, attribute, reason')
+        .select('amount, attribute, reason, created_at')
         .eq('student_id', sid),
 
       supabase
@@ -308,6 +310,23 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
         completed: weekItems >= 5,
       },
     ]
+
+    // ─── Grant XP de missões semanais (só na sessão do próprio aluno) ─────
+    if (!overrideSid) {
+      const grantedThisWeek = new Set(
+        xpEvents
+          .filter(e => e.created_at >= weekStart + 'T00:00:00' &&
+            (e.reason === 'weekly_mission_streak' ||
+             e.reason === 'weekly_mission_items' ||
+             e.reason === 'weekly_mission_pomodoros'))
+          .map(e => e.reason)
+      )
+      for (const m of weeklyMissions) {
+        if (m.completed && !grantedThisWeek.has(m.key)) {
+          grantXp(sid, m.key as XpReason)
+        }
+      }
+    }
 
     // ─── Stats semanais ───────────────────────────────────────────────────
     const weekStats = {
