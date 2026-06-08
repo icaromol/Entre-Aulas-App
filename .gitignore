@@ -1,4 +1,3 @@
-cat > .gitignore << 'EOF'
 # Dependencies
 node_modules
 .pnp
@@ -41,4 +40,6 @@ lerna-debug.log*
 # Misc
 .cache
 .temp
-EOF
+
+# Documentação interna — não vai pro repositório
+docs/
