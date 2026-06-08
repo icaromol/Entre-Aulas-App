@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useLocation, useNavigationType, createRoutesFromChildren, matchRoutes } from 'react-router-dom'
 
 Sentry.init({
-  dsn: 'https://3505589dc5ef8e4c50abb02eb72c0890@o4511532107235328.ingest.de.sentry.io/4511532111560784',
+  dsn: import.meta.env.VITE_SENTRY_DSN,
   environment: import.meta.env.MODE,
   integrations: [
     Sentry.reactRouterV6BrowserTracingIntegration({
