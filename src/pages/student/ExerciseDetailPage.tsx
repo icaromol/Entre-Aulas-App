@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { MdArrowBack, MdTaskAlt, MdDeleteOutline, MdEdit } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
+import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
@@ -109,6 +111,7 @@ export default function StudentExerciseDetailPage() {
     navigate('/aluno/repertorio?tab=exercises')
   }
 
+  if (!isValidUUID(exerciseId)) return <Navigate to="/" replace />
   if (loading) return <StudentLayout><p className="text-sm text-gray-400">Carregando...</p></StudentLayout>
   if (!exercise) return <StudentLayout><p className="text-sm text-red-400">Exercício não encontrado.</p></StudentLayout>
 

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { MdArrowBack, MdAdd, MdDeleteOutline, MdEdit, MdMusicNote, MdSchool, MdCalendarMonth, MdLocationOn } from 'react-icons/md'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
+import { isValidUUID } from '@/lib/utils'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import type { Programa, ProgramPiece, ProgramExercise } from '@/types/programs'
 
@@ -162,6 +164,7 @@ export default function ProgramaDetailPage() {
     navigate(`/professor/alunos/${studentId}?tab=programs`)
   }
 
+  if (!isValidUUID(studentId) || !isValidUUID(programId)) return <Navigate to="/" replace />
   if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
   if (!programa) return <TeacherLayout><p className="text-sm text-red-400">Programa não encontrado.</p></TeacherLayout>
 

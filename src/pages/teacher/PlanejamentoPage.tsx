@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   MdArrowBack, MdAutoAwesome, MdBalance, MdCheck,
@@ -7,6 +8,7 @@ import {
   MdSchool, MdMusicNote, MdLibraryMusic, MdMic, MdFolder,
 } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
+import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -439,6 +441,7 @@ export default function PlanejamentoPage() {
 
   const levelLabel: Record<string, string> = { beginner: 'Iniciante', intermediate: 'Intermediário', advanced: 'Avançado' }
 
+  if (!isValidUUID(studentId)) return <Navigate to="/" replace />
   if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
 
   // ── Config step ─────────────────────────────────────────────────────────────

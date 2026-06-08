@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { MdArrowBack, MdSchool, MdNotes } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
+import { isValidUUID } from '@/lib/utils'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
@@ -67,6 +69,7 @@ export default function EditExercisePage() {
     }
   }
 
+  if (!isValidUUID(studentId) || !isValidUUID(exerciseId)) return <Navigate to="/" replace />
   if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
 
   return (

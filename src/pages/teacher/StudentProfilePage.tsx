@@ -3,9 +3,11 @@ import { toast } from "sonner";
 import {
   useParams,
   Link,
+  Navigate,
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
+import { isValidUUID } from "@/lib/utils";
 import {
   MdArrowBack,
   MdMusicNote,
@@ -352,6 +354,8 @@ export default function StudentProfilePage() {
     await supabase.from("students").delete().eq("id", studentId!);
     navigate("/professor/alunos");
   }
+
+  if (!isValidUUID(studentId)) return <Navigate to="/" replace />
 
   if (loading) {
     return (

@@ -92,18 +92,7 @@ export default function NewStudentPage() {
 
       if (!teacher) throw new Error('Professor não encontrado.')
 
-      // 2. Verifica se o e-mail já existe
-      const { data: existingStudent } = await supabase
-        .from('students')
-        .select('id')
-        .eq('contact_email', email)
-        .single()
-
-      if (existingStudent) {
-        throw new Error('Este e-mail já está cadastrado para outro aluno.')
-      }
-
-      // 3. Cria o aluno
+      // 2. Cria o aluno
       const { data: student, error: studentError } = await supabase
         .from('students')
         .insert({
@@ -120,6 +109,7 @@ export default function NewStudentPage() {
         .select('id, invite_token')
         .single()
 
+      if (studentError?.code === '23505') throw new Error('Este e-mail já está cadastrado para outro aluno.')
       if (studentError || !student) throw new Error('Erro ao criar aluno.')
 
       // 4. Salva disponibilidade

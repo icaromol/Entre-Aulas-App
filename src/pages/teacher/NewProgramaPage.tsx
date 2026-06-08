@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { MdArrowBack, MdLibraryMusic, MdNotes, MdMusicNote, MdSchool } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
+import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -137,6 +139,8 @@ export default function NewProgramaPage() {
   }
 
   const hasItems = pieces.length > 0 || exercises.length > 0
+
+  if (!isValidUUID(studentId)) return <Navigate to="/" replace />
 
   return (
     <TeacherLayout>

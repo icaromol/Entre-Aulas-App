@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { MdArrowBack, MdMusicNote, MdNotes, MdTune, MdAdd, MdExpandMore, MdLibraryMusic, MdPiano, MdFavorite, MdGraphicEq, MdFlashOn, MdMic, MdFolder, MdBuild, MdStars, MdMenuBook, MdEmojiEvents } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
+import { isValidUUID } from '@/lib/utils'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 import { DEFAULT_CHECKLIST } from '@/lib/defaultChecklist'
@@ -156,6 +158,8 @@ export default function NewPiecePage() {
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  if (!isValidUUID(studentId)) return <Navigate to="/" replace />
 
   return (
     <TeacherLayout>
