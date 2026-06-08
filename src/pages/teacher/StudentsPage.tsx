@@ -32,6 +32,7 @@ export default function StudentsPage() {
   const [students, setStudents]       = useState<Student[]>([])
   const [pending, setPending]         = useState<Student[]>([])
   const [loading, setLoading]         = useState(true)
+  const [fetchError, setFetchError]   = useState<string | null>(null)
 
   const location = useLocation()
   const [inviteLink, setInviteLink]               = useState<string | undefined>(location.state?.inviteLink)
@@ -151,6 +152,13 @@ export default function StudentsPage() {
         .eq('status', 'pending')
         .order('created_at', { ascending: false }),
     ])
+
+    if (activeRes.error || pendingRes.error) {
+      console.error('[StudentsPage] fetch failed:', activeRes.error ?? pendingRes.error)
+      setFetchError('Não foi possível carregar os alunos. Tente recarregar a página.')
+      setLoading(false)
+      return
+    }
 
     setStudents(activeRes.data ?? [])
     setPending(pendingRes.data ?? [])
@@ -284,6 +292,8 @@ export default function StudentsPage() {
 
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
+      ) : fetchError ? (
+        <p className="text-sm text-red-500 text-center py-12">{fetchError}</p>
       ) : (
         <div className="space-y-6">
 

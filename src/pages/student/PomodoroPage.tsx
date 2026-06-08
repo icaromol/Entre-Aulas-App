@@ -217,6 +217,12 @@ export default function PomodoroPage() {
         .eq('student_id', sid).eq('status', 'active'),
     ])
 
+    if (completionsRes.error || piecesRes.error || exercisesRes.error) {
+      console.error('[PomodoroPage] fetch failed:', completionsRes.error ?? piecesRes.error ?? exercisesRes.error)
+      setLoadingItems(false)
+      return
+    }
+
     const completedIds = new Set(
       (completionsRes.data ?? []).map((c: any) => c.checklist_item_id)
     )

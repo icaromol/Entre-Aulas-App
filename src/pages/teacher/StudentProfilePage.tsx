@@ -230,6 +230,7 @@ export default function StudentProfilePage() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [programas, setProgramas] = useState<Programa[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const rawTab = searchParams.get("tab");
   const initialTab: TabKey =
     rawTab === "programs" ? "programs" :
@@ -322,6 +323,13 @@ export default function StudentProfilePage() {
           .order("created_at", { ascending: false }),
       ]);
 
+    if (studentRes.error || piecesRes.error || exercisesRes.error) {
+      console.error('[StudentProfilePage] fetch failed:', studentRes.error ?? piecesRes.error ?? exercisesRes.error)
+      setFetchError('Não foi possível carregar os dados do aluno. Tente recarregar a página.')
+      setLoading(false)
+      return
+    }
+
     setStudent(studentRes.data);
     setAvailability(availRes.data ?? []);
     setPieces(piecesRes.data ?? []);
@@ -365,6 +373,14 @@ export default function StudentProfilePage() {
     return (
       <TeacherLayout>
         <div className="flex justify-center py-12"><Spinner /></div>
+      </TeacherLayout>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <TeacherLayout>
+        <p className="text-sm text-red-500 text-center py-12">{fetchError}</p>
       </TeacherLayout>
     );
   }

@@ -89,6 +89,7 @@ export default function TodayPage() {
 
   const [items, setItems] = useState<PlanItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [studentId, setStudentId] = useState<string | null>(null);
   const [viewDay, setViewDay] = useState(getTodayDayOfWeek());
   const [pendingItem, setPendingItem] = useState<PlanItem | null>(null);
@@ -111,13 +112,15 @@ export default function TodayPage() {
     setLoading(true);
 
     if (!studentId) {
-      const { data: student } = await supabase
+      const { data: student, error: studentError } = await supabase
         .from("students")
         .select("id")
         .eq("profile_id", profile!.id)
         .single();
 
-      if (!student) {
+      if (studentError || !student) {
+        console.error('[TodayPage] student fetch failed:', studentError)
+        setFetchError('Não foi possível carregar seu perfil. Tente recarregar a página.')
         setLoading(false);
         return;
       }
@@ -129,12 +132,19 @@ export default function TodayPage() {
   }
 
   async function fetchItems(sid: string) {
-    const { data: plan } = await supabase
+    const { data: plan, error: planError } = await supabase
       .from("weekly_plans")
       .select("id")
       .eq("student_id", sid)
       .eq("week_start", weekStart)
       .single();
+
+    if (planError && planError.code !== 'PGRST116') {
+      console.error('[TodayPage] plan fetch failed:', planError)
+      setFetchError('Não foi possível carregar o planejamento.')
+      setLoading(false);
+      return;
+    }
 
     if (!plan) {
       setItems([]);
@@ -142,7 +152,7 @@ export default function TodayPage() {
       return;
     }
 
-    const { data: planItems } = await supabase
+    const { data: planItems, error: itemsError } = await supabase
       .from("plan_items")
       .select(
         `
@@ -156,6 +166,13 @@ export default function TodayPage() {
       .eq("plan_id", plan.id)
       .eq("day_of_week", viewDay)
       .order("position");
+
+    if (itemsError) {
+      console.error('[TodayPage] items fetch failed:', itemsError)
+      setFetchError('Não foi possível carregar as tarefas do dia.')
+      setLoading(false);
+      return;
+    }
 
     setItems((planItems ?? []) as unknown as PlanItem[]);
     setLoading(false);
@@ -220,6 +237,14 @@ export default function TodayPage() {
     return (
       <StudentLayout>
         <div className="flex justify-center py-12"><Spinner /></div>
+      </StudentLayout>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <StudentLayout>
+        <p className="text-sm text-red-500 text-center py-12">{fetchError}</p>
       </StudentLayout>
     );
   }

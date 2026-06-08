@@ -71,6 +71,7 @@ export default function RepertoirePage() {
   const [programas, setProgramas] = useState<Programa[]>([])
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [expandedPieceId, setExpandedPieceId] = useState<string | null>(null)
 
   function switchTab(tab: TabKey) {
@@ -83,10 +84,15 @@ export default function RepertoirePage() {
   }, [profile])
 
   async function fetchAll() {
-    const { data: student } = await supabase
+    const { data: student, error: studentError } = await supabase
       .from('students').select('id').eq('profile_id', profile!.id).single()
 
-    if (!student) { setLoading(false); return }
+    if (studentError || !student) {
+      console.error('[RepertoirePage] student fetch failed:', studentError)
+      setFetchError('Não foi possível carregar seu repertório. Tente recarregar a página.')
+      setLoading(false)
+      return
+    }
 
     const [piecesRes, exercisesRes, completionsRes, programasRes] = await Promise.all([
       supabase.from('pieces')
@@ -99,6 +105,13 @@ export default function RepertoirePage() {
       supabase.from('programas')
         .select('id, title, type, status, deadline').eq('student_id', student.id).order('title'),
     ])
+
+    if (piecesRes.error || exercisesRes.error) {
+      console.error('[RepertoirePage] fetch failed:', piecesRes.error ?? exercisesRes.error)
+      setFetchError('Não foi possível carregar o repertório. Tente recarregar a página.')
+      setLoading(false)
+      return
+    }
 
     setPieces(
       (piecesRes.data ?? []).map((p: Piece) => ({
@@ -116,6 +129,10 @@ export default function RepertoirePage() {
 
   if (loading) {
     return <StudentLayout><div className="flex justify-center py-12"><Spinner /></div></StudentLayout>
+  }
+
+  if (fetchError) {
+    return <StudentLayout><p className="text-sm text-red-500 text-center py-12">{fetchError}</p></StudentLayout>
   }
 
   return (

@@ -134,11 +134,20 @@ export default function PlanejamentoPage() {
   // ── Data loading ────────────────────────────────────────────────────────────
 
   async function fetchPrograms() {
-    const [{ data: progs }, { data: donePieces }, { data: student }] = await Promise.all([
+    const [progsRes, donePiecesRes, studentRes] = await Promise.all([
       supabase.from('programas').select('*').eq('student_id', studentId!).neq('status', 'archived').order('created_at'),
       supabase.from('pieces').select('id').eq('student_id', studentId!).eq('status', 'completed'),
       supabase.from('students').select('level').eq('id', studentId!).single(),
     ])
+    if (progsRes.error || studentRes.error) {
+      console.error('[PlanejamentoPage] fetch failed:', progsRes.error ?? studentRes.error)
+      setError('Não foi possível carregar os programas. Tente recarregar a página.')
+      setLoading(false)
+      return
+    }
+    const progs = progsRes.data
+    const donePieces = donePiecesRes.data
+    const student = studentRes.data
     const list = progs ?? []
     setPrograms(list)
     setHasCompletedPieces((donePieces ?? []).length > 0)
