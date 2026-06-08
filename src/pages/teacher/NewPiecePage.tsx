@@ -176,7 +176,7 @@ export default function NewPiecePage() {
 
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Título da peça</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} required
+            <input value={title} onChange={e => setTitle(e.target.value)} required maxLength={200}
               placeholder="Ex: Sonatina Op.36 nº1"
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
           </div>
@@ -184,13 +184,13 @@ export default function NewPiecePage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-500">Compositor</label>
-              <input value={composer} onChange={e => setComposer(e.target.value)}
+              <input value={composer} onChange={e => setComposer(e.target.value)} maxLength={150}
                 placeholder="Ex: Clementi"
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-500">Opus / Catálogo</label>
-              <input value={catalogNumber} onChange={e => setCatalogNumber(e.target.value)}
+              <input value={catalogNumber} onChange={e => setCatalogNumber(e.target.value)} maxLength={50}
                 placeholder="Ex: Op.36, BWV 772"
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
             </div>
@@ -275,7 +275,7 @@ export default function NewPiecePage() {
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600">
             <MdNotes size={15} /> Observações
           </h2>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} maxLength={2000}
             placeholder="Anotações sobre a peça..."
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
         </div>

@@ -201,6 +201,7 @@ export default function StudentPieceDetailPage() {
             <input value={newItemTitle} onChange={e => setNewItemTitle(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomItem())}
               placeholder="Ex: Trabalhar digitação do compasso 12"
+              maxLength={200}
               className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
             <Button onClick={addCustomItem} disabled={addingItem || !newItemTitle.trim()}
               className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs px-4">

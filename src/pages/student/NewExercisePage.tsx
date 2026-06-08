@@ -141,7 +141,7 @@ export default function StudentNewExercisePage() {
 
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Nome do exercício</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} required
+            <input value={title} onChange={e => setTitle(e.target.value)} required maxLength={200}
               placeholder="Ex: Escalas maiores em todas as tonalidades"
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
           </div>
@@ -164,7 +164,7 @@ export default function StudentNewExercisePage() {
 
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Objetivo</label>
-            <textarea value={objective} onChange={e => setObjective(e.target.value)} rows={2}
+            <textarea value={objective} onChange={e => setObjective(e.target.value)} rows={2} maxLength={500}
               placeholder="O que você quer desenvolver com esse exercício..."
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
           </div>
@@ -184,7 +184,7 @@ export default function StudentNewExercisePage() {
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600">
             <MdNotes size={15} /> Observações
           </h2>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} maxLength={2000}
             placeholder="Anotações sobre o exercício..."
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
         </div>

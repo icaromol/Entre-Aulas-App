@@ -166,6 +166,7 @@ export default function NewStudentPage() {
                 onChange={e => setFirstName(e.target.value)}
                 placeholder="Ex: João"
                 required
+                maxLength={100}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
               />
             </div>
@@ -176,6 +177,7 @@ export default function NewStudentPage() {
                 onChange={e => setLastName(e.target.value)}
                 placeholder="Ex: Silva"
                 required
+                maxLength={100}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
               />
             </div>
@@ -189,6 +191,7 @@ export default function NewStudentPage() {
               onChange={e => setEmail(e.target.value)}
               placeholder="Ex: joao@email.com"
               required
+              maxLength={254}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
             />
           </div>
@@ -199,6 +202,7 @@ export default function NewStudentPage() {
               value={phone}
               onChange={e => setPhone(e.target.value)}
               placeholder="Ex: (11) 98765-4321"
+              maxLength={20}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
             />
           </div>
@@ -322,6 +326,7 @@ export default function NewStudentPage() {
             onChange={e => setNotes(e.target.value)}
             placeholder="Ex: Aluno iniciante, preferência por jazz"
             rows={3}
+            maxLength={2000}
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition resize-none placeholder:text-gray-300"
           />
         </div>

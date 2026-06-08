@@ -186,6 +186,7 @@ export default function NewProgramaPage() {
               value={title}
               onChange={e => handleTitleChange(e.target.value)}
               placeholder={type === 'outro' ? 'Nome do programa' : selected.label}
+              maxLength={200}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
             />
           </div>
@@ -211,6 +212,7 @@ export default function NewProgramaPage() {
                 value={venue}
                 onChange={e => setVenue(e.target.value)}
                 placeholder="Ex: Teatro Municipal, Sala de Recitais..."
+                maxLength={200}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition"
               />
             </div>
@@ -319,6 +321,7 @@ export default function NewProgramaPage() {
             value={notes}
             onChange={e => setNotes(e.target.value)}
             rows={3}
+            maxLength={2000}
             placeholder="Contexto, repertório previsto, objetivos..."
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none"
           />

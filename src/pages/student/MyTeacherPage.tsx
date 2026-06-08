@@ -23,7 +23,6 @@ export default function MyTeacherPage() {
   const navigate = useNavigate()
 
   const [connState, setConnState]   = useState<ConnectionState>('loading')
-  const [studentId, setStudentId]   = useState<string | null>(null)
   const [teacher, setTeacher]       = useState<TeacherInfo | null>(null)
   const [teacherEmail, setTeacherEmail] = useState('')
   const [requesting, setRequesting]     = useState(false)
@@ -41,8 +40,7 @@ export default function MyTeacherPage() {
     const { data, error } = await supabase.rpc('get_my_teacher_info')
     if (error) { setConnState('none'); return }
 
-    const res = data as { state: string; student_id?: string; first_name?: string; last_name?: string; avatar_url?: string | null }
-    setStudentId(res.student_id ?? null)
+    const res = data as { state: string; first_name?: string; last_name?: string; avatar_url?: string | null }
 
     if (res.state === 'pending') {
       setConnState('pending')
@@ -95,7 +93,6 @@ export default function MyTeacherPage() {
     await supabase.rpc('disconnect_from_teacher')
     setDisconnecting(false)
     setTeacher(null)
-    setStudentId(null)
     setConnState('none')
     toast.success('Desconectado do professor.')
   }
@@ -103,7 +100,6 @@ export default function MyTeacherPage() {
   async function handleCancelRequest() {
     if (!confirm('Cancelar a solicitação?')) return
     await supabase.rpc('disconnect_from_teacher')
-    setStudentId(null)
     setConnState('none')
   }
 
@@ -146,6 +142,7 @@ export default function MyTeacherPage() {
               onChange={e => setTeacherEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleRequest()}
               placeholder="professor@email.com"
+              maxLength={254}
               className="w-full px-3 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
             />
             <button

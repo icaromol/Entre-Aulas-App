@@ -165,6 +165,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                 <input
                   value={editFirst}
                   onChange={e => setEditFirst(e.target.value)}
+                  maxLength={100}
                   className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
                 />
               </div>
@@ -173,6 +174,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                 <input
                   value={editLast}
                   onChange={e => setEditLast(e.target.value)}
+                  maxLength={100}
                   className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
                 />
               </div>

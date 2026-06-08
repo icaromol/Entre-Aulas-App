@@ -106,7 +106,7 @@ export default function StudentEditProgramaPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Nome do programa</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} required
+            <input value={title} onChange={e => setTitle(e.target.value)} required maxLength={200}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
           </div>
 
@@ -123,6 +123,7 @@ export default function StudentEditProgramaPage() {
               <label className="text-xs font-medium text-gray-500">Local / Venue (opcional)</label>
               <input value={venue} onChange={e => setVenue(e.target.value)}
                 placeholder="Ex: Teatro Municipal..."
+                maxLength={200}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition" />
             </div>
           )}
@@ -132,7 +133,7 @@ export default function StudentEditProgramaPage() {
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600">
             <MdNotes size={15} />Observações (opcional)
           </h2>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} maxLength={2000}
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
         </div>
 

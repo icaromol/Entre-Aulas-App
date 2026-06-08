@@ -31,7 +31,6 @@ export default function StudentsPage() {
   const [students, setStudents]       = useState<Student[]>([])
   const [pending, setPending]         = useState<Student[]>([])
   const [loading, setLoading]         = useState(true)
-  const [teacherId, setTeacherId]     = useState<string | null>(null)
 
   const location = useLocation()
   const [inviteLink, setInviteLink]               = useState<string | undefined>(location.state?.inviteLink)
@@ -142,7 +141,6 @@ export default function StudentsPage() {
       .single()
 
     if (!teacher) { setLoading(false); return }
-    setTeacherId(teacher.id)
 
     const [activeRes, pendingRes] = await Promise.all([
       supabase
@@ -240,6 +238,7 @@ export default function StudentsPage() {
                 onChange={e => setLinkEmail(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleLinkExisting()}
                 placeholder="aluno@email.com"
+                maxLength={254}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
                 autoFocus
               />

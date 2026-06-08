@@ -524,6 +524,7 @@ export default function PomodoroPage() {
           onChange={e => setComment(e.target.value)}
           placeholder="Dificuldades, dúvidas, observações..."
           rows={3}
+          maxLength={500}
           className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none"
         />
       </div>

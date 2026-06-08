@@ -248,6 +248,7 @@ export default function ExerciseDetailPage() {
               onChange={e => setNewItemTitle(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomItem())}
               placeholder="Ex: Praticar no andamento 120 BPM"
+              maxLength={200}
               className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
             />
             <Button
