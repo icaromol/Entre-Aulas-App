@@ -32,6 +32,7 @@ import { getMonday, formatWeekStart, formatWeekLabel } from "@/lib/weekUtils";
 import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from "@/components/layout/TeacherLayout";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { StudentJornadaTab } from "@/components/teacher/StudentJornadaTab";
 
 interface Student {
   id: string;
@@ -213,7 +214,7 @@ function planDayDate(weekStart: string, dayOfWeek: number): string {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
-type TabKey = "plans" | "repertoire" | "programs";
+type TabKey = "plans" | "repertoire" | "programs" | "journey";
 type RepertoireTab = "pieces" | "exercises";
 
 export default function StudentProfilePage() {
@@ -232,6 +233,7 @@ export default function StudentProfilePage() {
   const initialTab: TabKey =
     rawTab === "programs" ? "programs" :
     rawTab === "repertoire" ? "repertoire" :
+    rawTab === "journey" ? "journey" :
     rawTab === "plans" ? "plans" : "plans";
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [subTab, setSubTab] = useState<RepertoireTab>(
@@ -657,6 +659,7 @@ export default function StudentProfilePage() {
             { key: "plans",      label: "Planejamentos", Icon: MdCalendarMonth },
             { key: "repertoire", label: "Repertório",    Icon: MdMusicNote     },
             { key: "programs",   label: "Programas",     Icon: MdLibraryMusic  },
+            { key: "journey",    label: "Jornada",       Icon: MdTrendingUp    },
           ] as const
         ).map((tab) => (
           <button
@@ -964,6 +967,11 @@ export default function StudentProfilePage() {
             Novo programa
           </Link>
         </div>
+      )}
+
+      {/* Tab: Jornada */}
+      {activeTab === "journey" && (
+        <StudentJornadaTab studentId={studentId!} />
       )}
 
     </TeacherLayout>

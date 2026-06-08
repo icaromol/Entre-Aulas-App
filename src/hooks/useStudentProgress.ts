@@ -57,40 +57,52 @@ export interface StudentProgress {
     daysUntil: number
   } | null
   weeklyMissions: WeeklyMission[]
+  xpHistory: { week: string; xp: number }[]
+  minutesHistory: { week: string; minutes: number }[]
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-export function useStudentProgress(): { progress: StudentProgress | null; loading: boolean } {
+export function useStudentProgress(opts?: { studentId?: string }): { progress: StudentProgress | null; loading: boolean } {
   const { profile } = useAuth()
   const [progress, setProgress] = useState<StudentProgress | null>(null)
   const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
+    if (opts?.studentId) {
+      load(opts.studentId)
+      return
+    }
     if (!profile || profile.role !== 'student') {
       setLoading(false)
       return
     }
-    load()
-  }, [profile?.id])
+    load(undefined)
+  }, [profile?.id, opts?.studentId])
 
-  async function load() {
+  async function load(overrideSid?: string) {
     setLoading(true)
 
-    // 1. Resolver student_id
-    const { data: student } = await supabase
-      .from('students')
-      .select('id')
-      .eq('profile_id', profile!.id)
-      .single()
+    let sid: string
+    if (overrideSid) {
+      sid = overrideSid
+    } else {
+      // 1. Resolver student_id a partir do profile logado
+      const { data: student } = await supabase
+        .from('students')
+        .select('id')
+        .eq('profile_id', profile!.id)
+        .single()
 
-    if (!student) { setLoading(false); return }
-    const sid = student.id
+      if (!student) { setLoading(false); return }
+      sid = student.id
+    }
 
     const weekStart    = formatWeekStart(getMonday(new Date()))
     const todayDow     = getTodayDayOfWeek()
     const weekStartDt  = new Date(weekStart + 'T00:00:00')
     const weekEndIso   = new Date(weekStartDt.getTime() + 7 * 86400000).toISOString()
+    const eightWeeksAgo = new Date(weekStartDt.getTime() - 7 * 7 * 86400000).toISOString().slice(0, 10)
 
     // 2. Buscar todos os dados em paralelo
     const [
@@ -102,6 +114,8 @@ export function useStudentProgress(): { progress: StudentProgress | null; loadin
       weekPlanResult,
       weekSessionsResult,
       weekItemsResult,
+      xpHistoryResult,
+      minutesHistoryResult,
     ] = await Promise.all([
       supabase
         .from('student_xp_events')
@@ -157,6 +171,18 @@ export function useStudentProgress(): { progress: StudentProgress | null; loadin
         .eq('reason', 'checklist_item')
         .gte('created_at', weekStart + 'T00:00:00')
         .lt('created_at', weekEndIso),
+
+      supabase
+        .from('student_xp_events')
+        .select('amount, created_at')
+        .eq('student_id', sid)
+        .gte('created_at', eightWeeksAgo + 'T00:00:00'),
+
+      supabase
+        .from('study_sessions')
+        .select('started_at, duration_seconds')
+        .eq('student_id', sid)
+        .gte('started_at', eightWeeksAgo + 'T00:00:00'),
     ])
 
     // ─── XP total e por atributo ──────────────────────────────────────────
@@ -269,6 +295,28 @@ export function useStudentProgress(): { progress: StudentProgress | null; loadin
       },
     ]
 
+    // ─── Histórico de XP e minutos (8 semanas) ───────────────────────────
+    const xpByWeek: Record<string, number> = {}
+    for (const e of (xpHistoryResult.data ?? [])) {
+      const w = formatWeekStart(getMonday(new Date(e.created_at)))
+      xpByWeek[w] = (xpByWeek[w] ?? 0) + e.amount
+    }
+    const minByWeek: Record<string, number> = {}
+    for (const s of (minutesHistoryResult.data ?? [])) {
+      const w = formatWeekStart(getMonday(new Date(s.started_at)))
+      minByWeek[w] = (minByWeek[w] ?? 0) + Math.round((s.duration_seconds ?? 0) / 60)
+    }
+    const xpHistory: { week: string; xp: number }[] = []
+    const minutesHistory: { week: string; minutes: number }[] = []
+    let cumulativeXp = 0
+    for (let i = 7; i >= 0; i--) {
+      const d = new Date(weekStartDt.getTime() - i * 7 * 86400000)
+      const w = formatWeekStart(d)
+      cumulativeXp += (xpByWeek[w] ?? 0)
+      xpHistory.push({ week: w, xp: cumulativeXp })
+      minutesHistory.push({ week: w, minutes: minByWeek[w] ?? 0 })
+    }
+
     setProgress({
       studentId:     sid,
       xpTotal,
@@ -280,6 +328,8 @@ export function useStudentProgress(): { progress: StudentProgress | null; loadin
       todayMission,
       nextEvent,
       weeklyMissions,
+      xpHistory,
+      minutesHistory,
     })
     setLoading(false)
   }
