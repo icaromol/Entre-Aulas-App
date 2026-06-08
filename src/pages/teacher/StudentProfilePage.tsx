@@ -23,6 +23,7 @@ import {
   MdFolder,
   MdPiano,
   MdTrendingUp,
+  MdBarChart,
   MdEmojiEvents,
   MdGraphicEq,
 } from "react-icons/md";
@@ -659,7 +660,7 @@ export default function StudentProfilePage() {
             { key: "plans",      label: "Planejamentos", Icon: MdCalendarMonth },
             { key: "repertoire", label: "Repertório",    Icon: MdMusicNote     },
             { key: "programs",   label: "Programas",     Icon: MdLibraryMusic  },
-            { key: "journey",    label: "Jornada",       Icon: MdTrendingUp    },
+            { key: "journey",    label: "Jornada",       Icon: MdBarChart      },
           ] as const
         ).map((tab) => (
           <button

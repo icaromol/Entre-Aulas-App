@@ -57,6 +57,13 @@ export interface StudentProgress {
     daysUntil: number
   } | null
   weeklyMissions: WeeklyMission[]
+  weekStats: {
+    sessions: number
+    activeDays: number
+    plannedDays: number
+    doneItems: number
+    totalItems: number
+  }
   xpHistory: { week: string; xp: number }[]
   minutesHistory: { week: string; minutes: number }[]
 }
@@ -225,23 +232,30 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
       })
     }
 
-    // ─── Missão do dia ────────────────────────────────────────────────────
+    // ─── Missão do dia + stats semanais de itens ─────────────────────────
     let todayMission = { total: 0, done: 0, xpReward: 20, completed: false }
+    let weekItemStats = { doneItems: 0, totalItems: 0, plannedDays: 0 }
 
     if (weekPlanResult.data) {
-      const { data: dayItems } = await supabase
+      const { data: allWeekItems } = await supabase
         .from('plan_items')
-        .select('id, is_done')
+        .select('id, is_done, day_of_week')
         .eq('plan_id', weekPlanResult.data.id)
-        .eq('day_of_week', todayDow)
 
-      const total = (dayItems ?? []).length
-      const done  = (dayItems ?? []).filter(i => i.is_done).length
+      const allItems = allWeekItems ?? []
+      const dayItems = allItems.filter(i => i.day_of_week === todayDow)
+      const total = dayItems.length
+      const done  = dayItems.filter(i => i.is_done).length
       todayMission = {
         total,
         done,
         xpReward:  20,
         completed: total > 0 && done === total,
+      }
+      weekItemStats = {
+        doneItems:   allItems.filter(i => i.is_done).length,
+        totalItems:  allItems.length,
+        plannedDays: new Set(allItems.map(i => i.day_of_week)).size,
       }
     }
 
@@ -295,6 +309,15 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
       },
     ]
 
+    // ─── Stats semanais ───────────────────────────────────────────────────
+    const weekStats = {
+      sessions:    weekPomodoros,
+      activeDays:  weekDaysStudied,
+      plannedDays: weekItemStats.plannedDays,
+      doneItems:   weekItemStats.doneItems,
+      totalItems:  weekItemStats.totalItems,
+    }
+
     // ─── Histórico de XP e minutos (8 semanas) ───────────────────────────
     const xpByWeek: Record<string, number> = {}
     for (const e of (xpHistoryResult.data ?? [])) {
@@ -328,6 +351,7 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
       todayMission,
       nextEvent,
       weeklyMissions,
+      weekStats,
       xpHistory,
       minutesHistory,
     })

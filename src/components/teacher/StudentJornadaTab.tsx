@@ -2,7 +2,7 @@ import { useStudentProgress } from '@/hooks/useStudentProgress'
 import { Spinner } from '@/components/ui/Spinner'
 import {
   MdWhatshot, MdEmojiEvents, MdLock, MdStar,
-  MdMusicNote, MdTimer,
+  MdMusicNote, MdTimer, MdAccessTime, MdCheckCircle,
 } from 'react-icons/md'
 import type { XpAttribute } from '@/lib/xpHelpers'
 
@@ -60,47 +60,51 @@ function shortWeekLabel(isoMonday: string): string {
   return `${d}/${m}`
 }
 
-// ─── Gráfico de barras inline (SVG) ──────────────────────────────────────────
+// ─── Gráfico de barras responsivo (SVG) ──────────────────────────────────────
 
 function BarChart({ data, color }: { data: { label: string; value: number }[]; color: string }) {
-  const CHART_H = 64
+  const CHART_H = 56
   const maxVal = Math.max(1, ...data.map(d => d.value))
-  const barW   = 24
-  const gap    = 8
+  const barW   = 20
+  const gap    = 6
   const totalW = data.length * (barW + gap) - gap
+  const viewH  = CHART_H + 24
 
   return (
-    <div className="overflow-x-auto">
-      <svg width={totalW} height={CHART_H + 28} className="block mx-auto">
-        {data.map((d, i) => {
-          const h   = Math.max(d.value > 0 ? 4 : 0, Math.round((d.value / maxVal) * CHART_H))
-          const x   = i * (barW + gap)
-          const y   = CHART_H - h
-          const isMax = d.value === maxVal && d.value > 0
-          return (
-            <g key={i}>
-              <rect x={x} y={y} width={barW} height={h} rx={4} fill={color} />
-              {isMax && (
-                <text x={x + barW / 2} y={y - 4} textAnchor="middle" fontSize={9} fill="#6B7280">
-                  {d.value}
-                </text>
-              )}
-              <text x={x + barW / 2} y={CHART_H + 14} textAnchor="middle" fontSize={9} fill="#9CA3AF">
-                {d.label}
+    <svg
+      viewBox={`0 0 ${totalW} ${viewH}`}
+      width="100%"
+      style={{ display: 'block' }}
+      preserveAspectRatio="xMidYMid meet"
+    >
+      {data.map((d, i) => {
+        const h   = Math.max(d.value > 0 ? 3 : 0, Math.round((d.value / maxVal) * CHART_H))
+        const x   = i * (barW + gap)
+        const y   = CHART_H - h
+        const isMax = d.value === maxVal && d.value > 0
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width={barW} height={h} rx={3} fill={color} />
+            {isMax && (
+              <text x={x + barW / 2} y={y - 3} textAnchor="middle" fontSize={8} fill="#6B7280">
+                {d.value}
               </text>
-            </g>
-          )
-        })}
-      </svg>
-    </div>
+            )}
+            <text x={x + barW / 2} y={CHART_H + 13} textAnchor="middle" fontSize={8} fill="#9CA3AF">
+              {d.label}
+            </text>
+          </g>
+        )
+      })}
+    </svg>
   )
 }
 
-// ─── Gráfico de área inline (SVG) ─────────────────────────────────────────────
+// ─── Gráfico de área responsivo (SVG) ─────────────────────────────────────────
 
 function AreaChart({ data }: { data: { label: string; value: number }[] }) {
-  const CHART_H = 64
-  const CHART_W = 260
+  const CHART_H = 56
+  const CHART_W = 200
   const maxVal  = Math.max(1, ...data.map(d => d.value))
   const n       = data.length
 
@@ -115,17 +119,20 @@ function AreaChart({ data }: { data: { label: string; value: number }[] }) {
   const lastVal  = data[data.length - 1].value
 
   return (
-    <div className="overflow-x-auto">
-      <svg width={CHART_W} height={CHART_H + 4} className="block mx-auto">
-        <polygon points={polygon} fill="#D6E4F0" />
-        <polyline points={polyline} fill="none" stroke="#1E3A5F" strokeWidth={2} strokeLinejoin="round" />
-        {lastVal > 0 && (
-          <text x={lastPt.x} y={lastPt.y - 6} textAnchor="end" fontSize={9} fill="#1E3A5F" fontWeight="600">
-            {fmtXp(lastVal)} XP
-          </text>
-        )}
-      </svg>
-    </div>
+    <svg
+      viewBox={`0 0 ${CHART_W} ${CHART_H + 16}`}
+      width="100%"
+      style={{ display: 'block' }}
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <polygon points={polygon} fill="#D6E4F0" />
+      <polyline points={polyline} fill="none" stroke="#1E3A5F" strokeWidth={2} strokeLinejoin="round" />
+      {lastVal > 0 && (
+        <text x={lastPt.x} y={Math.max(10, lastPt.y - 4)} textAnchor="end" fontSize={8} fill="#1E3A5F" fontWeight="600">
+          {fmtXp(lastVal)} XP
+        </text>
+      )}
+    </svg>
   )
 }
 
@@ -152,7 +159,7 @@ export function StudentJornadaTab({ studentId }: Props) {
     )
   }
 
-  const { rank, xpTotal, xpByAttribute, streak, achievements, xpHistory, minutesHistory } = progress
+  const { rank, xpTotal, xpByAttribute, streak, achievements, weekStats, xpHistory, minutesHistory } = progress
   const unlockedSet = new Set(achievements)
 
   const attrValues = ATTRIBUTE_ORDER.map(k => ({ key: k, xp: xpByAttribute[k] ?? 0 }))
@@ -167,6 +174,8 @@ export function StudentJornadaTab({ studentId }: Props) {
     label: shortWeekLabel(h.week),
     value: h.xp,
   }))
+
+  const pendingItems = weekStats.totalItems - weekStats.doneItems
 
   return (
     <div className="space-y-4 pb-4">
@@ -213,16 +222,59 @@ export function StudentJornadaTab({ studentId }: Props) {
         </div>
       </div>
 
-      {/* Minutos estudados por semana */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4">
-        <p className="text-sm font-semibold text-gray-700 mb-3">Minutos estudados por semana</p>
-        <BarChart data={minutesChartData} color="#4A90C4" />
+      {/* Gráficos — side by side em telas maiores */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <p className="text-xs font-semibold text-gray-500 mb-3">Minutos / semana</p>
+          <BarChart data={minutesChartData} color="#4A90C4" />
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <p className="text-xs font-semibold text-gray-500 mb-3">XP acumulado</p>
+          <AreaChart data={xpChartData} />
+        </div>
       </div>
 
-      {/* XP acumulado */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4">
-        <p className="text-sm font-semibold text-gray-700 mb-3">XP acumulado (8 semanas)</p>
-        <AreaChart data={xpChartData} />
+      {/* Stats semanais — acessos e itens */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <MdAccessTime size={15} className="text-[#4A90C4] shrink-0" />
+            <p className="text-xs font-semibold text-gray-500">Acessos esta semana</p>
+          </div>
+          <p className="text-2xl font-bold text-[#1E3A5F] leading-none">
+            {weekStats.activeDays}
+            <span className="text-sm font-normal text-gray-400 ml-1">
+              / {weekStats.plannedDays || '—'} dias
+            </span>
+          </p>
+          <p className="text-xs text-gray-400 mt-1">{weekStats.sessions} {weekStats.sessions === 1 ? 'sessão' : 'sessões'} de estudo</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <MdCheckCircle size={15} className="text-[#4A90C4] shrink-0" />
+            <p className="text-xs font-semibold text-gray-500">Itens desta semana</p>
+          </div>
+          <p className="text-2xl font-bold text-[#1E3A5F] leading-none">
+            {weekStats.doneItems}
+            <span className="text-sm font-normal text-gray-400 ml-1">
+              / {weekStats.totalItems}
+            </span>
+          </p>
+          {weekStats.totalItems > 0 && (
+            <>
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mt-2">
+                <div
+                  className="h-full bg-[#4A90C4] rounded-full"
+                  style={{ width: `${Math.round((weekStats.doneItems / weekStats.totalItems) * 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1">{pendingItems} pendente{pendingItems !== 1 ? 's' : ''}</p>
+            </>
+          )}
+          {weekStats.totalItems === 0 && (
+            <p className="text-xs text-gray-400 mt-1">Sem plano esta semana</p>
+          )}
+        </div>
       </div>
 
       {/* Atributos musicais */}
