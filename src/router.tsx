@@ -48,7 +48,7 @@ export function Router() {
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         {/* Professor */}
-        <Route path="/professor" element={<AuthGuard allowedRole="teacher"><Navigate to="/professor/alunos" replace /></AuthGuard>} />
+        <Route path="/professor" element={<AuthGuard allowedRole="teacher"><Navigate to="/professor/jornada" replace /></AuthGuard>} />
         <Route path="/professor/alunos" element={<AuthGuard allowedRole="teacher"><StudentsPage /></AuthGuard>} />
         <Route path="/professor/alunos/novo" element={<AuthGuard allowedRole="teacher"><NewStudentPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId" element={<AuthGuard allowedRole="teacher"><StudentProfilePage /></AuthGuard>} />

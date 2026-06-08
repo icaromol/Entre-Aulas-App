@@ -135,12 +135,22 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
         <div className="w-full px-4 sm:px-6 lg:px-8 h-14 grid grid-cols-3 items-center">
 
           {/* Logo — coluna esquerda */}
-          <Link to="/professor/alunos" className="flex items-center">
+          <Link to="/professor/jornada" className="flex items-center">
             <img src="/estudamus_logo.png" alt="estudamus" className="h-[22px]" />
           </Link>
 
           {/* Nav central — coluna central */}
           <nav className="hidden sm:flex items-center justify-center gap-6">
+            <Link
+              to="/professor/jornada"
+              className={`text-sm font-medium transition ${
+                location.pathname.startsWith('/professor/jornada')
+                  ? 'text-[#1E3A5F]'
+                  : 'text-gray-400 hover:text-[#1E3A5F]'
+              }`}
+            >
+              Início
+            </Link>
             <Link
               to="/professor/alunos"
               className={`relative text-sm font-medium transition ${
@@ -153,16 +163,6 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
               {pendingCount > 0 && (
                 <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-[#4A90C4]" />
               )}
-            </Link>
-            <Link
-              to="/professor/jornada"
-              className={`text-sm font-medium transition ${
-                location.pathname.startsWith('/professor/jornada')
-                  ? 'text-[#1E3A5F]'
-                  : 'text-gray-400 hover:text-[#1E3A5F]'
-              }`}
-            >
-              Jornada
             </Link>
           </nav>
 
@@ -228,6 +228,16 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
         {/* Nav mobile */}
         <div className="sm:hidden flex gap-5 px-4 border-t border-gray-100">
           <Link
+            to="/professor/jornada"
+            className={`py-2 text-xs font-medium transition ${
+              location.pathname.startsWith('/professor/jornada')
+                ? 'text-[#1E3A5F] border-b-2 border-[#1E3A5F]'
+                : 'text-gray-400'
+            }`}
+          >
+            Início
+          </Link>
+          <Link
             to="/professor/alunos"
             className={`relative py-2 text-xs font-medium transition ${
               location.pathname.startsWith('/professor/alunos')
@@ -239,16 +249,6 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
             {pendingCount > 0 && (
               <span className="absolute -top-0 -right-2 w-2 h-2 rounded-full bg-[#4A90C4]" />
             )}
-          </Link>
-          <Link
-            to="/professor/jornada"
-            className={`py-2 text-xs font-medium transition ${
-              location.pathname.startsWith('/professor/jornada')
-                ? 'text-[#1E3A5F] border-b-2 border-[#1E3A5F]'
-                : 'text-gray-400'
-            }`}
-          >
-            Jornada
           </Link>
         </div>
       </header>
