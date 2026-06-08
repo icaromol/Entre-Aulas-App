@@ -8,9 +8,20 @@ import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
 const INSTRUMENTS = [
-  'Violão', 'Guitarra', 'Baixo', 'Piano', 'Teclado',
-  'Violino', 'Viola', 'Violoncelo', 'Flauta', 'Saxofone',
-  'Trompete', 'Bateria', 'Percussão', 'Canto', 'Outro',
+  { value: 'Violão',   emoji: '🎸' },
+  { value: 'Piano',    emoji: '🎹' },
+  { value: 'Guitarra', emoji: '🎸' },
+  { value: 'Baixo',    emoji: '🎸' },
+  { value: 'Bateria',  emoji: '🥁' },
+  { value: 'Canto',    emoji: '🎤' },
+  { value: 'Violino',  emoji: '🎻' },
+  { value: 'Saxofone', emoji: '🎷' },
+]
+
+const LEVELS = [
+  { value: 'beginner',     label: 'Iniciante',     emoji: '🌱', bars: 1 },
+  { value: 'intermediate', label: 'Intermediário', emoji: '📈', bars: 2 },
+  { value: 'advanced',     label: 'Avançado',      emoji: '🎓', bars: 3 },
 ]
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -117,12 +128,6 @@ export default function NewStudentPage() {
     }
   }
 
-  const levelOptions = [
-    { value: 'beginner', label: 'Iniciante' },
-    { value: 'intermediate', label: 'Intermediário' },
-    { value: 'advanced', label: 'Avançado' },
-  ]
-
   return (
     <TeacherLayout>
       <div className="flex items-center gap-3 mb-6">
@@ -183,40 +188,74 @@ export default function NewStudentPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdMusicNote size={15} />Instrumento</h2>
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-5">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdMusicNote size={15} />Instrumento e nível</h2>
 
-          <div className="space-y-1">
+          {/* Instrumento — 2 linhas de 4 + Outro */}
+          <div className="space-y-2">
             <label className="text-xs font-medium text-gray-500">Instrumento</label>
-            <select
-              value={instrument}
-              onChange={e => setInstrument(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition bg-white text-gray-700"
-            >
-              <option value="">Selecione...</option>
-              {INSTRUMENTS.map(i => (
-                <option key={i} value={i}>{i}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500">Nível <span className="text-red-400">*</span></label>
-            <div className="flex gap-2">
-              {levelOptions.map(opt => (
+            <div className="grid grid-cols-4 gap-2">
+              {INSTRUMENTS.map(inst => (
                 <button
-                  key={opt.value}
+                  key={inst.value}
                   type="button"
-                  onClick={() => setLevel(opt.value as typeof level)}
-                  className={`flex-1 py-2 rounded-lg border text-xs font-medium transition ${
-                    level === opt.value
+                  onClick={() => setInstrument(inst.value)}
+                  className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-medium transition ${
+                    instrument === inst.value
                       ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
                   }`}
                 >
-                  {opt.label}
+                  <span className="text-xl leading-none">{inst.emoji}</span>
+                  <span className="leading-none">{inst.value}</span>
                 </button>
               ))}
+              {/* Outro — ocupa as 4 colunas restantes */}
+              <button
+                type="button"
+                onClick={() => setInstrument('Outro')}
+                className={`col-span-4 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-medium transition ${
+                  instrument === 'Outro'
+                    ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
+                    : 'bg-white text-gray-500 border-gray-200 border-dashed hover:border-[#4A90C4]'
+                }`}
+              >
+                <MdAdd size={15} />Outro instrumento
+              </button>
+            </div>
+          </div>
+
+          {/* Nível — 1 linha, 3 cards progressivos */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-gray-500">Nível <span className="text-red-400">*</span></label>
+            <div className="grid grid-cols-3 gap-2">
+              {LEVELS.map(lvl => {
+                const active = level === lvl.value
+                return (
+                  <button
+                    key={lvl.value}
+                    type="button"
+                    onClick={() => setLevel(lvl.value as typeof level)}
+                    className={`flex flex-col items-center gap-2 py-4 rounded-xl border transition ${
+                      active
+                        ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
+                    }`}
+                  >
+                    <span className="text-2xl leading-none">{lvl.emoji}</span>
+                    <span className="text-xs font-semibold leading-none">{lvl.label}</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3].map(bar => (
+                        <div key={bar} className={`w-3 h-1 rounded-full transition ${
+                          bar <= lvl.bars
+                            ? active ? 'bg-white' : 'bg-[#4A90C4]'
+                            : active ? 'bg-white/25' : 'bg-gray-200'
+                        }`} />
+                      ))}
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
