@@ -643,7 +643,7 @@ export default function PlanejamentoPage() {
       {/* Board */}
       <div
         ref={scrollRef}
-        className={`scrollbar-plan mb-4 pb-4 rounded-b-xl ${grabbing ? 'cursor-grabbing select-none' : 'md:cursor-grab'}`}
+        className={`board-scroll md:overflow-x-scroll mt-2 mb-4 pt-1 pb-5 rounded-b-xl ${grabbing ? 'cursor-grabbing select-none' : 'md:cursor-grab'}`}
         onMouseDown={onBoardMouseDown}
         onMouseMove={onBoardMouseMove}
         onMouseUp={onBoardMouseUp}

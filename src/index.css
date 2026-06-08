@@ -54,6 +54,10 @@
   }
 }
 
+.board-scroll::-webkit-scrollbar { height: 4px; }
+.board-scroll::-webkit-scrollbar-thumb { background-color: #1E3A5F; border-radius: 999px; }
+.board-scroll::-webkit-scrollbar-track { background: transparent; }
+
 :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
@@ -135,28 +139,3 @@
     }
 }
 
-/* ── Planejamento board scrollbar ── */
-/* overflow-x in @media so it only applies on desktop (mobile is flex-col, no horizontal overflow) */
-@media (min-width: 768px) {
-  .scrollbar-plan {
-    overflow-x: scroll;
-  }
-}
-.scrollbar-plan {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(74, 144, 196, 0.4) transparent;
-}
-.scrollbar-plan::-webkit-scrollbar {
-  height: 5px;
-  display: block;
-}
-.scrollbar-plan::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollbar-plan::-webkit-scrollbar-thumb {
-  background-color: rgba(74, 144, 196, 0.35);
-  border-radius: 9999px;
-}
-.scrollbar-plan::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(74, 144, 196, 0.65);
-}

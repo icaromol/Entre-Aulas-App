@@ -593,6 +593,58 @@ export default function StudentProfilePage() {
         </div>
       </div>
 
+      {/* Cards: instrumento + nível */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+          {(() => {
+            const Icon = instrumentIcon(student.instrument);
+            return <Icon size={32} className="mx-auto mb-2 text-[#4A90C4]" />;
+          })()}
+          <p className="text-sm font-bold text-[#1E3A5F] truncate">
+            {student.instrument}
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">Instrumento</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+          {(() => {
+            const Icon = levelIcon(student.level);
+            return <Icon size={32} className="mx-auto mb-2 text-[#4A90C4]" />;
+          })()}
+          <p className="text-sm font-bold text-[#1E3A5F]">
+            {levelLabel[student.level] ?? student.level}
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">Nível</p>
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+          <MdMusicNote size={16} className="mx-auto mb-1 text-[#4A90C4]" />
+          <p className="text-2xl font-bold text-[#1E3A5F]">{pieces.length}</p>
+          <p className="text-xs text-gray-400 mt-1">Peças</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+          <MdSchool size={16} className="mx-auto mb-1 text-[#4A90C4]" />
+          <p className="text-2xl font-bold text-[#1E3A5F]">
+            {exercises.length}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">Exercícios</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+          <MdAccessTime size={16} className="mx-auto mb-1 text-[#4A90C4]" />
+          <p className="text-2xl font-bold text-[#1E3A5F]">{totalMinutes}</p>
+          <p className="text-xs text-gray-400 mt-1">min/semana</p>
+          <div className="flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mt-1.5">
+            {activeDays.map(d => (
+              <span key={d.day_of_week} className="text-[10px] text-gray-400">
+                {DAYS[d.day_of_week]} {d.minutes_available}m
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
         {(
@@ -668,7 +720,7 @@ export default function StudentProfilePage() {
                 <p className="text-sm text-gray-400">Nenhuma disponibilidade cadastrada.</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:overflow-x-auto pb-1">
+              <div className="board-scroll flex flex-col gap-3 md:flex-row md:items-start md:overflow-x-auto pb-3">
                 {activeDays.map(avail => {
                   const dayTasks = planItems.filter(i => i.day_of_week === avail.day_of_week);
                   const totalMin = dayTasks.reduce((s, t) => s + (t.duration_minutes ?? 0), 0);
@@ -909,57 +961,6 @@ export default function StudentProfilePage() {
         </div>
       )}
 
-      {/* Cards: instrumento + nível */}
-      <div className="grid grid-cols-2 gap-3 mt-5 mb-3">
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-          {(() => {
-            const Icon = instrumentIcon(student.instrument);
-            return <Icon size={32} className="mx-auto mb-2 text-[#4A90C4]" />;
-          })()}
-          <p className="text-sm font-bold text-[#1E3A5F] truncate">
-            {student.instrument}
-          </p>
-          <p className="text-xs text-gray-400 mt-0.5">Instrumento</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-          {(() => {
-            const Icon = levelIcon(student.level);
-            return <Icon size={32} className="mx-auto mb-2 text-[#4A90C4]" />;
-          })()}
-          <p className="text-sm font-bold text-[#1E3A5F]">
-            {levelLabel[student.level] ?? student.level}
-          </p>
-          <p className="text-xs text-gray-400 mt-0.5">Nível</p>
-        </div>
-      </div>
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-          <MdMusicNote size={16} className="mx-auto mb-1 text-[#4A90C4]" />
-          <p className="text-2xl font-bold text-[#1E3A5F]">{pieces.length}</p>
-          <p className="text-xs text-gray-400 mt-1">Peças</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-          <MdSchool size={16} className="mx-auto mb-1 text-[#4A90C4]" />
-          <p className="text-2xl font-bold text-[#1E3A5F]">
-            {exercises.length}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Exercícios</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-          <MdAccessTime size={16} className="mx-auto mb-1 text-[#4A90C4]" />
-          <p className="text-2xl font-bold text-[#1E3A5F]">{totalMinutes}</p>
-          <p className="text-xs text-gray-400 mt-1">min/semana</p>
-          <div className="flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mt-1.5">
-            {activeDays.map(d => (
-              <span key={d.day_of_week} className="text-[10px] text-gray-400">
-                {DAYS[d.day_of_week]} {d.minutes_available}m
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
     </TeacherLayout>
   );
 }

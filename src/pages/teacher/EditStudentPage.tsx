@@ -14,6 +14,22 @@ const INSTRUMENTS = [
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
+const AVAIL_MIN = 5
+const AVAIL_MAX = 720
+
+function toSliderPos(minutes: number): number {
+  return Math.round(Math.log(minutes / AVAIL_MIN) / Math.log(AVAIL_MAX / AVAIL_MIN) * 100)
+}
+function fromSliderPos(pos: number): number {
+  const raw = AVAIL_MIN * Math.pow(AVAIL_MAX / AVAIL_MIN, pos / 100)
+  return Math.max(AVAIL_MIN, Math.round(raw / 5) * 5)
+}
+function fmtMin(m: number): string {
+  if (m < 60) return `${m}min`
+  const h = Math.floor(m / 60), r = m % 60
+  return r === 0 ? `${h}h` : `${h}h${r}min`
+}
+
 interface DayAvailability {
   day: number
   active: boolean
@@ -31,7 +47,7 @@ export default function EditStudentPage() {
   const [phone, setPhone] = useState('')
   const [notes, setNotes] = useState('')
   const [availability, setAvailability] = useState<DayAvailability[]>(
-    DAYS.map((_, i) => ({ day: i, active: false, minutes: 30 }))
+    DAYS.map((_, i) => ({ day: i, active: false, minutes: 15 }))
   )
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -64,7 +80,7 @@ export default function EditStudentPage() {
           return {
             day: i,
             active: found?.is_active ?? false,
-            minutes: found?.minutes_available ?? 30,
+            minutes: found?.minutes_available ?? 15,
           }
         })
       )
@@ -200,11 +216,19 @@ export default function EditStudentPage() {
                   {DAYS[day.day]}
                 </button>
                 {day.active && (
-                  <div className="flex items-center gap-2 flex-1">
-                    <input type="number" value={day.minutes} onChange={e => setMinutes(day.day, Number(e.target.value))}
-                      min={5} max={240} step={5}
-                      className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition text-center" />
-                    <span className="text-xs text-gray-400">minutos</span>
+                  <div className="flex items-center gap-3 flex-1">
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={toSliderPos(day.minutes)}
+                      onChange={e => setMinutes(day.day, fromSliderPos(Number(e.target.value)))}
+                      className="flex-1 accent-[#1E3A5F]"
+                    />
+                    <span className="text-xs font-bold text-[#1E3A5F] w-14 text-right shrink-0">
+                      {fmtMin(day.minutes)}
+                    </span>
                   </div>
                 )}
               </div>

@@ -26,6 +26,22 @@ const LEVELS = [
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
+const AVAIL_MIN = 5
+const AVAIL_MAX = 720
+
+function toSliderPos(minutes: number): number {
+  return Math.round(Math.log(minutes / AVAIL_MIN) / Math.log(AVAIL_MAX / AVAIL_MIN) * 100)
+}
+function fromSliderPos(pos: number): number {
+  const raw = AVAIL_MIN * Math.pow(AVAIL_MAX / AVAIL_MIN, pos / 100)
+  return Math.max(AVAIL_MIN, Math.round(raw / 5) * 5)
+}
+function fmtMin(m: number): string {
+  if (m < 60) return `${m}min`
+  const h = Math.floor(m / 60), r = m % 60
+  return r === 0 ? `${h}h` : `${h}h${r}min`
+}
+
 interface DayAvailability {
   day: number
   active: boolean
@@ -282,15 +298,15 @@ export default function NewStudentPage() {
                   <div className="flex items-center gap-3 flex-1">
                     <input
                       type="range"
-                      min={5}
-                      max={270}
-                      step={5}
-                      value={day.minutes}
-                      onChange={e => setMinutes(day.day, Number(e.target.value))}
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={toSliderPos(day.minutes)}
+                      onChange={e => setMinutes(day.day, fromSliderPos(Number(e.target.value)))}
                       className="flex-1 accent-[#1E3A5F]"
                     />
                     <span className="text-xs font-bold text-[#1E3A5F] w-14 text-right shrink-0">
-                      {day.minutes} min
+                      {fmtMin(day.minutes)}
                     </span>
                   </div>
                 )}

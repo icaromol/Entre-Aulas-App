@@ -18,6 +18,10 @@ sonner (toasts)
 boring-avatars (beam=aluno, marble=peça, pixel=exercício)
 ```
 
+## Ícones
+
+**SEMPRE usar ícones de `react-icons/md` — nunca emojis no código.** Emojis são proibidos em JSX e em arrays de constantes (campos `emoji: '...'`). Usar componentes importados: `<MdMusicNote size={20} />`. Em arrays de opções, armazenar `Icon: MdFoo` e renderizar com `const Icon = item.Icon; return <Icon size={...} />`.
+
 ## Design System
 
 Paleta fixa — não usar outras cores além dessas:
