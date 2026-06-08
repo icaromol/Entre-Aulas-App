@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MdAccessTime } from 'react-icons/md'
+import { MdAccessTime, MdStar } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
@@ -77,24 +77,28 @@ export default function HistoryPage() {
   const { profile } = useAuth()
 
   const [sessions, setSessions] = useState<Session[]>([])
+  const [xpBySession, setXpBySession] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { if (profile) fetchAll() }, [profile])
 
   async function fetchAll() {
-    const { data: student } = await supabase
+    const { data: student, error: studentError } = await supabase
       .from('students')
       .select('id')
       .eq('profile_id', profile!.id)
       .single()
 
+    console.debug('[history] student', student, studentError)
     if (!student) { setLoading(false); return }
 
-    const { data } = await supabase
+    // Step 1 — sessões + itens via join
+    const { data: rawSessions, error: sessionsError } = await supabase
       .from('study_sessions')
       .select(`
         id, started_at, duration_seconds, cycle_name, difficulty_felt, notes,
         session_items(
+          plan_item_id,
           plan_item:plan_items(
             is_maintenance,
             piece:pieces(title),
@@ -109,7 +113,25 @@ export default function HistoryPage() {
       .eq('student_id', student.id)
       .order('started_at', { ascending: false })
 
-    setSessions((data ?? []) as unknown as Session[])
+    console.debug('[history] rawSessions count', rawSessions?.length, 'error', sessionsError)
+
+    // Step 2 — XP por sessão
+    const { data: xpEvents, error: xpError } = await supabase
+      .from('student_xp_events')
+      .select('source_id, amount')
+      .eq('student_id', student.id)
+      .eq('reason', 'pomodoro_session')
+
+    if (sessionsError) console.error('[history] sessions error', sessionsError)
+    if (xpError)       console.error('[history] xp error', xpError)
+
+    setSessions((rawSessions ?? []) as unknown as Session[])
+
+    const xpMap: Record<string, number> = {}
+    for (const e of (xpEvents ?? [])) {
+      if (e.source_id) xpMap[e.source_id] = (xpMap[e.source_id] ?? 0) + e.amount
+    }
+    setXpBySession(xpMap)
     setLoading(false)
   }
 
@@ -189,22 +211,33 @@ export default function HistoryPage() {
                       ? difficultyBadge[session.difficulty_felt]
                       : null
 
+                    const sessionXp = xpBySession[session.id]
+
                     return (
                       <div key={session.id} className="bg-white rounded-2xl border border-gray-100 p-4">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div>
                             <p className="text-xs font-semibold text-gray-700">
-                              {fmtDate(session.started_at)}
+                              Sessão de estudo — {session.cycle_name}
+                              <span className="font-normal text-gray-400 ml-1">· {fmtDuration(session.duration_seconds)}</span>
                             </p>
                             <p className="text-xs text-gray-400 mt-0.5">
-                              {session.cycle_name} · {fmtDuration(session.duration_seconds)}
+                              {fmtDate(session.started_at)}
                             </p>
                           </div>
-                          {badge && (
-                            <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 font-medium ${badge.color}`}>
-                              {badge.emoji}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {sessionXp != null && (
+                              <span className="flex items-center gap-0.5 text-xs font-semibold text-[#4A90C4] bg-[#D6E4F0] px-1.5 py-0.5 rounded-full">
+                                <MdStar size={11} />
+                                +{sessionXp} XP
+                              </span>
+                            )}
+                            {badge && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.color}`}>
+                                {badge.emoji}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {labels.length > 0 && (

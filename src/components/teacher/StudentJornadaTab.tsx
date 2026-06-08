@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useStudentProgress } from '@/hooks/useStudentProgress'
 import { Spinner } from '@/components/ui/Spinner'
 import {
@@ -5,6 +6,7 @@ import {
   MdMusicNote, MdTimer, MdAccessTime, MdCheckCircle,
 } from 'react-icons/md'
 import type { XpAttribute } from '@/lib/xpHelpers'
+import { supabase } from '@/lib/supabase'
 
 // ─── Constantes de exibição ────────────────────────────────────────────────
 
@@ -137,6 +139,41 @@ function AreaChart({ data }: { data: { label: string; value: number }[] }) {
   )
 }
 
+// ─── Tipos e helpers de sessões ──────────────────────────────────────────────
+
+interface RecentSession {
+  id: string
+  started_at: string
+  duration_seconds: number
+  cycle_name: string
+  difficulty_felt: 'easy' | 'ok' | 'hard' | null
+  notes: string | null
+  xp: number
+}
+
+const difficultyLabel: Record<string, string> = {
+  easy: 'Fácil', ok: 'Ok', hard: 'Difícil',
+}
+const difficultyColor: Record<string, string> = {
+  easy: 'bg-green-50 text-green-700',
+  ok:   'bg-amber-50 text-amber-700',
+  hard: 'bg-red-50 text-red-500',
+}
+
+function fmtDuration(secs: number): string {
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  if (m === 0) return `${s}s`
+  return s > 0 ? `${m}min ${s}s` : `${m}min`
+}
+
+function fmtDate(isoStr: string): string {
+  return new Date(isoStr).toLocaleDateString('pt-BR', {
+    weekday: 'short', day: '2-digit', month: 'short',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 interface Props {
@@ -145,6 +182,35 @@ interface Props {
 
 export function StudentJornadaTab({ studentId }: Props) {
   const { progress, loading } = useStudentProgress({ studentId })
+  const [sessions, setSessions] = useState<RecentSession[]>([])
+  const [sessionsLoading, setSessionsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchSessions() {
+      const [sessionsRes, xpRes] = await Promise.all([
+        supabase
+          .from('study_sessions')
+          .select('id, started_at, duration_seconds, cycle_name, difficulty_felt, notes')
+          .eq('student_id', studentId)
+          .order('started_at', { ascending: false })
+          .limit(20),
+        supabase
+          .from('student_xp_events')
+          .select('source_id, amount')
+          .eq('student_id', studentId)
+          .eq('reason', 'pomodoro_session'),
+      ])
+
+      const xpMap: Record<string, number> = {}
+      for (const e of (xpRes.data ?? [])) {
+        if (e.source_id) xpMap[e.source_id] = (xpMap[e.source_id] ?? 0) + e.amount
+      }
+
+      setSessions((sessionsRes.data ?? []).map((s: any) => ({ ...s, xp: xpMap[s.id] ?? 0 })))
+      setSessionsLoading(false)
+    }
+    fetchSessions()
+  }, [studentId])
 
   if (loading) {
     return <div className="flex justify-center py-12"><Spinner /></div>
@@ -329,6 +395,46 @@ export function StudentJornadaTab({ studentId }: Props) {
             )
           })}
         </div>
+      </div>
+
+      {/* Sessões recentes */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <p className="text-sm font-semibold text-gray-700 mb-3">Sessões recentes</p>
+        {sessionsLoading ? (
+          <div className="flex justify-center py-6"><Spinner /></div>
+        ) : sessions.length === 0 ? (
+          <p className="text-xs text-gray-400 text-center py-6">Nenhuma sessão registrada ainda.</p>
+        ) : (
+          <div className="space-y-3">
+            {sessions.map(s => (
+              <div key={s.id} className="flex items-start justify-between gap-3 py-2.5 border-b border-gray-50 last:border-0">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-gray-700 truncate">
+                    Sessão de estudo — {s.cycle_name}
+                    <span className="font-normal text-gray-400 ml-1">· {fmtDuration(s.duration_seconds)}</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">{fmtDate(s.started_at)}</p>
+                  {s.notes && (
+                    <p className="text-[11px] text-gray-400 mt-1 italic truncate">"{s.notes}"</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {s.xp > 0 && (
+                    <span className="flex items-center gap-0.5 text-xs font-semibold text-[#4A90C4] bg-[#D6E4F0] px-1.5 py-0.5 rounded-full">
+                      <MdStar size={11} />
+                      +{s.xp} XP
+                    </span>
+                  )}
+                  {s.difficulty_felt && (
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${difficultyColor[s.difficulty_felt]}`}>
+                      {difficultyLabel[s.difficulty_felt]}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
     </div>

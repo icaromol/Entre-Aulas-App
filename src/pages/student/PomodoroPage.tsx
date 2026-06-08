@@ -6,6 +6,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 import { grantXp } from '@/lib/xpHelpers'
+import { formatWeekStart, getMonday } from '@/lib/weekUtils'
 
 interface CyclePreset {
   key: string
@@ -36,16 +37,9 @@ type Phase = 'idle' | 'work' | 'break' | 'finished'
 
 interface DayItem {
   id: string
-  kind: 'checklist' | 'goal'
+  kind: 'checklist'
   title: string
   subtitle: string
-}
-
-const typeLabel: Record<string, string> = {
-  free: 'Livre',
-  measurable: 'Mensurável',
-  checklist_item: 'Checklist',
-  exercise: 'Exercício',
 }
 
 const ACHIEVEMENT_LABEL: Record<string, string> = {
@@ -209,7 +203,7 @@ export default function PomodoroPage() {
     const sid = nav?.studentId
     if (!sid) { setLoadingItems(false); return }
 
-    const [completionsRes, piecesRes, exercisesRes, goalsRes] = await Promise.all([
+    const [completionsRes, piecesRes, exercisesRes] = await Promise.all([
       supabase.from('checklist_completions').select('checklist_item_id').eq('student_id', sid),
       supabase.from('pieces')
         .select('id, title, checklist_items(id, title)')
@@ -217,7 +211,6 @@ export default function PomodoroPage() {
       supabase.from('exercises')
         .select('id, title, checklist_items(id, title)')
         .eq('student_id', sid).eq('status', 'active'),
-      supabase.from('goals').select('id, title, type').eq('student_id', sid).eq('status', 'active'),
     ])
 
     const completedIds = new Set(
@@ -237,9 +230,6 @@ export default function PomodoroPage() {
         if (!completedIds.has(ci.id))
           items.push({ id: ci.id, kind: 'checklist', title: ci.title, subtitle: ex.title })
       }
-    }
-    for (const g of (goalsRes.data ?? []) as any[]) {
-      items.push({ id: g.id, kind: 'goal', title: g.title, subtitle: typeLabel[g.type] ?? g.type })
     }
 
     setDayItems(items)
@@ -282,50 +272,68 @@ export default function PomodoroPage() {
       }
     }
 
-    if (workedIds.size > 0) {
-      const checklistIds = [...workedIds].filter(id => dayItems.find(i => i.id === id)?.kind === 'checklist')
-      const goalIds      = [...workedIds].filter(id => dayItems.find(i => i.id === id)?.kind === 'goal')
+    const checklistIds = [...workedIds]
 
-      if (checklistIds.length > 0) {
-        await supabase.from('checklist_completions').insert(
-          checklistIds.map(id => ({ checklist_item_id: id, student_id: sid }))
-        )
+    if (checklistIds.length > 0) {
+      await supabase.from('checklist_completions').insert(
+        checklistIds.map(id => ({ checklist_item_id: id, student_id: sid }))
+      )
 
-        // Verificar se alguma peça chegou a 100%
-        const { data: ciRows } = await supabase
-          .from('checklist_items')
-          .select('piece_id')
-          .in('id', checklistIds)
-          .not('piece_id', 'is', null)
+      // Verificar se alguma peça chegou a 100%
+      const { data: ciRows } = await supabase
+        .from('checklist_items')
+        .select('piece_id')
+        .in('id', checklistIds)
+        .not('piece_id', 'is', null)
 
-        const pieceIds = [...new Set((ciRows ?? []).map((r: { piece_id: string }) => r.piece_id))]
+      const pieceIds = [...new Set((ciRows ?? []).map((r: { piece_id: string }) => r.piece_id))]
 
-        if (pieceIds.length > 0) {
-          const [piecesRes, alreadyGrantedRes] = await Promise.all([
-            supabase.from('pieces').select('id, completion_pct').in('id', pieceIds),
-            supabase.from('student_xp_events')
-              .select('source_id')
-              .eq('student_id', sid)
-              .eq('reason', 'piece_completed')
-              .in('source_id', pieceIds),
-          ])
+      if (pieceIds.length > 0) {
+        const [piecesRes, alreadyGrantedRes] = await Promise.all([
+          supabase.from('pieces').select('id, completion_pct').in('id', pieceIds),
+          supabase.from('student_xp_events')
+            .select('source_id')
+            .eq('student_id', sid)
+            .eq('reason', 'piece_completed')
+            .in('source_id', pieceIds),
+        ])
 
-          const alreadyGranted = new Set((alreadyGrantedRes.data ?? []).map(r => r.source_id))
+        const alreadyGranted = new Set((alreadyGrantedRes.data ?? []).map(r => r.source_id))
 
-          for (const piece of (piecesRes.data ?? [])) {
-            if (piece.completion_pct === 100 && !alreadyGranted.has(piece.id)) {
-              const { newAchievements: pAch } = await grantXp(sid, 'piece_completed', piece.id, 'musicalidade')
-              toast.success('+300 XP · Peça concluída! 🎼')
-              for (const key of pAch) {
-                toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
-              }
+        for (const piece of (piecesRes.data ?? [])) {
+          if (piece.completion_pct === 100 && !alreadyGranted.has(piece.id)) {
+            const { newAchievements: pAch } = await grantXp(sid, 'piece_completed', piece.id, 'musicalidade')
+            toast.success('+300 XP · Peça concluída! 🎼')
+            for (const key of pAch) {
+              toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
             }
           }
         }
       }
+    }
 
-      if (goalIds.length > 0) {
-        await supabase.from('goals').update({ status: 'completed' }).in('id', goalIds)
+    // Inserir session_items ligando a sessão aos plan_items trabalhados
+    if (sessionData?.id) {
+      const planItemIds = new Set<string>()
+      if (nav?.planItemId) planItemIds.add(nav.planItemId)
+
+      if (checklistIds.length > 0) {
+        const weekStart = formatWeekStart(getMonday(new Date()))
+        const { data: plan } = await supabase
+          .from('weekly_plans').select('id')
+          .eq('student_id', sid).eq('week_start', weekStart).maybeSingle()
+        if (plan?.id) {
+          const { data: matched } = await supabase
+            .from('plan_items').select('id')
+            .eq('plan_id', plan.id).in('checklist_item_id', checklistIds)
+          for (const pi of matched ?? []) planItemIds.add(pi.id)
+        }
+      }
+
+      if (planItemIds.size > 0) {
+        await supabase.from('session_items').insert(
+          [...planItemIds].map(planItemId => ({ session_id: sessionData.id, plan_item_id: planItemId }))
+        )
       }
     }
 
