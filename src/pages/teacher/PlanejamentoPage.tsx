@@ -12,6 +12,7 @@ import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { grantTeacherXp } from '@/lib/teacherXpHelpers'
 import { fireBasic, fireStars } from '@/lib/confettiEffects'
+import { sound } from '@/lib/soundEffects'
 import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -405,6 +406,7 @@ export default function PlanejamentoPage() {
         const { newAchievements } = await grantTeacherXp(teacher.id, 'new_plan', ws)
         allAchievements.push(...newAchievements)
       }
+      sound.xpEarn()
       if (allAchievements.length > 0) fireStars()
       else fireBasic()
       toast.success('Planejamento salvo!')

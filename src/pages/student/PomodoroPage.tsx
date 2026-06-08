@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { grantXp } from '@/lib/xpHelpers'
 import { formatWeekStart, getMonday } from '@/lib/weekUtils'
 import { fireBasic, fireSideCannons, fireStars, hasRankUp } from '@/lib/confettiEffects'
+import { sound } from '@/lib/soundEffects'
 
 interface CyclePreset {
   key: string
@@ -147,12 +148,14 @@ export default function PomodoroPage() {
 
       if (currentCycle < c.totalCycles) {
         // Há mais ciclos — vai para pausa
+        sound.pomodoroSection()
         const secs = c.breakMinutes * 60
         setPhase('break')
         setTimeLeft(secs)
         setTotalSecs(secs)
       } else {
         // Todos os ciclos completos — pré-marca o item da sessão
+        sound.pomodoroSuccess()
         setPhase('finished')
         openFinishModal(true)
       }
@@ -267,6 +270,7 @@ export default function PomodoroPage() {
       if (import.meta.env.DEV) console.error('[pomodoro] save error', error.code)
     } else if (sessionData?.id) {
       const { newAchievements } = await grantXp(sid, 'pomodoro_session', sessionData.id, null)
+      sound.xpEarn()
       toast.success('+5 XP · Sessão concluída!')
       for (const key of newAchievements) {
         toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)

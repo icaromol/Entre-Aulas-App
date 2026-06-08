@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { grantTeacherXp } from '@/lib/teacherXpHelpers'
 import { fireBasic, fireStars } from '@/lib/confettiEffects'
+import { sound } from '@/lib/soundEffects'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
@@ -126,6 +127,7 @@ export default function NewStudentPage() {
 
       // 5. XP do professor + confetti
       const { newAchievements } = await grantTeacherXp(teacher.id, 'new_student', student.id)
+      sound.xpEarn()
       if (newAchievements.length > 0) fireStars()
       else fireBasic()
 
