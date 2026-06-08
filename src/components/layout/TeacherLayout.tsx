@@ -4,7 +4,7 @@ import Avatar from 'boring-avatars'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
-import { MdMenu, MdEdit, MdLogout } from 'react-icons/md'
+import { MdMenu, MdEdit, MdLogout, MdEmojiEvents, MdChevronRight } from 'react-icons/md'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
 
@@ -154,6 +154,16 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                 <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-[#4A90C4]" />
               )}
             </Link>
+            <Link
+              to="/professor/jornada"
+              className={`text-sm font-medium transition ${
+                location.pathname.startsWith('/professor/jornada')
+                  ? 'text-[#1E3A5F]'
+                  : 'text-gray-400 hover:text-[#1E3A5F]'
+              }`}
+            >
+              Jornada
+            </Link>
           </nav>
 
           {/* Hamburger menu — coluna direita */}
@@ -188,6 +198,13 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
 
                   {/* Ações */}
                   <div className="py-1">
+                    <button onClick={() => { setShowMenu(false); navigate('/professor/jornada') }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
+                      <MdEmojiEvents size={18} className="text-[#4A90C4] shrink-0" />
+                      <span className="text-sm font-medium text-gray-700 flex-1">Minha Jornada</span>
+                      <MdChevronRight size={18} className="text-gray-300" />
+                    </button>
+                    <div className="mx-3 border-t border-gray-100" />
                     <button onClick={openEdit}
                       className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
                       <MdEdit size={18} className="text-[#4A90C4] shrink-0" />
@@ -222,6 +239,16 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
             {pendingCount > 0 && (
               <span className="absolute -top-0 -right-2 w-2 h-2 rounded-full bg-[#4A90C4]" />
             )}
+          </Link>
+          <Link
+            to="/professor/jornada"
+            className={`py-2 text-xs font-medium transition ${
+              location.pathname.startsWith('/professor/jornada')
+                ? 'text-[#1E3A5F] border-b-2 border-[#1E3A5F]'
+                : 'text-gray-400'
+            }`}
+          >
+            Jornada
           </Link>
         </div>
       </header>

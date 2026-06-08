@@ -33,6 +33,7 @@ import StudentNewProgramaPage from '@/pages/student/NewProgramaPage'
 import StudentProgramaDetailPage from '@/pages/student/ProgramaDetailPage'
 import StudentEditProgramaPage from '@/pages/student/EditProgramaPage'
 import JourneyPage from '@/pages/student/JourneyPage'
+import TeacherJourneyPage from '@/pages/teacher/TeacherJourneyPage'
 import StatsPage from '@/pages/student/StatsPage'
 
 export function Router() {
@@ -62,6 +63,7 @@ export function Router() {
         <Route path="/professor/alunos/:studentId/programas/:programId" element={<AuthGuard allowedRole="teacher"><ProgramaDetailPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/programas/:programId/editar" element={<AuthGuard allowedRole="teacher"><EditProgramaPage /></AuthGuard>} />
         <Route path="/professor/alunos/:studentId/planejamento" element={<AuthGuard allowedRole="teacher"><PlanejamentoPage /></AuthGuard>} />
+        <Route path="/professor/jornada" element={<AuthGuard allowedRole="teacher"><TeacherJourneyPage /></AuthGuard>} />
 
         {/* Aluno */}
         <Route path="/aluno" element={<AuthGuard allowedRole="student"><Navigate to="/aluno/hoje" replace /></AuthGuard>} />

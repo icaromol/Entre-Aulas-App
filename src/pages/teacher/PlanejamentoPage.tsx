@@ -10,6 +10,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { grantTeacherXp } from '@/lib/teacherXpHelpers'
 import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -396,6 +397,10 @@ export default function PlanejamentoPage() {
           const { error: err } = await supabase.from('plan_items').insert(rows)
           if (err) throw err
         }
+      }
+      // XP por plano criado (um grant por semana gerada)
+      for (const ws of weekStarts) {
+        grantTeacherXp(teacher.id, 'new_plan', ws)
       }
       toast.success('Planejamento salvo!')
       navigate(`/professor/alunos/${studentId}?tab=plans`)

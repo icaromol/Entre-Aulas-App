@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdPerson, MdMusicNote, MdAccessTime, MdNotes, MdAdd } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { grantTeacherXp } from '@/lib/teacherXpHelpers'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
@@ -122,7 +123,10 @@ export default function NewStudentPage() {
 
       await supabase.from('student_availability').insert(availabilityRows)
 
-      // 5. Gera link de convite e redireciona
+      // 5. XP do professor
+      grantTeacherXp(teacher.id, 'new_student', student.id)
+
+      // 6. Gera link de convite e redireciona
       const inviteLink = `${window.location.origin}/cadastro?invite=${student.id}&token=${(student as { id: string; invite_token: string }).invite_token}`
       toast.success('Aluno cadastrado com sucesso!')
       navigate('/professor/alunos', { state: { inviteLink, studentName: firstName, studentEmail: email } })
