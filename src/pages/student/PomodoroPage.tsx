@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
+import { grantXp } from '@/lib/xpHelpers'
 
 interface CyclePreset {
   key: string
@@ -45,6 +46,24 @@ const typeLabel: Record<string, string> = {
   measurable: 'Mensurável',
   checklist_item: 'Checklist',
   exercise: 'Exercício',
+}
+
+const ACHIEVEMENT_LABEL: Record<string, string> = {
+  first_session:        'Primeira sessão concluída',
+  first_piece:          'Primeira peça concluída',
+  streak_3:             '3 dias seguidos',
+  streak_7:             '7 dias seguidos',
+  streak_14:            '14 dias seguidos',
+  streak_30:            '30 dias seguidos',
+  rank_estudante_4:     'Novo rank: Estudante!',
+  rank_amador_4:        'Novo rank: Amador!',
+  rank_junior_4:        'Novo rank: Júnior!',
+  rank_profissional_4:  'Novo rank: Profissional!',
+  rank_expert:          'Novo rank: Expert!',
+  rank_mestre:          'Rank máximo: Mestre!',
+  first_recital:        'Primeiro recital',
+  pieces_3:             '3 peças concluídas',
+  pieces_5:             '5 peças concluídas',
 }
 
 const CIRCUMFERENCE = 2 * Math.PI * 54
@@ -236,7 +255,7 @@ export default function PomodoroPage() {
 
     const endedAt = new Date().toISOString()
 
-    const { error } = await supabase
+    const { data: sessionData, error } = await supabase
       .from('study_sessions')
       .insert({
         student_id: sid,
@@ -250,8 +269,18 @@ export default function PomodoroPage() {
         difficulty_felt: difficulty || null,
         notes: comment || null,
       })
+      .select('id')
+      .single()
 
-    if (error) if (import.meta.env.DEV) console.error('[pomodoro] save error', error.code)
+    if (error) {
+      if (import.meta.env.DEV) console.error('[pomodoro] save error', error.code)
+    } else if (sessionData?.id) {
+      const { newAchievements } = await grantXp(sid, 'pomodoro_session', sessionData.id, null)
+      toast.success('+5 XP · Sessão concluída!')
+      for (const key of newAchievements) {
+        toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
+      }
+    }
 
     if (workedIds.size > 0) {
       const checklistIds = [...workedIds].filter(id => dayItems.find(i => i.id === id)?.kind === 'checklist')
@@ -261,7 +290,40 @@ export default function PomodoroPage() {
         await supabase.from('checklist_completions').insert(
           checklistIds.map(id => ({ checklist_item_id: id, student_id: sid }))
         )
+
+        // Verificar se alguma peça chegou a 100%
+        const { data: ciRows } = await supabase
+          .from('checklist_items')
+          .select('piece_id')
+          .in('id', checklistIds)
+          .not('piece_id', 'is', null)
+
+        const pieceIds = [...new Set((ciRows ?? []).map((r: { piece_id: string }) => r.piece_id))]
+
+        if (pieceIds.length > 0) {
+          const [piecesRes, alreadyGrantedRes] = await Promise.all([
+            supabase.from('pieces').select('id, completion_pct').in('id', pieceIds),
+            supabase.from('student_xp_events')
+              .select('source_id')
+              .eq('student_id', sid)
+              .eq('reason', 'piece_completed')
+              .in('source_id', pieceIds),
+          ])
+
+          const alreadyGranted = new Set((alreadyGrantedRes.data ?? []).map(r => r.source_id))
+
+          for (const piece of (piecesRes.data ?? [])) {
+            if (piece.completion_pct === 100 && !alreadyGranted.has(piece.id)) {
+              const { newAchievements: pAch } = await grantXp(sid, 'piece_completed', piece.id, 'musicalidade')
+              toast.success('+300 XP · Peça concluída! 🎼')
+              for (const key of pAch) {
+                toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
+              }
+            }
+          }
+        }
       }
+
       if (goalIds.length > 0) {
         await supabase.from('goals').update({ status: 'completed' }).in('id', goalIds)
       }

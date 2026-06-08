@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'sonner'
 import { MdChevronLeft, MdChevronRight, MdPlayArrow } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from "@/components/layout/StudentLayout";
+import { grantXp, EXERCISE_ATTRIBUTE_MAP } from '@/lib/xpHelpers'
+import type { XpAttribute } from '@/lib/xpHelpers'
 import type { PlanItem } from "@/types/plan";
 import {
   getMonday,
@@ -47,6 +50,36 @@ function itemCardClass(item: PlanItem): string {
   if (item.is_maintenance) return "bg-white border-gray-100";
   if (item.exercise_id) return "bg-rose-50 border-rose-100";
   return "bg-[#D6E4F0]/30 border-[#D6E4F0]";
+}
+
+const ATTRIBUTE_LABEL: Partial<Record<XpAttribute, string>> = {
+  tecnica:       'Técnica',
+  leitura:       'Leitura',
+  ritmo:         'Ritmo',
+  musicalidade:  'Musicalidade',
+  performance:   'Performance',
+  percepcao:     'Percepção',
+  improvisacao:  'Improvisação',
+  teoria:        'Teoria',
+  historia:      'História',
+}
+
+const ACHIEVEMENT_LABEL: Record<string, string> = {
+  first_session:        'Primeira sessão concluída',
+  first_piece:          'Primeira peça concluída',
+  streak_3:             '3 dias seguidos',
+  streak_7:             '7 dias seguidos',
+  streak_14:            '14 dias seguidos',
+  streak_30:            '30 dias seguidos',
+  rank_estudante_4:     'Novo rank: Estudante!',
+  rank_amador_4:        'Novo rank: Amador!',
+  rank_junior_4:        'Novo rank: Júnior!',
+  rank_profissional_4:  'Novo rank: Profissional!',
+  rank_expert:          'Novo rank: Expert!',
+  rank_mestre:          'Rank máximo: Mestre!',
+  first_recital:        'Primeiro recital',
+  pieces_3:             '3 peças concluídas',
+  pieces_5:             '5 peças concluídas',
 }
 
 export default function TodayPage() {
@@ -127,18 +160,40 @@ export default function TodayPage() {
   }
 
   async function toggleDone(item: PlanItem) {
-    const newDone = !item.is_done;
+    const newDone = !item.is_done
     await supabase
       .from("plan_items")
-      .update({
-        is_done: newDone,
-        done_at: newDone ? new Date().toISOString() : null,
-      })
-      .eq("id", item.id);
+      .update({ is_done: newDone, done_at: newDone ? new Date().toISOString() : null })
+      .eq("id", item.id)
 
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, is_done: newDone } : i)),
-    );
+    const updatedItems = items.map(i => i.id === item.id ? { ...i, is_done: newDone } : i)
+    setItems(updatedItems)
+
+    if (!newDone || !studentId) return
+
+    // Determina atributo pelo tipo do item
+    const category = (item as PlanItem & { exercise?: { category?: string } }).exercise?.category
+    const attribute: XpAttribute = category
+      ? (EXERCISE_ATTRIBUTE_MAP[category] ?? 'tecnica')
+      : 'musicalidade'
+
+    const { newAchievements } = await grantXp(studentId, 'checklist_item', item.id, attribute)
+
+    toast.success(`+15 XP · ${ATTRIBUTE_LABEL[attribute] ?? attribute}`)
+    for (const key of newAchievements) {
+      toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
+    }
+
+    // Missão do dia: todos os itens de hoje concluídos
+    const totalNow = updatedItems.length
+    const doneNow  = updatedItems.filter(i => i.is_done).length
+    if (totalNow > 0 && doneNow === totalNow) {
+      const { newAchievements: mAch } = await grantXp(studentId, 'daily_mission', null, null)
+      toast.success('+20 XP · Missão do dia completa! 🎉')
+      for (const key of mAch) {
+        toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
+      }
+    }
   }
 
   const done = items.filter((i) => i.is_done).length;
