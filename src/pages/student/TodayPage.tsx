@@ -9,7 +9,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { grantXp, EXERCISE_ATTRIBUTE_MAP } from '@/lib/xpHelpers'
 import type { XpAttribute } from '@/lib/xpHelpers'
-import { fireBasic, fireStars, hasRankUp } from '@/lib/confettiEffects'
+import { fireBasic, fireSideCannons, fireStars, hasRankUp } from '@/lib/confettiEffects'
 import type { PlanItem } from "@/types/plan";
 import {
   getMonday,
@@ -198,6 +198,8 @@ export default function TodayPage() {
       for (const key of mAch) {
         toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
       }
+      if (hasRankUp(mAch)) fireStars()
+      else fireSideCannons()
     }
   }
 

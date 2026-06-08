@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useStudentProgress } from '@/hooks/useStudentProgress'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
@@ -7,6 +7,7 @@ import {
   MdClose, MdArrowForward, MdStars, MdBolt, MdLeaderboard, MdTune, MdFlag,
 } from 'react-icons/md'
 import type { XpAttribute } from '@/lib/xpHelpers'
+import { fireBasic, fireSideCannons } from '@/lib/confettiEffects'
 
 // ─── Constantes de exibição ────────────────────────────────────────────────
 
@@ -181,6 +182,7 @@ function fmtXp(n: number) {
 export default function JourneyPage() {
   const { progress, loading } = useStudentProgress()
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const missionsAllDoneRef = useRef(false)
 
   useEffect(() => {
     if (!loading && progress?.studentId) {
@@ -189,9 +191,22 @@ export default function JourneyPage() {
     }
   }, [loading, progress?.studentId])
 
+  const completedMissionCount = progress?.weeklyMissions?.filter(m => m.completed).length ?? 0
+  const totalMissions = progress?.weeklyMissions?.length ?? 0
+
+  useEffect(() => {
+    if (totalMissions === 0) return
+    const allDone = completedMissionCount === totalMissions
+    if (allDone && !missionsAllDoneRef.current) {
+      fireSideCannons()
+    }
+    missionsAllDoneRef.current = allDone
+  }, [completedMissionCount, totalMissions])
+
   function closeOnboarding() {
     localStorage.setItem(ONBOARDING_KEY, '1')
     setShowOnboarding(false)
+    fireBasic()
   }
 
   if (loading) {
