@@ -32,6 +32,7 @@ import StudentEditExercisePage from '@/pages/student/EditExercisePage'
 import StudentNewProgramaPage from '@/pages/student/NewProgramaPage'
 import StudentProgramaDetailPage from '@/pages/student/ProgramaDetailPage'
 import StudentEditProgramaPage from '@/pages/student/EditProgramaPage'
+import JourneyPage from '@/pages/student/JourneyPage'
 
 export function Router() {
   return (
@@ -76,6 +77,7 @@ export function Router() {
         <Route path="/aluno/repertorio/programas/:programId" element={<AuthGuard allowedRole="student"><StudentProgramaDetailPage /></AuthGuard>} />
         <Route path="/aluno/repertorio/programas/:programId/editar" element={<AuthGuard allowedRole="student"><StudentEditProgramaPage /></AuthGuard>} />
         <Route path="/aluno/historico" element={<AuthGuard allowedRole="student"><HistoryPage /></AuthGuard>} />
+        <Route path="/aluno/jornada"   element={<AuthGuard allowedRole="student"><JourneyPage /></AuthGuard>} />
         <Route path="/aluno/professor" element={<AuthGuard allowedRole="student"><MyTeacherPage /></AuthGuard>} />
 
         <Route path="*" element={<NotFoundPage />} />
