@@ -9,6 +9,7 @@ import { FaWhatsapp } from 'react-icons/fa'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
@@ -288,7 +289,7 @@ export default function StudentsPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-gray-400">Carregando...</p>
+        <div className="flex justify-center py-12"><Spinner /></div>
       ) : (
         <div className="space-y-6">
 

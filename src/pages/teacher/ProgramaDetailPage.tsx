@@ -6,6 +6,7 @@ import { MdArrowBack, MdAdd, MdDeleteOutline, MdEdit, MdMusicNote, MdSchool, MdC
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
+import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import type { Programa, ProgramPiece, ProgramExercise } from '@/types/programs'
 
@@ -165,7 +166,7 @@ export default function ProgramaDetailPage() {
   }
 
   if (!isValidUUID(studentId) || !isValidUUID(programId)) return <Navigate to="/" replace />
-  if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
+  if (loading) return <TeacherLayout><div className="flex justify-center py-12"><Spinner /></div></TeacherLayout>
   if (!programa) return <TeacherLayout><p className="text-sm text-red-400">Programa não encontrado.</p></TeacherLayout>
 
   const days = programa.deadline ? daysUntil(programa.deadline) : null

@@ -4,6 +4,7 @@ import { MdChevronLeft, MdChevronRight, MdPlayArrow } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import type { PlanItem } from "@/types/plan";
 import {
@@ -148,7 +149,7 @@ export default function TodayPage() {
   if (loading) {
     return (
       <StudentLayout>
-        <p className="text-sm text-gray-400">Carregando...</p>
+        <div className="flex justify-center py-12"><Spinner /></div>
       </StudentLayout>
     );
   }

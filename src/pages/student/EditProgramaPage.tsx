@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdLibraryMusic, MdNotes } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
+import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 import type { ProgramaType } from '@/types/programs'
@@ -70,7 +71,7 @@ export default function StudentEditProgramaPage() {
   }
 
   if (!isValidUUID(programId)) return <Navigate to="/" replace />
-  if (loading) return <StudentLayout><p className="text-sm text-gray-400">Carregando...</p></StudentLayout>
+  if (loading) return <StudentLayout><div className="flex justify-center py-12"><Spinner /></div></StudentLayout>
 
   return (
     <StudentLayout>

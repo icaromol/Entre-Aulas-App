@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { MdAccessTime } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { getMonday, formatWeekStart, formatWeekLabel } from '@/lib/weekUtils'
 
@@ -115,7 +116,7 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <StudentLayout>
-        <p className="text-sm text-gray-400">Carregando...</p>
+        <div className="flex justify-center py-12"><Spinner /></div>
       </StudentLayout>
     )
   }

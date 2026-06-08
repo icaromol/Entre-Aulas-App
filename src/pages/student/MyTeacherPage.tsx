@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdSchool } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
@@ -118,7 +119,7 @@ export default function MyTeacherPage() {
 
       {/* Loading */}
       {connState === 'loading' && (
-        <p className="text-sm text-gray-400">Carregando...</p>
+        <div className="flex justify-center py-12"><Spinner /></div>
       )}
 
       {/* Sem professor */}

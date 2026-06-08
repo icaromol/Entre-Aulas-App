@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdTaskAlt, MdDeleteOutline, MdEdit } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
+import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
@@ -143,7 +144,7 @@ export default function ExerciseDetailPage() {
   }
 
   if (!isValidUUID(studentId) || !isValidUUID(exerciseId)) return <Navigate to="/" replace />
-  if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
+  if (loading) return <TeacherLayout><div className="flex justify-center py-12"><Spinner /></div></TeacherLayout>
   if (!exercise) return <TeacherLayout><p className="text-sm text-red-400">Exercício não encontrado.</p></TeacherLayout>
 
   const grouped = checklist.reduce<Record<string, ChecklistItem[]>>((acc, item) => {

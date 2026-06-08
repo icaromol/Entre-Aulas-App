@@ -7,6 +7,7 @@ import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import type { Programa, ProgramPiece, ProgramExercise } from '@/types/programs'
 
@@ -167,7 +168,7 @@ export default function StudentProgramaDetailPage() {
   }
 
   if (!isValidUUID(programId)) return <Navigate to="/" replace />
-  if (loading) return <StudentLayout><p className="text-sm text-gray-400">Carregando...</p></StudentLayout>
+  if (loading) return <StudentLayout><div className="flex justify-center py-12"><Spinner /></div></StudentLayout>
   if (!programa) return <StudentLayout><p className="text-sm text-red-400">Programa não encontrado.</p></StudentLayout>
 
   const days = programa.deadline ? daysUntil(programa.deadline) : null

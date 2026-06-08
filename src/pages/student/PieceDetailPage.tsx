@@ -6,6 +6,7 @@ import { MdArrowBack, MdTaskAlt, MdInfoOutline, MdEdit, MdDeleteOutline } from '
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 
@@ -119,7 +120,7 @@ export default function StudentPieceDetailPage() {
   }
 
   if (!isValidUUID(pieceId)) return <Navigate to="/" replace />
-  if (loading) return <StudentLayout><p className="text-sm text-gray-400">Carregando...</p></StudentLayout>
+  if (loading) return <StudentLayout><div className="flex justify-center py-12"><Spinner /></div></StudentLayout>
   if (!piece) return <StudentLayout><p className="text-sm text-red-400">Peça não encontrada.</p></StudentLayout>
 
   const grouped = checklist.reduce<Record<string, ChecklistItem[]>>((acc, item) => {

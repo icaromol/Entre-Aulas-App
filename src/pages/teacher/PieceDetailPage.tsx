@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdTaskAlt, MdInfoOutline, MdEdit, MdDeleteOutline } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
+import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
@@ -162,7 +163,7 @@ export default function PieceDetailPage() {
   }
 
   if (!isValidUUID(studentId) || !isValidUUID(pieceId)) return <Navigate to="/" replace />
-  if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
+  if (loading) return <TeacherLayout><div className="flex justify-center py-12"><Spinner /></div></TeacherLayout>
   if (!piece) return <TeacherLayout><p className="text-sm text-red-400">Peça não encontrada.</p></TeacherLayout>
 
   // Agrupa checklist por categoria

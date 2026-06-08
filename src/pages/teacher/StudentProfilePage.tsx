@@ -29,6 +29,7 @@ import {
 import Avatar from "boring-avatars";
 import { supabase } from "@/lib/supabase";
 import { getMonday, formatWeekStart, formatWeekLabel } from "@/lib/weekUtils";
+import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from "@/components/layout/TeacherLayout";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -360,7 +361,7 @@ export default function StudentProfilePage() {
   if (loading) {
     return (
       <TeacherLayout>
-        <p className="text-sm text-gray-400">Carregando...</p>
+        <div className="flex justify-center py-12"><Spinner /></div>
       </TeacherLayout>
     );
   }
@@ -718,7 +719,7 @@ export default function StudentProfilePage() {
 
             {/* Board de dias */}
             {planLoading ? (
-              <p className="text-sm text-gray-400 text-center py-8">Carregando...</p>
+              <div className="flex justify-center py-8"><Spinner /></div>
             ) : activeDays.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
                 <p className="text-sm text-gray-400">Nenhuma disponibilidade cadastrada.</p>

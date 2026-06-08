@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 
@@ -452,7 +453,7 @@ export default function PomodoroPage() {
       <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
         <p className="text-sm font-semibold text-gray-600 mb-3">O que você trabalhou?</p>
         {loadingItems ? (
-          <p className="text-xs text-gray-400">Carregando...</p>
+          <Spinner size={16} />
         ) : dayItems.length === 0 ? (
           <p className="text-xs text-gray-400 py-4 text-center">Nenhum item pendente. Tudo em dia! 🎉</p>
         ) : (

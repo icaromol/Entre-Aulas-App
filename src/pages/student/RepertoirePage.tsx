@@ -4,6 +4,7 @@ import Avatar from 'boring-avatars'
 import { MdAdd } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 
@@ -115,7 +116,7 @@ export default function RepertoirePage() {
   }
 
   if (loading) {
-    return <StudentLayout><p className="text-sm text-gray-400">Carregando...</p></StudentLayout>
+    return <StudentLayout><div className="flex justify-center py-12"><Spinner /></div></StudentLayout>
   }
 
   return (

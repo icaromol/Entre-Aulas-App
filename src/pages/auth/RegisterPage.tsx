@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Spinner } from '@/components/ui/Spinner'
 import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import { FcGoogle } from 'react-icons/fc'
 import { MdPerson, MdSchool } from 'react-icons/md'
@@ -149,7 +150,7 @@ export default function RegisterPage() {
 
           {/* Botão */}
           {inviteStudentId && !inviteStudent ? (
-            <p className="text-sm text-gray-400 text-center py-2">Carregando...</p>
+            <div className="flex justify-center py-4"><Spinner /></div>
           ) : autoSignup ? (
             <Button
               onClick={handleDirectSignup}

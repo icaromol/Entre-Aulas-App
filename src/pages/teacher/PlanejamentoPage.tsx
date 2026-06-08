@@ -10,6 +10,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 import { getMonday, formatWeekStart, formatWeekLabel } from '@/lib/weekUtils'
@@ -442,7 +443,7 @@ export default function PlanejamentoPage() {
   const levelLabel: Record<string, string> = { beginner: 'Iniciante', intermediate: 'Intermediário', advanced: 'Avançado' }
 
   if (!isValidUUID(studentId)) return <Navigate to="/" replace />
-  if (loading) return <TeacherLayout><p className="text-sm text-gray-400">Carregando...</p></TeacherLayout>
+  if (loading) return <TeacherLayout><div className="flex justify-center py-12"><Spinner /></div></TeacherLayout>
 
   // ── Config step ─────────────────────────────────────────────────────────────
 

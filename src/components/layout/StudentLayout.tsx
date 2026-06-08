@@ -70,6 +70,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   const displayFirst = nameOverride?.first ?? profile?.first_name ?? ''
   const displayLast  = nameOverride?.last  ?? profile?.last_name  ?? ''
   const fullName     = `${displayFirst} ${displayLast}`.trim()
+  const avatarUrl    = profile?.avatar_url ?? user?.user_metadata?.avatar_url
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -94,9 +95,13 @@ export function StudentLayout({ children }: StudentLayoutProps) {
 
           {/* Card de perfil */}
           <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-            <div className="rounded-full overflow-hidden shrink-0">
-              <Avatar size={44} name={fullName} variant="beam" colors={AVATAR_COLORS} />
-            </div>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={fullName} className="w-11 h-11 rounded-full object-cover shrink-0" />
+            ) : (
+              <div className="rounded-full overflow-hidden shrink-0">
+                <Avatar size={44} name={fullName} variant="beam" colors={AVATAR_COLORS} />
+              </div>
+            )}
             <div className="leading-tight min-w-0">
               <p className="text-sm font-semibold text-[#1E3A5F] truncate">{fullName || 'Aluno'}</p>
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
