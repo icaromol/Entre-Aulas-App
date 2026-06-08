@@ -26,7 +26,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://www.googletagmanager.com https://www.clarity.ms; worker-src blob: 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.google-analytics.com https://analytics.google.com https://*.clarity.ms https://*.ingest.sentry.io https://*.ingest.de.sentry.io; frame-src https://accounts.google.com; font-src 'self' data:"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://www.googletagmanager.com https://www.clarity.ms https://scripts.clarity.ms; worker-src blob: 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.google-analytics.com https://analytics.google.com https://*.clarity.ms https://*.ingest.sentry.io https://*.ingest.de.sentry.io; frame-src https://accounts.google.com; font-src 'self' data:"
         }
       ]
     }
