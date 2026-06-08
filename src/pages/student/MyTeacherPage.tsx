@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Avatar from 'boring-avatars'
 import { toast } from 'sonner'
@@ -26,8 +26,10 @@ export default function MyTeacherPage() {
   const [studentId, setStudentId]   = useState<string | null>(null)
   const [teacher, setTeacher]       = useState<TeacherInfo | null>(null)
   const [teacherEmail, setTeacherEmail] = useState('')
-  const [requesting, setRequesting] = useState(false)
+  const [requesting, setRequesting]     = useState(false)
+  const [cooldown, setCooldown]         = useState(0)
   const [disconnecting, setDisconnecting] = useState(false)
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -53,7 +55,7 @@ export default function MyTeacherPage() {
   }
 
   async function handleRequest() {
-    if (!teacherEmail.trim()) return
+    if (!teacherEmail.trim() || cooldown > 0) return
     setRequesting(true)
     const { data, error } = await supabase.rpc('request_teacher_connection', {
       p_teacher_email: teacherEmail.trim(),
@@ -64,14 +66,28 @@ export default function MyTeacherPage() {
       const msg = code === 'professor_not_found' ? 'Professor não encontrado nesta plataforma.'
                 : code === 'not_a_teacher'       ? 'Este e-mail não pertence a um professor.'
                 : code === 'already_connected'   ? 'Você já enviou uma solicitação para este professor.'
+                : code === 'rate_limited'         ? 'Muitas tentativas. Aguarde alguns minutos.'
                 : 'Erro ao enviar. Tente novamente.'
       toast.error(msg)
+      startCooldown()
       return
     }
     setTeacherEmail('')
     setConnState('pending')
     toast.success('Solicitação enviada!')
   }
+
+  function startCooldown() {
+    setCooldown(30)
+    cooldownRef.current = setInterval(() => {
+      setCooldown(prev => {
+        if (prev <= 1) { clearInterval(cooldownRef.current!); return 0 }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
+  useEffect(() => () => { if (cooldownRef.current) clearInterval(cooldownRef.current) }, [])
 
   async function handleDisconnect() {
     if (!confirm('Desconectar do professor? Seu histórico e repertório serão preservados.')) return
@@ -134,10 +150,10 @@ export default function MyTeacherPage() {
             />
             <button
               onClick={handleRequest}
-              disabled={requesting || !teacherEmail.trim()}
+              disabled={requesting || !teacherEmail.trim() || cooldown > 0}
               className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-40"
             >
-              {requesting ? 'Enviando...' : 'Solicitar conexão'}
+              {requesting ? 'Enviando...' : cooldown > 0 ? `Aguarde ${cooldown}s` : 'Solicitar conexão'}
             </button>
           </div>
         </div>
