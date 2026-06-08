@@ -5,6 +5,7 @@ import { MdArrowBack, MdPerson, MdMusicNote, MdAccessTime, MdNotes, MdAdd } from
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { grantTeacherXp } from '@/lib/teacherXpHelpers'
+import { fireBasic, fireStars, hasRankUp } from '@/lib/confettiEffects'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
@@ -123,8 +124,10 @@ export default function NewStudentPage() {
 
       await supabase.from('student_availability').insert(availabilityRows)
 
-      // 5. XP do professor
-      grantTeacherXp(teacher.id, 'new_student', student.id)
+      // 5. XP do professor + confetti
+      const { newAchievements } = await grantTeacherXp(teacher.id, 'new_student', student.id)
+      if (hasRankUp(newAchievements)) fireStars()
+      else fireBasic()
 
       // 6. Gera link de convite e redireciona
       const inviteLink = `${window.location.origin}/cadastro?invite=${student.id}&token=${(student as { id: string; invite_token: string }).invite_token}`

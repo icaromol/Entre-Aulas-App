@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { grantTeacherXp } from '@/lib/teacherXpHelpers'
+import { fireBasic, fireStars, hasRankUp } from '@/lib/confettiEffects'
 import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -398,10 +399,14 @@ export default function PlanejamentoPage() {
           if (err) throw err
         }
       }
-      // XP por plano criado (um grant por semana gerada)
+      // XP por plano criado + confetti (um grant por semana gerada)
+      const allAchievements: string[] = []
       for (const ws of weekStarts) {
-        grantTeacherXp(teacher.id, 'new_plan', ws)
+        const { newAchievements } = await grantTeacherXp(teacher.id, 'new_plan', ws)
+        allAchievements.push(...newAchievements)
       }
+      if (hasRankUp(allAchievements)) fireStars()
+      else fireBasic()
       toast.success('Planejamento salvo!')
       navigate(`/professor/alunos/${studentId}?tab=plans`)
     } catch (e: unknown) {
