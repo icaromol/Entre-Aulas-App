@@ -7,6 +7,7 @@ interface PendingSignup {
   type: 'login' | 'signup'
   role?: 'teacher' | 'student'
   inviteStudentId?: string
+  inviteToken?: string
   firstName?: string
   lastName?: string
 }
@@ -38,12 +39,14 @@ export default function AuthCallbackPage() {
           p_avatar_url: user.user_metadata?.avatar_url ?? null,
         })
 
-        if (pending.inviteStudentId) {
+        if (pending.inviteStudentId && pending.inviteToken) {
           await supabase
             .from('students')
-            .update({ profile_id: user.id })
+            .update({ profile_id: user.id, invite_token: null })
             .eq('id', pending.inviteStudentId)
+            .eq('invite_token', pending.inviteToken)
             .is('profile_id', null)
+            .gt('invite_expires_at', new Date().toISOString())
         }
       }
 

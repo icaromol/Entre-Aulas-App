@@ -22,6 +22,7 @@ interface Student {
   level: string
   status: string
   contact_email: string | null
+  invite_token: string | null
 }
 
 export default function StudentsPage() {
@@ -52,7 +53,7 @@ export default function StudentsPage() {
   }
 
   function handleInvite(student: Student) {
-    const link = `${window.location.origin}/cadastro?invite=${student.id}`
+    const link = `${window.location.origin}/cadastro?invite=${student.id}&token=${student.invite_token ?? ''}`
     setInviteLink(link)
     setInviteStudentName(`${student.first_name} ${student.last_name}`)
     setInviteStudentEmail(student.contact_email ?? undefined)
@@ -146,13 +147,13 @@ export default function StudentsPage() {
     const [activeRes, pendingRes] = await Promise.all([
       supabase
         .from('students')
-        .select('id, first_name, last_name, instrument, level, status, contact_email')
+        .select('id, first_name, last_name, instrument, level, status, contact_email, invite_token')
         .eq('teacher_id', teacher.id)
         .eq('status', 'active')
         .order('first_name'),
       supabase
         .from('students')
-        .select('id, first_name, last_name, instrument, level, status, contact_email')
+        .select('id, first_name, last_name, instrument, level, status, contact_email, invite_token')
         .eq('teacher_id', teacher.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false }),

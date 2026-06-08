@@ -17,23 +17,33 @@ export default function RegisterPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const inviteStudentId = searchParams.get('invite')
+  const inviteToken     = searchParams.get('token')
   const autoSignup = (location.state as { autoSignup?: boolean } | null)?.autoSignup ?? false
 
   const [inviteStudent, setInviteStudent] = useState<{ first_name: string; last_name: string } | null>(null)
+  const [inviteInvalid, setInviteInvalid] = useState(false)
   const [selectedRole, setSelectedRole] = useState<Role | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!inviteStudentId) return
+    if (!inviteStudentId || !inviteToken) {
+      if (inviteStudentId) setInviteInvalid(true) // tem id mas não tem token
+      return
+    }
     supabase
       .from('students')
       .select('first_name, last_name')
       .eq('id', inviteStudentId)
+      .eq('invite_token', inviteToken)
       .is('profile_id', null)
+      .gt('invite_expires_at', new Date().toISOString())
       .single()
-      .then(({ data }) => { if (data) setInviteStudent(data) })
-  }, [inviteStudentId])
+      .then(({ data }) => {
+        if (data) setInviteStudent(data)
+        else setInviteInvalid(true)
+      })
+  }, [inviteStudentId, inviteToken])
 
   // Fluxo: usuário já autenticado via Google mas sem profile → escolhe role aqui
   async function handleDirectSignup() {
@@ -73,7 +83,7 @@ export default function RegisterPage() {
 
     const role: Role = inviteStudentId ? 'student' : selectedRole!
     const pending = inviteStudentId
-      ? { type: 'signup' as const, role, inviteStudentId, firstName: inviteStudent?.first_name, lastName: inviteStudent?.last_name }
+      ? { type: 'signup' as const, role, inviteStudentId, inviteToken: inviteToken ?? '', firstName: inviteStudent?.first_name, lastName: inviteStudent?.last_name }
       : { type: 'signup' as const, role }
 
     sessionStorage.setItem('pending_signup', JSON.stringify(pending))
@@ -94,12 +104,14 @@ export default function RegisterPage() {
   const subtitle = autoSignup
     ? 'Sua conta Google foi conectada. Como quer usar o estudamus?'
     : inviteStudentId
-      ? inviteStudent
-        ? `Olá, ${inviteStudent.first_name}! Crie sua conta para acessar o estudamus.`
-        : 'Verificando convite...'
+      ? inviteInvalid
+        ? 'Link de convite inválido ou expirado.'
+        : inviteStudent
+          ? `Olá, ${inviteStudent.first_name}! Crie sua conta para acessar o estudamus.`
+          : 'Verificando convite...'
       : 'Criar conta'
 
-  const canProceed = inviteStudentId ? !!inviteStudent : !!selectedRole
+  const canProceed = inviteStudentId ? (!!inviteStudent && !inviteInvalid) : !!selectedRole
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

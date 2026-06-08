@@ -117,7 +117,7 @@ export default function NewStudentPage() {
           notes: notes || null,
           status: 'active',
         })
-        .select('id')
+        .select('id, invite_token')
         .single()
 
       if (studentError || !student) throw new Error('Erro ao criar aluno.')
@@ -133,7 +133,7 @@ export default function NewStudentPage() {
       await supabase.from('student_availability').insert(availabilityRows)
 
       // 5. Gera link de convite e redireciona
-      const inviteLink = `${window.location.origin}/cadastro?invite=${student.id}`
+      const inviteLink = `${window.location.origin}/cadastro?invite=${student.id}&token=${(student as { id: string; invite_token: string }).invite_token}`
       toast.success('Aluno cadastrado com sucesso!')
       navigate('/professor/alunos', { state: { inviteLink, studentName: firstName, studentEmail: email } })
 
