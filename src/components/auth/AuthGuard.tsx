@@ -22,10 +22,9 @@ export function AuthGuard({ children, allowedRole }: AuthGuardProps) {
     return <Navigate to="/login" replace />
   }
 
-  // Professor com área pessoal ativa e sem modo escolhido → tela de seleção
+  // Professor sem modo escolhido → tela de seleção (sempre, na primeira entrada)
   if (
     profile.role === 'teacher' &&
-    profile.studentId !== null &&
     mode === null &&
     location.pathname !== '/modo'
   ) {
