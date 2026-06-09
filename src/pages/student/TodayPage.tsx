@@ -187,13 +187,13 @@ export default function TodayPage() {
     if (profile) fetchDayPlan();
   }, [profile, viewDay]);
 
-  // Re-fetcha ao voltar para a página (ex: retorno do pomodoro)
+  // Re-fetcha ao voltar para a aba após sair (ex: retorno do pomodoro)
   useEffect(() => {
-    const onFocus = () => {
-      if (profile && studentId) fetchItems(studentId);
+    const onVisible = () => {
+      if (!document.hidden && profile && studentId) fetchItems(studentId);
     };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [profile, studentId, viewDay]);
 
   async function fetchDayPlan() {
@@ -302,7 +302,7 @@ export default function TodayPage() {
           toComplete.map((item) =>
             supabase
               .from("plan_items")
-              .update({ is_done: true, done_at: new Date().toISOString() })
+              .update({ is_done: true, done_at: new Date().toISOString(), completed_manually: false })
               .eq("id", item.id),
           ),
         );
@@ -423,7 +423,7 @@ export default function TodayPage() {
     if (item.is_done) {
       toggleDone(item);
     } else if (localStorage.getItem(SKIP_KEY) === "1") {
-      toggleDone(item);
+      toggleDone(item, true);
     } else {
       setSkipConfirm(false);
       setPendingItem(item);
