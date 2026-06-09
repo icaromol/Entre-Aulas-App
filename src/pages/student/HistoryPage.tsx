@@ -9,15 +9,20 @@ import { getMonday, formatWeekStart, formatWeekLabel } from '@/lib/weekUtils'
 interface PlanItemJoin {
   is_maintenance: boolean
   piece: { title: string } | null
+  exercise: { title: string } | null
+}
+
+interface SessionItem {
+  plan_item_id: string | null
+  plan_item: PlanItemJoin | null
+}
+
+interface ChecklistCompletion {
   checklist_item: {
     title: string
     piece: { title: string } | null
     exercise: { title: string } | null
   } | null
-}
-
-interface SessionItem {
-  plan_item: PlanItemJoin | null
 }
 
 interface Session {
@@ -28,6 +33,7 @@ interface Session {
   difficulty_felt: 'easy' | 'ok' | 'hard' | null
   notes: string | null
   session_items: SessionItem[]
+  checklist_completions: ChecklistCompletion[]
 }
 
 const difficultyBadge: Record<string, { emoji: string; color: string }> = {
@@ -62,15 +68,20 @@ function sessionWeekStart(startedAt: string): string {
   return formatWeekStart(getMonday(new Date(startedAt)))
 }
 
-function itemLabel(si: SessionItem): string | null {
+function planItemLabel(si: SessionItem): string | null {
   const p = si.plan_item
   if (!p) return null
   if (p.is_maintenance) return `🔄 ${p.piece?.title ?? 'Manutenção'}`
-  if (p.checklist_item) {
-    const src = p.checklist_item.piece?.title ?? p.checklist_item.exercise?.title
-    return src ? `${p.checklist_item.title} — ${src}` : p.checklist_item.title
-  }
-  return p.piece?.title ?? null
+  if (p.exercise) return p.exercise.title
+  if (p.piece)    return p.piece.title
+  return null
+}
+
+function checklistLabel(c: ChecklistCompletion): string | null {
+  const ci = c.checklist_item
+  if (!ci) return null
+  const src = ci.piece?.title ?? ci.exercise?.title
+  return src ? `${ci.title} — ${src}` : ci.title
 }
 
 export default function HistoryPage() {
@@ -80,55 +91,45 @@ export default function HistoryPage() {
   const [xpBySession, setXpBySession] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { if (profile) fetchAll() }, [profile])
+  useEffect(() => { if (profile?.studentId) fetchAll(profile.studentId) }, [profile?.studentId])
 
-  async function fetchAll() {
-    const { data: student, error: studentError } = await supabase
-      .from('students')
-      .select('id')
-      .eq('profile_id', profile!.id)
-      .single()
-
-    console.debug('[history] student', student, studentError)
-    if (!student) { setLoading(false); return }
-
-    // Step 1 — sessões + itens via join
-    const { data: rawSessions, error: sessionsError } = await supabase
-      .from('study_sessions')
-      .select(`
-        id, started_at, duration_seconds, cycle_name, difficulty_felt, notes,
-        session_items(
-          plan_item_id,
-          plan_item:plan_items(
-            is_maintenance,
-            piece:pieces(title),
+  async function fetchAll(sid: string) {
+    const [sessionsRes, xpRes] = await Promise.all([
+      supabase
+        .from('study_sessions')
+        .select(`
+          id, started_at, duration_seconds, cycle_name, difficulty_felt, notes,
+          session_items(
+            plan_item_id,
+            plan_item:plan_items(
+              is_maintenance,
+              piece:pieces(title),
+              exercise:exercises(title)
+            )
+          ),
+          checklist_completions(
             checklist_item:checklist_items(
               title,
               piece:pieces(title),
               exercise:exercises(title)
             )
           )
-        )
-      `)
-      .eq('student_id', student.id)
-      .order('started_at', { ascending: false })
+        `)
+        .eq('student_id', sid)
+        .order('started_at', { ascending: false }),
+      supabase
+        .from('student_xp_events')
+        .select('source_id, amount')
+        .eq('student_id', sid)
+        .eq('reason', 'pomodoro_session'),
+    ])
 
-    console.debug('[history] rawSessions count', rawSessions?.length, 'error', sessionsError)
+    if (sessionsRes.error) console.error('[history] sessions error', sessionsRes.error)
 
-    // Step 2 — XP por sessão
-    const { data: xpEvents, error: xpError } = await supabase
-      .from('student_xp_events')
-      .select('source_id, amount')
-      .eq('student_id', student.id)
-      .eq('reason', 'pomodoro_session')
-
-    if (sessionsError) console.error('[history] sessions error', sessionsError)
-    if (xpError)       console.error('[history] xp error', xpError)
-
-    setSessions((rawSessions ?? []) as unknown as Session[])
+    setSessions((sessionsRes.data ?? []) as unknown as Session[])
 
     const xpMap: Record<string, number> = {}
-    for (const e of (xpEvents ?? [])) {
+    for (const e of (xpRes.data ?? [])) {
       if (e.source_id) xpMap[e.source_id] = (xpMap[e.source_id] ?? 0) + e.amount
     }
     setXpBySession(xpMap)
@@ -203,9 +204,18 @@ export default function HistoryPage() {
 
                 <div className="space-y-3">
                   {weekSessions.map(session => {
-                    const labels = session.session_items
-                      .map(itemLabel)
+                    // Labels de itens do planejamento trabalhados
+                    const planLabels = session.session_items
+                      .map(planItemLabel)
                       .filter((t): t is string => Boolean(t))
+
+                    // Labels de checklist completados nessa sessão
+                    const checkLabels = session.checklist_completions
+                      .map(checklistLabel)
+                      .filter((t): t is string => Boolean(t))
+
+                    // Deduplica: remove checklist labels que já estão cobertos pelo plan label da peça
+                    const allLabels = [...new Set([...planLabels, ...checkLabels])]
 
                     const badge = session.difficulty_felt
                       ? difficultyBadge[session.difficulty_felt]
@@ -240,9 +250,9 @@ export default function HistoryPage() {
                           </div>
                         </div>
 
-                        {labels.length > 0 && (
+                        {allLabels.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
-                            {labels.map((label, i) => (
+                            {allLabels.map((label, i) => (
                               <span key={i} className="text-[11px] bg-[#D6E4F0] text-[#1E3A5F] px-2 py-0.5 rounded-lg font-medium">
                                 {label}
                               </span>

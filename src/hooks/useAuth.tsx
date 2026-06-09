@@ -83,20 +83,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     teacherId = (teacherRes.data as { id: string } | null)?.id ?? null
     studentId = (studentRes.data as { id: string } | null)?.id ?? null
 
-    // Professor sem registro de aluno: cria automaticamente para modo estudante
+    // Professor sem registro de aluno: associa ou cria um student para modo estudante
     if (data.role === 'teacher' && teacherId && !studentId) {
-      const { data: created } = await supabase
+      // Primeiro: verifica se já existe um student do professor sem profile_id (criado pelo planejamento)
+      const { data: orphan } = await supabase
         .from('students')
-        .insert({
-          teacher_id: teacherId,
-          profile_id: u.id,
-          first_name: data.first_name,
-          last_name:  data.last_name,
-          status:     'active',
-        })
         .select('id')
-        .single()
-      studentId = created?.id ?? null
+        .eq('teacher_id', teacherId)
+        .is('profile_id', null)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+
+      if (orphan) {
+        // Vincula o profile_id ao student existente
+        await supabase
+          .from('students')
+          .update({ profile_id: u.id, first_name: data.first_name, last_name: data.last_name })
+          .eq('id', orphan.id)
+        studentId = orphan.id
+      } else {
+        // Nenhum student existente: cria novo
+        const { data: created } = await supabase
+          .from('students')
+          .insert({
+            teacher_id: teacherId,
+            profile_id: u.id,
+            first_name: data.first_name,
+            last_name:  data.last_name,
+            status:     'active',
+          })
+          .select('id')
+          .single()
+        studentId = created?.id ?? null
+      }
     }
 
     const fullProfile: Profile = { ...data, teacherId, studentId }

@@ -76,7 +76,7 @@ export default function StudentExerciseDetailPage() {
       await supabase.from('checklist_completions').delete()
         .eq('checklist_item_id', item.id).eq('student_id', studentId)
     } else {
-      await supabase.from('checklist_completions').insert({ checklist_item_id: item.id, student_id: studentId })
+      await supabase.from('checklist_completions').insert({ checklist_item_id: item.id, student_id: studentId, completed_at: new Date().toISOString() })
     }
     setChecklist(prev => prev.map(c => c.id === item.id ? { ...c, completed: !c.completed } : c))
   }

@@ -97,6 +97,73 @@ function fmtStudied(secs: number): string {
   return s > 0 ? `${m} min ${s}s de estudo` : `${m} min de estudo`;
 }
 
+type PlanItemRef = { id: string; piece_id: string | null; exercise_id: string | null }
+
+async function linkSessionItems(
+  sessionId: string,
+  studentId: string,
+  checklistIds: string[],
+  directPlanItemId: string | null,
+  totalWorkSecs: number,
+): Promise<void> {
+  const itemData: Record<string, { weight: number; piece_id: string | null; exercise_id: string | null }> = {}
+  const weekStart = formatWeekStart(getMonday(new Date()))
+
+  if (directPlanItemId) {
+    const { data: piRow } = await supabase
+      .from("plan_items").select("id, piece_id, exercise_id")
+      .eq("id", directPlanItemId).single()
+    if (piRow) itemData[directPlanItemId] = { weight: 1, piece_id: piRow.piece_id, exercise_id: piRow.exercise_id }
+  }
+
+  if (checklistIds.length > 0) {
+    const { data: ciData } = await supabase
+      .from("checklist_items").select("piece_id, exercise_id").in("id", checklistIds)
+    const ciRows = (ciData ?? []) as { piece_id: string | null; exercise_id: string | null }[]
+    const pieceIds    = [...new Set(ciRows.map(r => r.piece_id).filter((x): x is string => !!x))]
+    const exerciseIds = [...new Set(ciRows.map(r => r.exercise_id).filter((x): x is string => !!x))]
+
+    if (pieceIds.length > 0 || exerciseIds.length > 0) {
+      const { data: plan } = await supabase
+        .from("weekly_plans").select("id")
+        .eq("student_id", studentId).eq("week_start", weekStart).maybeSingle()
+
+      if (plan?.id) {
+        const queries: Promise<{ data: PlanItemRef[] | null }>[] = []
+        if (pieceIds.length > 0)
+          queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id").eq("plan_id", plan.id).in("piece_id", pieceIds) as any)
+        if (exerciseIds.length > 0)
+          queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id").eq("plan_id", plan.id).in("exercise_id", exerciseIds) as any)
+
+        const matchedPlanItems = (await Promise.all(queries)).flatMap(r => r.data ?? [])
+        for (const ci of ciRows) {
+          for (const pi of matchedPlanItems) {
+            const matches = (ci.piece_id && ci.piece_id === pi.piece_id) || (ci.exercise_id && ci.exercise_id === pi.exercise_id)
+            if (!matches) continue
+            if (!itemData[pi.id]) itemData[pi.id] = { weight: 0, piece_id: pi.piece_id, exercise_id: pi.exercise_id }
+            if (pi.id !== directPlanItemId) itemData[pi.id].weight += 1
+          }
+        }
+      }
+    }
+  }
+
+  const entries = Object.entries(itemData)
+  if (entries.length === 0) return
+
+  const totalWeight = entries.reduce((s, [, v]) => s + v.weight, 0) || 1
+  const rows = entries.map(([planItemId, v]) => ({
+    session_id:       sessionId,
+    plan_item_id:     planItemId,
+    piece_id:         v.piece_id,
+    exercise_id:      v.exercise_id,
+    duration_seconds: Math.round((v.weight / totalWeight) * totalWorkSecs),
+  }))
+
+  const { error } = await supabase.from("session_items").insert(rows)
+  if (error) toast.error("Erro ao vincular sessão ao plano. O progresso pode não aparecer hoje.")
+}
+
 export default function PomodoroPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -246,11 +313,13 @@ export default function PomodoroPage() {
       return;
     }
 
+    const weekStart = formatWeekStart(getMonday(new Date()))
     const [completionsRes, piecesRes, exercisesRes] = await Promise.all([
       supabase
         .from("checklist_completions")
         .select("checklist_item_id")
-        .eq("student_id", sid),
+        .eq("student_id", sid)
+        .gte("completed_at", weekStart + "T00:00:00"),
       supabase
         .from("pieces")
         .select("id, title, checklist_items(id, title)")
@@ -336,41 +405,37 @@ export default function PomodoroPage() {
       .single();
 
     if (error) {
-      if (import.meta.env.DEV)
-        console.error("[pomodoro] save error", error.code);
-    } else if (sessionData?.id) {
-      const minutesXp = Math.floor(workSecs.current / 60);
-      const bonusXp = completedCycles * 5;
-      const totalXp = minutesXp + bonusXp;
-      if (totalXp > 0) {
-        const { newAchievements } = await grantXp(
-          sid,
-          "pomodoro_session",
-          sessionData.id,
-          null,
-          totalXp,
-        );
-        sound.xpEarn();
-        toast.success(
-          `+${totalXp} XP · ${bonusXp > 0 ? "Sessão concluída! (+5 bônus)" : "Sessão registrada"}`,
-        );
-        for (const key of newAchievements) {
-          toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
-        }
-        if (hasRankUp(newAchievements)) fireStars();
-        else fireBasic();
-      }
+      toast.error("Não foi possível salvar a sessão. Tente novamente.");
+      setSaving(false);
+      return;
     }
 
+    // ── XP pela sessão ──
+    const minutesXp = Math.floor(workSecs.current / 60);
+    const bonusXp   = completedCycles * 5;
+    const totalXp   = minutesXp + bonusXp;
+    if (totalXp > 0) {
+      const { newAchievements } = await grantXp(sid, "pomodoro_session", sessionData!.id, null, totalXp);
+      sound.xpEarn();
+      toast.success(`+${totalXp} XP · ${bonusXp > 0 ? "Sessão concluída! (+5 bônus)" : "Sessão registrada"}`);
+      for (const key of newAchievements) toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
+      if (hasRankUp(newAchievements)) fireStars();
+      else fireBasic();
+    }
+
+    // ── Checklist completions ──
     const checklistIds = [...workedIds];
 
     if (checklistIds.length > 0) {
-      await supabase.from("checklist_completions").insert(
+      const { error: ccError } = await supabase.from("checklist_completions").insert(
         checklistIds.map((id) => ({
           checklist_item_id: id,
-          student_id: sid,
+          student_id:        sid,
+          session_id:        sessionData!.id,
+          completed_at:      endedAt,
         })),
       );
+      if (ccError) toast.error("Erro ao salvar checklist. Alguns itens podem não ter sido registrados.");
 
       // Verificar se alguma peça chegou a 100%
       const { data: ciRows } = await supabase
@@ -379,40 +444,19 @@ export default function PomodoroPage() {
         .in("id", checklistIds)
         .not("piece_id", "is", null);
 
-      const pieceIds = [
-        ...new Set((ciRows ?? []).map((r: { piece_id: string }) => r.piece_id)),
-      ];
+      const pieceIds = [...new Set((ciRows ?? []).map((r: { piece_id: string }) => r.piece_id))];
 
       if (pieceIds.length > 0) {
         const [piecesRes, alreadyGrantedRes] = await Promise.all([
-          supabase
-            .from("pieces")
-            .select("id, completion_pct")
-            .in("id", pieceIds),
-          supabase
-            .from("student_xp_events")
-            .select("source_id")
-            .eq("student_id", sid)
-            .eq("reason", "piece_completed")
-            .in("source_id", pieceIds),
+          supabase.from("pieces").select("id, completion_pct").in("id", pieceIds),
+          supabase.from("student_xp_events").select("source_id").eq("student_id", sid).eq("reason", "piece_completed").in("source_id", pieceIds),
         ]);
-
-        const alreadyGranted = new Set(
-          (alreadyGrantedRes.data ?? []).map((r) => r.source_id),
-        );
-
+        const alreadyGranted = new Set((alreadyGrantedRes.data ?? []).map((r) => r.source_id));
         for (const piece of piecesRes.data ?? []) {
           if (piece.completion_pct === 100 && !alreadyGranted.has(piece.id)) {
-            const { newAchievements: pAch } = await grantXp(
-              sid,
-              "piece_completed",
-              piece.id,
-              "musicalidade",
-            );
+            const { newAchievements: pAch } = await grantXp(sid, "piece_completed", piece.id, "musicalidade");
             toast.success("+300 XP · Peça concluída! 🎼");
-            for (const key of pAch) {
-              toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
-            }
+            for (const key of pAch) toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
             if (hasRankUp(pAch)) fireStars();
             fireSideCannons();
           }
@@ -420,90 +464,9 @@ export default function PomodoroPage() {
       }
     }
 
-    // Vincular session_items aos plan_items da semana atual
-    if (sessionData?.id) {
-      // Mapa: plan_item_id → peso (nº de checklist_items trabalhados dessa peça/exercício)
-      const itemWeight: Record<string, number> = {}
+    // ── Session items (vincula ao plano da semana) ──
+    await linkSessionItems(sessionData!.id, sid, checklistIds, nav?.planItemId ?? null, workSecs.current);
 
-      // 1. Se veio do botão Iniciar de um item específico, peso 1
-      if (nav?.planItemId) {
-        itemWeight[nav.planItemId] = 1
-      }
-
-      // 2. Resolver checklist_items selecionados → plan_items da semana
-      if (checklistIds.length > 0) {
-        const weekStart = formatWeekStart(getMonday(new Date()))
-
-        // checklist_item → piece_id / exercise_id
-        const { data: ciData } = await supabase
-          .from("checklist_items")
-          .select("piece_id, exercise_id")
-          .in("id", checklistIds)
-        const ciRows = (ciData ?? []) as { piece_id: string | null; exercise_id: string | null }[]
-
-        const pieceIds    = [...new Set(ciRows.map(r => r.piece_id).filter((x): x is string => !!x))]
-        const exerciseIds = [...new Set(ciRows.map(r => r.exercise_id).filter((x): x is string => !!x))]
-
-        if (pieceIds.length > 0 || exerciseIds.length > 0) {
-          const { data: plan } = await supabase
-            .from("weekly_plans").select("id")
-            .eq("student_id", sid).eq("week_start", weekStart).maybeSingle()
-
-          if (plan?.id) {
-            // Buscar plan_items cujo piece_id ou exercise_id batam com os trabalhados
-            const queries: Promise<{ data: { id: string; piece_id: string | null; exercise_id: string | null }[] | null }>[] = []
-            if (pieceIds.length > 0)
-              queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id").eq("plan_id", plan.id).in("piece_id", pieceIds) as any)
-            if (exerciseIds.length > 0)
-              queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id").eq("plan_id", plan.id).in("exercise_id", exerciseIds) as any)
-
-            const results = await Promise.all(queries)
-            const matchedPlanItems = results.flatMap(r => r.data ?? [])
-
-            // Para cada checklist_item trabalhado, incrementar o peso do plan_item correspondente
-            for (const ci of ciRows) {
-              for (const pi of matchedPlanItems) {
-                if ((ci.piece_id && ci.piece_id === pi.piece_id) ||
-                    (ci.exercise_id && ci.exercise_id === pi.exercise_id)) {
-                  // Não sobrescreve se já veio de nav.planItemId
-                  if (pi.id !== nav?.planItemId) {
-                    itemWeight[pi.id] = (itemWeight[pi.id] ?? 0) + 1
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      const planItemIds = Object.keys(itemWeight)
-
-      if (planItemIds.length > 0) {
-        const totalWeight   = Object.values(itemWeight).reduce((s, v) => s + v, 0)
-        const totalWorkSecs = workSecs.current
-
-        const rows = planItemIds.map((planItemId) => {
-          const weight = itemWeight[planItemId]
-          const proportionalSecs = Math.round((weight / totalWeight) * totalWorkSecs)
-          // duration_seconds requer migração: ADD COLUMN IF NOT EXISTS duration_seconds integer
-          return {
-            session_id:       sessionData.id,
-            plan_item_id:     planItemId,
-            duration_seconds: proportionalSecs,
-          }
-        })
-
-        const { error: siError } = await supabase.from("session_items").insert(rows)
-        if (siError) {
-          // Migração ainda não rodada — inserir sem duration_seconds
-          await supabase.from("session_items").insert(
-            rows.map(({ duration_seconds: _, ...r }) => r)
-          )
-        }
-      }
-    }
-
-    toast.success("Sessão registrada!");
     navigate("/aluno/hoje");
   }
 

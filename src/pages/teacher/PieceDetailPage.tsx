@@ -96,7 +96,8 @@ export default function PieceDetailPage() {
         .from('checklist_completions')
         .insert({
           checklist_item_id: item.id,
-          student_id: studentId!,
+          student_id:        studentId!,
+          completed_at:      new Date().toISOString(),
         })
       if (error) if (import.meta.env.DEV) console.error('[checklist] insert error', error.code)
     }

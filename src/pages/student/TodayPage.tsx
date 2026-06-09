@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -94,9 +94,9 @@ export default function TodayPage() {
     y: number;
   } | null>(null);
 
-  const weekStart = formatWeekStart(getMonday(new Date()));
+  const monday    = useMemo(() => getMonday(new Date()), []);
+  const weekStart = useMemo(() => formatWeekStart(monday), [monday]);
 
-  const monday = getMonday(new Date());
   const viewDate = new Date(monday);
   viewDate.setDate(viewDate.getDate() + (viewDay === 0 ? 6 : viewDay - 1));
   const displayDate = viewDate.toLocaleDateString("pt-BR", {
@@ -201,35 +201,12 @@ export default function TodayPage() {
     if (planItemIds.length > 0) {
       const { data: sessionRows } = await supabase
         .from("session_items")
-        .select("plan_item_id, duration_seconds, session_id, study_sessions(duration_seconds)")
+        .select("plan_item_id, duration_seconds")
         .in("plan_item_id", planItemIds);
 
-      const rows = (sessionRows ?? []) as any[];
-
-      // Fallback: buscar count total de session_items por sessão (para dividir proporcionalmente)
-      const sessionIds = [...new Set(rows.filter(r => r.duration_seconds == null).map(r => r.session_id).filter(Boolean))];
-      const sessionItemCount: Record<string, number> = {};
-      if (sessionIds.length > 0) {
-        const { data: countRows } = await supabase
-          .from("session_items")
-          .select("session_id")
-          .in("session_id", sessionIds);
-        for (const r of (countRows ?? []) as any[]) {
-          sessionItemCount[r.session_id] = (sessionItemCount[r.session_id] ?? 0) + 1;
-        }
-      }
-
       const secsMap: Record<string, number> = {};
-      for (const row of rows) {
-        let secs: number;
-        if (row.duration_seconds != null) {
-          secs = row.duration_seconds;
-        } else {
-          const total = row.study_sessions?.duration_seconds ?? 0;
-          const count = sessionItemCount[row.session_id] ?? 1;
-          secs = Math.round(total / count);
-        }
-        secsMap[row.plan_item_id] = (secsMap[row.plan_item_id] ?? 0) + secs;
+      for (const row of (sessionRows ?? []) as any[]) {
+        secsMap[row.plan_item_id] = (secsMap[row.plan_item_id] ?? 0) + (row.duration_seconds ?? 0);
       }
       setStudiedSecs(secsMap);
 
