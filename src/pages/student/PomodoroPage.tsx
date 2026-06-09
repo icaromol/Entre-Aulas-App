@@ -373,6 +373,25 @@ export default function PomodoroPage() {
     }
 
     setDayGroups(groups);
+
+    // Pre-select items when launched from a specific piece task
+    if (nav?.planItemId && groups.length > 0) {
+      const { data: piRow } = await supabase
+        .from("plan_items")
+        .select("piece_id, exercise_id")
+        .eq("id", nav.planItemId)
+        .single();
+
+      if (piRow) {
+        const matchId = piRow.piece_id ?? piRow.exercise_id;
+        const matchGroup = groups.find((g) => g.sourceId === matchId);
+        if (matchGroup) {
+          setWorkedIds(new Set(matchGroup.items.map((i) => i.id)));
+          setExpandedGroups(new Set([matchGroup.sourceId]));
+        }
+      }
+    }
+
     setLoadingItems(false);
   }
 
@@ -412,46 +431,51 @@ export default function PomodoroPage() {
       return;
     }
 
-    // ── XP pela sessão ──
+    // ── Feedback imediato — não espera o banco ──
     const minutesXp = Math.floor(workSecs.current / 60);
     const bonusXp   = completedCycles * 5;
     const totalXp   = minutesXp + bonusXp;
     if (totalXp > 0) {
-      const { newAchievements } = await grantXp(sid, "pomodoro_session", sessionData!.id, null, totalXp);
       sound.xpEarn();
       toast.success(`+${totalXp} XP · ${bonusXp > 0 ? "Sessão concluída! (+5 bônus)" : "Sessão registrada"}`);
-      for (const key of newAchievements) toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
-      if (hasRankUp(newAchievements)) fireStars();
-      else fireBasic();
+      fireBasic();
     }
 
-    // ── Session items (vincula ao plano da semana) ──
+    // ── Persistência em background + navigate imediato ──
     const checklistIds = [...workedIds];
-    await linkSessionItems(sessionData!.id, sid, checklistIds, nav?.planItemId ?? null, workSecs.current);
+    const sessionId = sessionData!.id;
 
     navigate("/aluno/hoje");
+
+    // Tudo abaixo roda após o redirect, sem bloquear o usuário
+    Promise.all([
+      totalXp > 0
+        ? grantXp(sid, "pomodoro_session", sessionId, null, totalXp).then(({ newAchievements }) => {
+            for (const key of newAchievements) toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
+            if (hasRankUp(newAchievements)) fireStars();
+          })
+        : Promise.resolve(),
+
+      completedIds.size > 0
+        ? supabase.from("checklist_completions")
+            .select("checklist_item_id")
+            .eq("student_id", sid)
+            .in("checklist_item_id", [...completedIds])
+            .then(({ data: existing }) => {
+              const existingSet = new Set((existing ?? []).map((r: any) => r.checklist_item_id));
+              const toInsert = [...completedIds].filter((id) => !existingSet.has(id));
+              if (toInsert.length > 0)
+                return supabase.from("checklist_completions").insert(
+                  toInsert.map((id) => ({ checklist_item_id: id, student_id: sid, completed_at: new Date().toISOString() }))
+                );
+            })
+        : Promise.resolve(),
+
+      linkSessionItems(sessionId, sid, checklistIds, nav?.planItemId ?? null, workSecs.current),
+    ]);
   }
 
   // ── Marcar item/peça como concluído no checklist ──
-  async function toggleComplete(ci: ChecklistEntry) {
-    const sid = nav?.studentId ?? profile?.studentId;
-    if (!sid) return;
-    const isDone = completedIds.has(ci.id);
-    if (isDone) {
-      await supabase
-        .from("checklist_completions")
-        .delete()
-        .eq("checklist_item_id", ci.id)
-        .eq("student_id", sid);
-      setCompletedIds((prev) => { const n = new Set(prev); n.delete(ci.id); return n; });
-    } else {
-      await supabase
-        .from("checklist_completions")
-        .insert({ checklist_item_id: ci.id, student_id: sid, completed_at: new Date().toISOString() });
-      setCompletedIds((prev) => new Set(prev).add(ci.id));
-    }
-  }
-
   // ── Derived ──
   const progress = totalSecs > 0 ? timeLeft / totalSecs : 0;
   const dashOffset = CIRCUMFERENCE * (1 - progress);
@@ -720,78 +744,47 @@ export default function PomodoroPage() {
                     const groupChecked = group.items.every((ci) => workedIds.has(ci.id));
                     const groupIndeterminate = !groupChecked && group.items.some((ci) => workedIds.has(ci.id));
 
-                    function toggleGroup() {
-                      setWorkedIds((prev) => {
-                        const next = new Set(prev);
-                        if (groupChecked) group.items.forEach((ci) => next.delete(ci.id));
-                        else group.items.forEach((ci) => next.add(ci.id));
-                        return next;
-                      });
-                    }
 
-                    function toggleItem(id: string) {
-                      setWorkedIds((prev) => {
-                        const next = new Set(prev);
-                        next.has(id) ? next.delete(id) : next.add(id);
-                        return next;
-                      });
-                    }
 
                     const groupAllDone = group.items.every((ci) => completedIds.has(ci.id));
 
-                    async function toggleCompleteGroup() {
-                      const sid = nav?.studentId ?? profile?.studentId;
-                      if (!sid) return;
+                    // Cicla: neutro → selecionado → concluído (todos) → neutro
+                    // Banco só é tocado no saveSession ao finalizar
+                    function cycleGroup() {
                       if (groupAllDone) {
-                        await Promise.all(group.items.map((ci) =>
-                          supabase.from("checklist_completions").delete()
-                            .eq("checklist_item_id", ci.id).eq("student_id", sid)
-                        ));
-                        setCompletedIds((prev) => {
-                          const n = new Set(prev);
-                          group.items.forEach((ci) => n.delete(ci.id));
-                          return n;
-                        });
-                      } else {
+                        setCompletedIds((prev) => { const n = new Set(prev); group.items.forEach((ci) => n.delete(ci.id)); return n; });
+                        setWorkedIds((prev) => { const n = new Set(prev); group.items.forEach((ci) => n.delete(ci.id)); return n; });
+                      } else if (groupChecked || groupIndeterminate) {
                         const toAdd = group.items.filter((ci) => !completedIds.has(ci.id));
-                        await Promise.all(toAdd.map((ci) =>
-                          supabase.from("checklist_completions").insert({
-                            checklist_item_id: ci.id, student_id: sid, completed_at: new Date().toISOString(),
-                          })
-                        ));
-                        setCompletedIds((prev) => {
-                          const n = new Set(prev);
-                          toAdd.forEach((ci) => n.add(ci.id));
-                          return n;
-                        });
+                        setCompletedIds((prev) => { const n = new Set(prev); toAdd.forEach((ci) => n.add(ci.id)); return n; });
+                        setWorkedIds((prev) => { const n = new Set(prev); group.items.forEach((ci) => n.add(ci.id)); return n; });
+                      } else {
+                        setWorkedIds((prev) => { const n = new Set(prev); group.items.forEach((ci) => n.add(ci.id)); return n; });
                       }
                     }
 
                     return (
-                      <div key={group.sourceId} className="pt-2 first:pt-0">
+                      <div key={group.sourceId} className="pt-3 first:pt-0">
                         {/* Linha do grupo (peça/exercício) */}
                         <div className="flex items-center gap-3">
-                          {/* Seleção grupo — círculo */}
+                          {/* Círculo 3 estados: neutro / azul (selecionado) / verde+check (concluído) */}
                           <button
-                            onClick={toggleGroup}
-                            className={`w-5 h-5 rounded-full shrink-0 transition ${
-                              groupChecked
-                                ? "bg-[#1E3A5F]"
-                                : groupIndeterminate
-                                  ? "bg-[#4A90C4]/40"
-                                  : "border-2 border-gray-300"
-                            }`}
-                          />
-                          {/* Conclusão grupo — check cinza/verde */}
-                          <button
-                            onClick={toggleCompleteGroup}
-                            className={`shrink-0 flex items-center justify-center transition ${
-                              groupAllDone ? "text-green-500" : "text-gray-300 hover:text-green-500"
+                            onClick={cycleGroup}
+                            className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition ${
+                              groupAllDone
+                                ? "bg-green-500"
+                                : groupChecked
+                                  ? "bg-[#1E3A5F]"
+                                  : groupIndeterminate
+                                    ? "bg-[#4A90C4]/40"
+                                    : "border-2 border-gray-300"
                             }`}
                           >
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path d="M5 13l4 4L19 7" />
-                            </svg>
+                            {groupAllDone && (
+                              <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                                <path d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
                           </button>
                           <button
                             onClick={() => setExpandedGroups((prev) => {
@@ -811,33 +804,45 @@ export default function PomodoroPage() {
 
                         {/* Itens do checklist (expandidos) */}
                         {expanded && (
-                          <div className="mt-2 ml-8 space-y-2 border-l-2 border-gray-100 pl-3">
+                          <div className="mt-2 ml-2.5 space-y-3 border-l-2 border-gray-200 pl-3">
                             {group.items.map((ci) => {
                               const checked = workedIds.has(ci.id);
                               const done = completedIds.has(ci.id);
+
+                              // Banco só é tocado no saveSession ao finalizar
+                              function cycleItem() {
+                                if (done) {
+                                  setCompletedIds((prev) => { const n = new Set(prev); n.delete(ci.id); return n; });
+                                  setWorkedIds((prev) => { const n = new Set(prev); n.delete(ci.id); return n; });
+                                } else if (checked) {
+                                  setCompletedIds((prev) => new Set(prev).add(ci.id));
+                                } else {
+                                  setWorkedIds((prev) => new Set(prev).add(ci.id));
+                                }
+                              }
+
                               return (
                                 <div key={ci.id} className="flex items-center gap-2">
-                                  {/* Seleção item — círculo */}
+                                  {/* Círculo 3 estados */}
                                   <button
-                                    onClick={() => toggleItem(ci.id)}
-                                    className={`w-4 h-4 rounded-full shrink-0 transition ${
-                                      checked ? "bg-[#1E3A5F]" : "border-2 border-gray-300"
-                                    }`}
-                                  />
-                                  {/* Conclusão item — check sem border */}
-                                  <button
-                                    onClick={() => toggleComplete(ci)}
-                                    className={`shrink-0 flex items-center justify-center transition ${
-                                      done ? "text-green-500" : "text-gray-300 hover:text-green-500"
+                                    onClick={cycleItem}
+                                    className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition ${
+                                      done
+                                        ? "bg-green-500"
+                                        : checked
+                                          ? "bg-[#1E3A5F]"
+                                          : "border-2 border-gray-300"
                                     }`}
                                   >
-                                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                      <path d="M5 13l4 4L19 7" />
-                                    </svg>
+                                    {done && (
+                                      <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                                        <path d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    )}
                                   </button>
                                   <span
-                                    onClick={() => toggleItem(ci.id)}
-                                    className={`text-xs truncate transition cursor-pointer ${done ? "line-through text-gray-300" : "text-gray-600"}`}
+                                    onClick={cycleItem}
+                                    className={`text-sm truncate transition cursor-pointer ${done ? "line-through text-gray-300" : "text-gray-600"}`}
                                   >
                                     {ci.title}
                                   </span>
