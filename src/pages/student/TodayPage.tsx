@@ -134,6 +134,8 @@ export default function TodayPage() {
   const [hasAnyPlan, setHasAnyPlan] = useState<boolean | null>(null);
   const [viewDay, setViewDay] = useState(getTodayDayOfWeek());
   const [pendingItem, setPendingItem] = useState<PlanItem | null>(null);
+  const [skipConfirm, setSkipConfirm] = useState(false);
+  const SKIP_KEY = 'estudamus_skip_pomodoro_confirm';
 
   const weekStart = formatWeekStart(getMonday(new Date()));
 
@@ -340,7 +342,10 @@ export default function TodayPage() {
   function handleItemClick(item: PlanItem) {
     if (item.is_done) {
       toggleDone(item)
+    } else if (localStorage.getItem(SKIP_KEY) === '1') {
+      toggleDone(item)
     } else {
+      setSkipConfirm(false)
       setPendingItem(item)
     }
   }
@@ -586,6 +591,17 @@ export default function TodayPage() {
             <p className="text-xs text-gray-400 mb-4">
               Você não fez uma sessão de estudo. Deseja marcar como concluído manualmente?
             </p>
+            <button
+              onClick={() => setSkipConfirm(v => !v)}
+              className="flex items-center gap-2 mb-4 group"
+            >
+              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition ${
+                skipConfirm ? 'bg-[#1E3A5F] border-[#1E3A5F]' : 'border-gray-300 group-hover:border-[#4A90C4]'
+              }`}>
+                {skipConfirm && <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3.5}><path d="M5 13l4 4L19 7"/></svg>}
+              </div>
+              <span className="text-xs text-gray-400">Não perguntar novamente</span>
+            </button>
             <div className="flex gap-2">
               <button
                 onClick={() => setPendingItem(null)}
@@ -594,7 +610,11 @@ export default function TodayPage() {
                 Cancelar
               </button>
               <button
-                onClick={() => { toggleDone(pendingItem); setPendingItem(null) }}
+                onClick={() => {
+                  if (skipConfirm) localStorage.setItem(SKIP_KEY, '1')
+                  toggleDone(pendingItem)
+                  setPendingItem(null)
+                }}
                 className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition"
               >
                 Sim, concluir
