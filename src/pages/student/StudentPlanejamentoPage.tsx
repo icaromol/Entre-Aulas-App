@@ -77,7 +77,7 @@ export default function StudentPlanejamentoPage() {
   const navigate = useNavigate()
   const studentId = profile?.studentId
 
-  const [step, setStep] = useState<'config' | 'preview'>('config')
+  const [step, setStep] = useState<'availability' | 'config' | 'preview'>('config')
 
   const [programs, setPrograms]               = useState<Programa[]>([])
   const [selectedIds, setSelectedIds]         = useState<Set<string>>(new Set())
@@ -86,8 +86,7 @@ export default function StudentPlanejamentoPage() {
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false)
   const [maintenanceBudget, setMaintenanceBudget]   = useState(20)
   const [hasCompletedPieces, setHasCompletedPieces] = useState(false)
-  const [hasAvailability, setHasAvailability] = useState(false)
-  const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
+const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
 
   const [editableDays, setEditableDays]       = useState<GeneratedDay[]>([])
   const [unscheduled, setUnscheduled]         = useState<PlannedTask[]>([])
@@ -113,10 +112,11 @@ export default function StudentPlanejamentoPage() {
   useEffect(() => { if (studentId) fetchPrograms() }, [studentId])
 
   async function fetchPrograms() {
-    const [progsRes, donePiecesRes, studentRes] = await Promise.all([
+    const [progsRes, donePiecesRes, studentRes, availRes] = await Promise.all([
       supabase.from('programas').select('*').eq('student_id', studentId!).neq('status', 'archived').order('created_at'),
       supabase.from('pieces').select('id').eq('student_id', studentId!).eq('status', 'completed'),
       supabase.from('students').select('level').eq('id', studentId!).single(),
+      supabase.from('student_availability').select('id').eq('student_id', studentId!).eq('is_active', true).limit(1),
     ])
     if (progsRes.error || studentRes.error) {
       setError('Não foi possível carregar os programas. Tente recarregar a página.')
@@ -126,6 +126,7 @@ export default function StudentPlanejamentoPage() {
     const list = progsRes.data ?? []
     setPrograms(list)
     setHasCompletedPieces((donePiecesRes.data ?? []).length > 0)
+    if ((availRes.data ?? []).length === 0) setStep('availability')
     if (studentRes.data?.level) setStudentLevel(studentRes.data.level as typeof studentLevel)
     const allIds = new Set(list.map(p => p.id))
     setSelectedIds(allIds)
@@ -179,11 +180,6 @@ export default function StudentPlanejamentoPage() {
         dayOfWeek: a.day_of_week, minutesAvailable: a.minutes_available,
       }))
 
-      if (availability.length === 0) {
-        setError('Configure seus dias disponíveis no perfil antes de gerar o planejamento.')
-        setGenerating(false)
-        return
-      }
 
       const selected      = programs.filter(p => selectedIds.has(p.id))
       const nonRegularIds = selected.filter(p => p.type !== 'regular').map(p => p.id)
@@ -380,6 +376,35 @@ export default function StudentPlanejamentoPage() {
 
   if (loading) return <StudentLayout><div className="flex justify-center py-12"><Spinner /></div></StudentLayout>
 
+  // ── Availability step ─────────────────────────────────────────────────────────
+
+  if (step === 'availability') {
+    return (
+      <StudentLayout>
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600 transition">
+            <MdArrowBack size={20} />
+          </button>
+          <h1 className="text-xl font-bold text-[#1E3A5F]">Meu Planejamento</h1>
+        </div>
+        <div className="space-y-5">
+          <div className="bg-[#D6E4F0]/50 border border-[#4A90C4]/20 rounded-2xl px-5 py-4">
+            <p className="text-sm font-semibold text-[#1E3A5F] mb-1">Antes de continuar</p>
+            <p className="text-xs text-[#1E3A5F]/70 leading-relaxed">
+              Configure os dias e o tempo disponível para estudo. O planejamento será gerado com base nisso.
+            </p>
+          </div>
+          {studentId && (
+            <AvailabilityEditor
+              studentId={studentId}
+              onSaved={hasAny => { if (hasAny) setStep('config') }}
+            />
+          )}
+        </div>
+      </StudentLayout>
+    )
+  }
+
   // ── Config step ──────────────────────────────────────────────────────────────
 
   if (step === 'config') {
@@ -525,17 +550,9 @@ export default function StudentPlanejamentoPage() {
               </div>
             )}
 
-            {studentId && (
-              <AvailabilityEditor
-                studentId={studentId}
-                onLoaded={setHasAvailability}
-                onSaved={setHasAvailability}
-              />
-            )}
-
             {error && <p className="text-sm text-red-500">{error}</p>}
 
-            <Button onClick={handleGenerate} disabled={!weightOk || !hasAvailability || generating}
+            <Button onClick={handleGenerate} disabled={!weightOk || generating}
               className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10 flex items-center gap-2">
               <MdAutoAwesome size={16} />
               {generating ? 'Gerando...' : 'Gerar planejamento automático'}
