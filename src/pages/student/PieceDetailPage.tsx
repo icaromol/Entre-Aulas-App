@@ -51,8 +51,8 @@ const periodLabel: Record<string, string> = {
 }
 
 const difficultyLabel: Record<string, { label: string; color: string }> = {
-  easy: { label: 'Fácil',      color: 'bg-green-50 text-green-600' },
-  ok:   { label: 'Moderada',   color: 'bg-blue-50 text-[#4A90C4]' },
+  easy: { label: 'Simples',     color: 'bg-green-50 text-green-600' },
+  ok:   { label: 'Normal',      color: 'bg-blue-50 text-[#4A90C4]' },
   hard: { label: 'Desafiadora', color: 'bg-red-50 text-red-500' },
 }
 
