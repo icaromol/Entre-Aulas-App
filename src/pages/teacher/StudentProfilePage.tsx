@@ -895,10 +895,15 @@ export default function StudentProfilePage() {
                   </Link>
                 ))
               )}
-              <Link to={`/professor/alunos/${studentId}/pecas/nova`}
-                className="flex items-center justify-center gap-2 w-full py-16 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
-                <MdAdd size={22} />Nova peça
-              </Link>
+              <div className="flex flex-col items-center gap-2 pt-4 pb-2">
+                <Link to={`/professor/alunos/${studentId}/pecas/nova`}
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">
+                  <MdAdd size={18} />Nova peça
+                </Link>
+                <button className="text-xs text-gray-400 hover:text-gray-600 transition">
+                  ou clique para importar em lote
+                </button>
+              </div>
             </div>
           )}
 
@@ -924,10 +929,15 @@ export default function StudentProfilePage() {
                   </Link>
                 ))
               )}
-              <Link to={`/professor/alunos/${studentId}/exercicios/novo`}
-                className="flex items-center justify-center gap-2 w-full py-16 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
-                <MdAdd size={22} />Novo exercício
-              </Link>
+              <div className="flex flex-col items-center gap-2 pt-4 pb-2">
+                <Link to={`/professor/alunos/${studentId}/exercicios/novo`}
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">
+                  <MdAdd size={18} />Novo exercício
+                </Link>
+                <button className="text-xs text-gray-400 hover:text-gray-600 transition">
+                  ou clique para importar em lote
+                </button>
+              </div>
             </div>
           )}
         </div>
