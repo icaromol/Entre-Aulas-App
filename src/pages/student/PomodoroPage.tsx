@@ -528,7 +528,7 @@ export default function PomodoroPage() {
             <div className="flex justify-center py-4"><Spinner size={16} /></div>
           ) : dayItems.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 p-4">
-              <p className="text-sm font-semibold text-gray-600 mb-3">O que você está trabalhando?</p>
+              <p className="text-sm font-semibold text-gray-600 mb-3">Selecione os itens que você está trabalhando.</p>
               <div className="space-y-2">
                 {dayItems.map(item => {
                   const checked = workedIds.has(item.id)
