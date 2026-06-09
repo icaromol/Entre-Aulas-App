@@ -15,6 +15,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
+import { grantXp, ACHIEVEMENT_LABEL } from '@/lib/xpHelpers'
+import { fireStars } from '@/lib/confettiEffects'
+import { sound } from '@/lib/soundEffects'
 
 interface Piece {
   id: string; title: string; composer: string | null; catalog_number: string | null
@@ -27,9 +30,12 @@ interface ChecklistItem {
   is_optional: boolean; completed: boolean
 }
 
-interface SessionItem {
-  piece_id: string | null
-  plan_item: { checklist_item: { title: string } | null } | null
+interface SessionChecklistItem {
+  checklist_item: {
+    id: string
+    title: string
+    piece: { id: string } | null
+  } | null
 }
 
 interface StudySession {
@@ -39,7 +45,7 @@ interface StudySession {
   cycle_name: string
   difficulty_felt: 'easy' | 'ok' | 'hard' | null
   notes: string | null
-  session_items: SessionItem[]
+  checklist_completions: SessionChecklistItem[]
 }
 
 const periodLabel: Record<string, string> = {
@@ -125,36 +131,43 @@ export default function StudentPieceDetailPage() {
     if (!studentId || !pieceId) return
     setLoadingHistory(true)
 
-    // Find session IDs that have session_items for this piece
-    const { data: siData } = await supabase
-      .from('session_items')
-      .select('session_id')
+    // Get checklist item IDs that belong to this piece
+    const { data: ciData } = await supabase
+      .from('checklist_items')
+      .select('id')
       .eq('piece_id', pieceId)
 
-    const sessionIds = [...new Set((siData ?? []).map((r: { session_id: string }) => r.session_id).filter(Boolean))]
+    const pieceChecklistIds = new Set((ciData ?? []).map((r: { id: string }) => r.id))
 
-    if (sessionIds.length === 0) {
+    if (pieceChecklistIds.size === 0) {
       setSessions([])
       setLoadingHistory(false)
       return
     }
 
+    // Fetch all sessions with their checklist completions — filter client-side by piece
     const { data } = await supabase
       .from('study_sessions')
       .select(`
         id, started_at, duration_seconds, cycle_name, difficulty_felt, notes,
-        session_items(
-          piece_id,
-          plan_item:plan_items(
-            checklist_item:checklist_items(title)
+        checklist_completions(
+          checklist_item:checklist_items(
+            id, title,
+            piece:pieces(id)
           )
         )
       `)
       .eq('student_id', studentId)
-      .in('id', sessionIds)
       .order('started_at', { ascending: false })
 
-    setSessions((data ?? []) as unknown as StudySession[])
+    // Keep only sessions that touched at least one item of this piece
+    const filtered = (data ?? []).filter((s: any) =>
+      s.checklist_completions?.some(
+        (cc: any) => pieceChecklistIds.has(cc.checklist_item?.id)
+      )
+    )
+
+    setSessions(filtered as unknown as StudySession[])
     setLoadingHistory(false)
   }
 
@@ -171,11 +184,36 @@ export default function StudentPieceDetailPage() {
     } else {
       await supabase.from('checklist_completions').insert({ checklist_item_id: item.id, student_id: studentId, completed_at: new Date().toISOString() })
     }
-    setChecklist(prev => prev.map(c => c.id === item.id ? { ...c, completed: !c.completed } : c))
     const updated = checklist.map(c => c.id === item.id ? { ...c, completed: !c.completed } : c)
+    setChecklist(updated)
     const mandatory = updated.filter(c => !c.is_optional)
     const pct = mandatory.length > 0 ? Math.round((mandatory.filter(c => c.completed).length / mandatory.length) * 100) : 0
     setPiece(prev => prev ? { ...prev, completion_pct: pct } : prev)
+
+    if (pct === 100 && !item.completed) {
+      // Auto-complete status
+      await supabase.from('pieces').update({ status: 'completed' }).eq('id', pieceId!)
+      setPiece(prev => prev ? { ...prev, status: 'completed' } : prev)
+
+      // XP once per piece — check if already granted
+      const { data: existing } = await supabase
+        .from('student_xp_events')
+        .select('id')
+        .eq('student_id', studentId)
+        .eq('reason', 'piece_completed')
+        .eq('source_id', pieceId!)
+        .maybeSingle()
+
+      if (!existing) {
+        sound.xpEarn()
+        fireStars()
+        toast.success('🎉 Peça concluída! +300 XP')
+        const { newAchievements } = await grantXp(studentId, 'piece_completed', pieceId!, null)
+        for (const key of newAchievements) toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
+      } else {
+        toast.success('Peça concluída!')
+      }
+    }
   }
 
   async function addCustomItem() {
@@ -259,7 +297,7 @@ export default function StudentPieceDetailPage() {
           <span className="text-xl font-bold text-[#1E3A5F]">{piece.completion_pct}%</span>
         </div>
         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full bg-[#4A90C4] rounded-full transition-all duration-500"
+          <div className={`h-full rounded-full transition-all duration-500 ${piece.completion_pct === 100 ? 'bg-green-500' : 'bg-[#4A90C4]'}`}
             style={{ width: `${piece.completion_pct}%` }} />
         </div>
         <div className="mt-4 space-y-1">
@@ -386,10 +424,10 @@ export default function StudentPieceDetailPage() {
             </div>
           ) : (
             sessions.map(session => {
-              const workedItems = session.session_items
-                .filter(si => si.piece_id === pieceId)
-                .map(si => si.plan_item?.checklist_item?.title)
-                .filter((t): t is string => !!t)
+              const workedItems = session.checklist_completions
+                .map(cc => cc.checklist_item)
+                .filter((ci): ci is NonNullable<typeof ci> => !!ci && ci.piece?.id === pieceId)
+                .map(ci => ci.title)
               const diff = session.difficulty_felt ? difficultyLabel[session.difficulty_felt] : null
 
               return (
