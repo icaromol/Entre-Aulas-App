@@ -13,7 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/Spinner";
 import { StudentLayout } from "@/components/layout/StudentLayout";
-import { grantXp, EXERCISE_ATTRIBUTE_MAP } from "@/lib/xpHelpers";
+import { grantXp, EXERCISE_ATTRIBUTE_MAP, ACHIEVEMENT_LABEL } from "@/lib/xpHelpers";
 import type { XpAttribute } from "@/lib/xpHelpers";
 import {
   fireBasic,
@@ -70,23 +70,6 @@ const ATTRIBUTE_LABEL: Partial<Record<XpAttribute, string>> = {
   historia: "História",
 };
 
-const ACHIEVEMENT_LABEL: Record<string, string> = {
-  first_session: "Primeira sessão concluída",
-  first_piece: "Primeira peça concluída",
-  streak_3: "3 dias seguidos",
-  streak_7: "7 dias seguidos",
-  streak_14: "14 dias seguidos",
-  streak_30: "30 dias seguidos",
-  rank_estudante_4: "Novo rank: Estudante!",
-  rank_amador_4: "Novo rank: Amador!",
-  rank_junior_4: "Novo rank: Júnior!",
-  rank_profissional_4: "Novo rank: Profissional!",
-  rank_expert: "Novo rank: Expert!",
-  rank_mestre: "Rank máximo: Mestre!",
-  first_recital: "Primeiro recital",
-  pieces_3: "3 peças concluídas",
-  pieces_5: "5 peças concluídas",
-};
 
 export default function TodayPage() {
   const { profile } = useAuth();
@@ -213,21 +196,35 @@ export default function TodayPage() {
     const resolvedItems = (planItems ?? []) as unknown as PlanItem[];
     setItems(resolvedItems);
 
-    // Buscar segundos estudados por plan_item — usa duration_seconds proporcional do session_item
-    // (fallback para duration_seconds da sessão mãe em registros antigos sem o campo)
+    // Buscar segundos estudados por plan_item
     const planItemIds = resolvedItems.map((i) => i.id);
     if (planItemIds.length > 0) {
       const { data: sessionRows } = await supabase
         .from("session_items")
-        .select(
-          "plan_item_id, duration_seconds, study_sessions(duration_seconds)",
-        )
+        .select("plan_item_id, duration_seconds, session_id, study_sessions(duration_seconds)")
         .in("plan_item_id", planItemIds);
 
+      const rows = (sessionRows ?? []) as any[];
+
+      // Para fallback (session_items sem duration_seconds): dividir duração da sessão
+      // proporcionalmente pelo nº de plan_items daquela sessão
+      const sessionItemCount: Record<string, number> = {};
+      for (const row of rows) {
+        if (row.duration_seconds == null && row.session_id) {
+          sessionItemCount[row.session_id] = (sessionItemCount[row.session_id] ?? 0) + 1;
+        }
+      }
+
       const secsMap: Record<string, number> = {};
-      for (const row of (sessionRows ?? []) as any[]) {
-        const secs =
-          row.duration_seconds ?? row.study_sessions?.duration_seconds ?? 0;
+      for (const row of rows) {
+        let secs: number;
+        if (row.duration_seconds != null) {
+          secs = row.duration_seconds;
+        } else {
+          const total = row.study_sessions?.duration_seconds ?? 0;
+          const count = sessionItemCount[row.session_id] ?? 1;
+          secs = Math.round(total / count);
+        }
         secsMap[row.plan_item_id] = (secsMap[row.plan_item_id] ?? 0) + secs;
       }
       setStudiedSecs(secsMap);

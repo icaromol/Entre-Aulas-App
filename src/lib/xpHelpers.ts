@@ -98,6 +98,24 @@ export const ACHIEVEMENT_KEYS = {
   PIECES_5:             'pieces_5',
 } as const
 
+export const ACHIEVEMENT_LABEL: Record<string, string> = {
+  first_session:        'Primeira sessão concluída',
+  first_piece:          'Primeira peça concluída',
+  streak_3:             '3 dias seguidos',
+  streak_7:             '7 dias seguidos',
+  streak_14:            '14 dias seguidos',
+  streak_30:            '30 dias seguidos',
+  rank_estudante_4:     'Novo rank: Estudante!',
+  rank_amador_4:        'Novo rank: Amador!',
+  rank_junior_4:        'Novo rank: Júnior!',
+  rank_profissional_4:  'Novo rank: Profissional!',
+  rank_expert:          'Novo rank: Expert!',
+  rank_mestre:          'Rank máximo: Mestre!',
+  first_recital:        'Primeiro recital',
+  pieces_3:             '3 peças concluídas',
+  pieces_5:             '5 peças concluídas',
+}
+
 // ─── Funções utilitárias ──────────────────────────────────────────────────────
 
 /** Retorna o rank atual e o próximo com base no XP total. */

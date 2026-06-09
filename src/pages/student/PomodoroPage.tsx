@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Spinner } from "@/components/ui/Spinner";
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { Button } from "@/components/ui/button";
-import { grantXp } from "@/lib/xpHelpers";
+import { grantXp, ACHIEVEMENT_LABEL } from "@/lib/xpHelpers";
 import { formatWeekStart, getMonday } from "@/lib/weekUtils";
 import {
   fireBasic,
@@ -80,23 +80,6 @@ interface DayItem {
   subtitle: string;
 }
 
-const ACHIEVEMENT_LABEL: Record<string, string> = {
-  first_session: "Primeira sessão concluída",
-  first_piece: "Primeira peça concluída",
-  streak_3: "3 dias seguidos",
-  streak_7: "7 dias seguidos",
-  streak_14: "14 dias seguidos",
-  streak_30: "30 dias seguidos",
-  rank_estudante_4: "Novo rank: Estudante!",
-  rank_amador_4: "Novo rank: Amador!",
-  rank_junior_4: "Novo rank: Júnior!",
-  rank_profissional_4: "Novo rank: Profissional!",
-  rank_expert: "Novo rank: Expert!",
-  rank_mestre: "Rank máximo: Mestre!",
-  first_recital: "Primeiro recital",
-  pieces_3: "3 peças concluídas",
-  pieces_5: "5 peças concluídas",
-};
 
 const CIRCUMFERENCE = 2 * Math.PI * 54;
 
@@ -435,83 +418,71 @@ export default function PomodoroPage() {
       }
     }
 
-    // Inserir session_items ligando a sessão aos plan_items trabalhados
+    // Vincular session_items aos plan_items da semana atual
     if (sessionData?.id) {
-      const planItemIds = new Set<string>();
-      if (nav?.planItemId) planItemIds.add(nav.planItemId);
+      // Mapa: plan_item_id → peso (nº de checklist_items trabalhados dessa peça/exercício)
+      const itemWeight: Record<string, number> = {}
 
-      // ciRows elevado para ser usado no cálculo proporcional abaixo
-      let ciRows: { piece_id: string | null; exercise_id: string | null }[] = []
+      // 1. Se veio do botão Iniciar de um item específico, peso 1
+      if (nav?.planItemId) {
+        itemWeight[nav.planItemId] = 1
+      }
 
+      // 2. Resolver checklist_items selecionados → plan_items da semana
       if (checklistIds.length > 0) {
-        const weekStart = formatWeekStart(getMonday(new Date()));
-        // Resolver checklist_item_id → piece_id / exercise_id
+        const weekStart = formatWeekStart(getMonday(new Date()))
+
+        // checklist_item → piece_id / exercise_id
         const { data: ciData } = await supabase
           .from("checklist_items")
           .select("piece_id, exercise_id")
-          .in("id", checklistIds);
-        ciRows = (ciData ?? []) as typeof ciRows
+          .in("id", checklistIds)
+        const ciRows = (ciData ?? []) as { piece_id: string | null; exercise_id: string | null }[]
 
-        const pieceIds    = [...new Set(ciRows.map(r => r.piece_id).filter(Boolean))]
-        const exerciseIds = [...new Set(ciRows.map(r => r.exercise_id).filter(Boolean))]
+        const pieceIds    = [...new Set(ciRows.map(r => r.piece_id).filter((x): x is string => !!x))]
+        const exerciseIds = [...new Set(ciRows.map(r => r.exercise_id).filter((x): x is string => !!x))]
 
-        const { data: plan } = await supabase
-          .from("weekly_plans")
-          .select("id")
-          .eq("student_id", sid)
-          .eq("week_start", weekStart)
-          .maybeSingle();
+        if (pieceIds.length > 0 || exerciseIds.length > 0) {
+          const { data: plan } = await supabase
+            .from("weekly_plans").select("id")
+            .eq("student_id", sid).eq("week_start", weekStart).maybeSingle()
 
-        if (plan?.id && (pieceIds.length > 0 || exerciseIds.length > 0)) {
-          const queries = []
-          if (pieceIds.length > 0)
-            queries.push(supabase.from("plan_items").select("id").eq("plan_id", plan.id).in("piece_id", pieceIds))
-          if (exerciseIds.length > 0)
-            queries.push(supabase.from("plan_items").select("id").eq("plan_id", plan.id).in("exercise_id", exerciseIds))
+          if (plan?.id) {
+            // Buscar plan_items cujo piece_id ou exercise_id batam com os trabalhados
+            const queries: Promise<{ data: { id: string; piece_id: string | null; exercise_id: string | null }[] | null }>[] = []
+            if (pieceIds.length > 0)
+              queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id").eq("plan_id", plan.id).in("piece_id", pieceIds) as any)
+            if (exerciseIds.length > 0)
+              queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id").eq("plan_id", plan.id).in("exercise_id", exerciseIds) as any)
 
-          const results = await Promise.all(queries)
-          for (const { data: matched } of results) {
-            for (const pi of matched ?? []) planItemIds.add(pi.id)
-          }
-        }
-      }
+            const results = await Promise.all(queries)
+            const matchedPlanItems = results.flatMap(r => r.data ?? [])
 
-      if (planItemIds.size > 0) {
-        // Calcular segundos proporcionais por plan_item baseado em quantos
-        // checklist_items de cada peça/exercício foram selecionados
-        const itemWeight: Record<string, number> = {}
-
-        if (ciRows.length > 0) {
-          const { data: planItemDetails } = await supabase
-            .from("plan_items")
-            .select("id, piece_id, exercise_id")
-            .in("id", [...planItemIds])
-
-          for (const ci of ciRows) {
-            for (const pi of (planItemDetails ?? [])) {
-              if ((ci.piece_id && ci.piece_id === pi.piece_id) ||
-                  (ci.exercise_id && ci.exercise_id === pi.exercise_id)) {
-                itemWeight[pi.id] = (itemWeight[pi.id] ?? 0) + 1
+            // Para cada checklist_item trabalhado, incrementar o peso do plan_item correspondente
+            for (const ci of ciRows) {
+              for (const pi of matchedPlanItems) {
+                if ((ci.piece_id && ci.piece_id === pi.piece_id) ||
+                    (ci.exercise_id && ci.exercise_id === pi.exercise_id)) {
+                  // Não sobrescreve se já veio de nav.planItemId
+                  if (pi.id !== nav?.planItemId) {
+                    itemWeight[pi.id] = (itemWeight[pi.id] ?? 0) + 1
+                  }
+                }
               }
             }
           }
         }
+      }
 
-        // plan_item vindo de nav.planItemId (início via botão Iniciar) conta como 1
-        if (nav?.planItemId && !itemWeight[nav.planItemId]) {
-          itemWeight[nav.planItemId] = 1
-        }
-        // fallback: qualquer item sem peso recebe 1
-        for (const id of planItemIds) {
-          if (!itemWeight[id]) itemWeight[id] = 1
-        }
+      const planItemIds = Object.keys(itemWeight)
 
+      if (planItemIds.length > 0) {
         const totalWeight   = Object.values(itemWeight).reduce((s, v) => s + v, 0)
         const totalWorkSecs = workSecs.current
 
         await supabase.from("session_items").insert(
-          [...planItemIds].map((planItemId) => {
-            const weight = itemWeight[planItemId] ?? 1
+          planItemIds.map((planItemId) => {
+            const weight = itemWeight[planItemId]
             const proportionalSecs = Math.round((weight / totalWeight) * totalWorkSecs)
             return {
               session_id:       sessionData.id,
@@ -519,7 +490,7 @@ export default function PomodoroPage() {
               duration_seconds: proportionalSecs,
             }
           }),
-        );
+        )
       }
     }
 

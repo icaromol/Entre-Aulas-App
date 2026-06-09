@@ -328,7 +328,7 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
       )
       for (const prog of (completedProgramasResult.data ?? [])) {
         if (!alreadyGrantedProgramIds.has(prog.id)) {
-          grantXp(sid, 'program_completed', prog.id, 'performance')
+          await grantXp(sid, 'program_completed', prog.id, 'performance')
         }
       }
 
@@ -338,7 +338,7 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
           e => e.reason === 'daily_mission' && e.created_at.startsWith(today)
         )
         if (!alreadyGrantedToday) {
-          grantXp(sid, 'daily_mission')
+          await grantXp(sid, 'daily_mission')
         }
       }
 
@@ -353,7 +353,7 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
       )
       for (const m of weeklyMissions) {
         if (m.completed && !grantedThisWeek.has(m.key)) {
-          grantXp(sid, m.key as XpReason)
+          await grantXp(sid, m.key as XpReason)
         }
       }
     }
