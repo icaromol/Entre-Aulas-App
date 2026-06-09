@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Avatar from 'boring-avatars'
 import { MdAdd, MdMusicNote, MdFitnessCenter, MdLibraryMusic } from 'react-icons/md'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
@@ -69,10 +70,40 @@ export default function RepertoirePage() {
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [expandedPieceId, setExpandedPieceId] = useState<string | null>(null)
+  const [studentId, setStudentId] = useState<string | null>(null)
+  const [importMode, setImportMode] = useState<'pieces' | 'exercises' | null>(null)
+  const [importText, setImportText] = useState('')
+  const [importing, setImporting] = useState(false)
 
   function switchTab(tab: TabKey) {
     setActiveTab(tab)
     setSearchParams({ tab })
+  }
+
+  function parseNames(text: string): string[] {
+    return text.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+  }
+
+  async function handleImport() {
+    if (!studentId || !importMode) return
+    const names = parseNames(importText)
+    if (names.length === 0) return
+    setImporting(true)
+    if (importMode === 'pieces') {
+      const { data } = await supabase.from('pieces').insert(
+        names.map(title => ({ student_id: studentId, title, status: 'in_progress', difficulty: 6 }))
+      ).select('id, title, composer, status, completion_pct')
+      setPieces(prev => [...prev, ...(data ?? []).map((p: any) => ({ ...p, checklist_items: [] }))])
+    } else {
+      const { data } = await supabase.from('exercises').insert(
+        names.map(title => ({ student_id: studentId, title, category: 'technique', status: 'active', difficulty: 6 }))
+      ).select('id, title, category, status')
+      setExercises(prev => [...prev, ...(data ?? [])])
+    }
+    setImportText('')
+    setImportMode(null)
+    setImporting(false)
+    toast.success(`${names.length} ${importMode === 'pieces' ? (names.length === 1 ? 'peça criada' : 'peças criadas') : (names.length === 1 ? 'exercício criado' : 'exercícios criados')}!`)
   }
 
   useEffect(() => {
@@ -89,6 +120,7 @@ export default function RepertoirePage() {
       setLoading(false)
       return
     }
+    setStudentId(student.id)
 
     const [piecesRes, exercisesRes, completionsRes, programasRes] = await Promise.all([
       supabase.from('pieces')
@@ -253,7 +285,8 @@ export default function RepertoirePage() {
               className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">
               <MdAdd size={18} />Nova peça
             </button>
-            <button className="text-xs text-gray-400 hover:text-gray-600 transition">
+            <button onClick={() => { setImportMode('pieces'); setImportText('') }}
+              className="text-xs text-gray-400 hover:text-gray-600 transition">
               ou clique para importar em lote
             </button>
           </div>
@@ -295,7 +328,8 @@ export default function RepertoirePage() {
               className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">
               <MdAdd size={18} />Novo exercício
             </button>
-            <button className="text-xs text-gray-400 hover:text-gray-600 transition">
+            <button onClick={() => { setImportMode('exercises'); setImportText('') }}
+              className="text-xs text-gray-400 hover:text-gray-600 transition">
               ou clique para importar em lote
             </button>
           </div>
@@ -351,6 +385,39 @@ export default function RepertoirePage() {
             className="flex items-center justify-center gap-2 w-full py-24 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
             <MdAdd size={22} />Novo programa
           </button>
+        </div>
+      )}
+
+      {/* Import modal */}
+      {importMode && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-5"
+          onClick={() => setImportMode(null)}>
+          <div className="bg-white rounded-2xl p-6 w-[60%] space-y-3" onClick={e => e.stopPropagation()}>
+            <div>
+              <h3 className="text-base font-bold text-[#1E3A5F]">
+                Importar {importMode === 'pieces' ? 'peças' : 'exercícios'} em lote
+              </h3>
+              <p className="text-sm text-gray-400 leading-relaxed mt-0.5">
+                Digite os nomes separados por vírgula ou um por linha.
+              </p>
+            </div>
+            <textarea
+              autoFocus
+              value={importText}
+              onChange={e => setImportText(e.target.value)}
+              placeholder={importMode === 'pieces'
+                ? 'Sonatina Op.36 nº1\nFur Elise\nNocturno Op.9 nº2'
+                : 'Escala de Dó maior\nArpejo de Sol\nHanon nº1'}
+              rows={6}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition resize-none"
+            />
+            <button onClick={handleImport} disabled={importing || !importText.trim()}
+              className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-50">
+              {importing
+                ? 'Criando...'
+                : (() => { const n = parseNames(importText).length; return n > 0 ? `Criar ${n} ${importMode === 'pieces' ? (n === 1 ? 'peça' : 'peças') : (n === 1 ? 'exercício' : 'exercícios')}` : 'Criar' })()}
+            </button>
+          </div>
         </div>
       )}
     </StudentLayout>

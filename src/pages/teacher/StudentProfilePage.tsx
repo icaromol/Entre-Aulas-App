@@ -31,7 +31,7 @@ import Avatar from "boring-avatars";
 import { supabase } from "@/lib/supabase";
 import { PROGRAM_TYPES } from "@/lib/programTypes";
 import { getMonday, formatWeekStart, formatWeekLabel } from "@/lib/weekUtils";
-import { Spinner } from '@/components/ui/Spinner'
+import { Spinner } from "@/components/ui/Spinner";
 import { TeacherLayout } from "@/components/layout/TeacherLayout";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StudentJornadaTab } from "@/components/teacher/StudentJornadaTab";
@@ -178,7 +178,7 @@ const exerciseStatusLabel: Record<string, string> = {
 };
 
 function programIcon(type: string) {
-  const Icon = (PROGRAM_TYPES[type] ?? PROGRAM_TYPES.outro).Icon
+  const Icon = (PROGRAM_TYPES[type] ?? PROGRAM_TYPES.outro).Icon;
   return <Icon size={20} className="text-white" />;
 }
 
@@ -225,13 +225,18 @@ export default function StudentProfilePage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const rawTab = searchParams.get("tab");
   const initialTab: TabKey =
-    rawTab === "programs" ? "programs" :
-    rawTab === "repertoire" ? "repertoire" :
-    rawTab === "journey" ? "journey" :
-    rawTab === "plans" ? "plans" : "plans";
+    rawTab === "programs"
+      ? "programs"
+      : rawTab === "repertoire"
+        ? "repertoire"
+        : rawTab === "journey"
+          ? "journey"
+          : rawTab === "plans"
+            ? "plans"
+            : "plans";
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [subTab, setSubTab] = useState<RepertoireTab>(
-    rawTab === "exercises" ? "exercises" : "pieces"
+    rawTab === "exercises" ? "exercises" : "pieces",
   );
   const [showMenu, setShowMenu] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -244,7 +249,16 @@ export default function StudentProfilePage() {
   const [planItems, setPlanItems] = useState<PlanItemLocal[]>([]);
   const [planLoading, setPlanLoading] = useState(false);
   const [hasPlan, setHasPlan] = useState(false);
-  const [editingPlanItem, setEditingPlanItem] = useState<PlanItemLocal | null>(null);
+  const [editingPlanItem, setEditingPlanItem] = useState<PlanItemLocal | null>(
+    null,
+  );
+
+  // Batch import
+  const [importMode, setImportMode] = useState<"pieces" | "exercises" | null>(
+    null,
+  );
+  const [importText, setImportText] = useState("");
+  const [importing, setImporting] = useState(false);
   const [editDuration, setEditDuration] = useState(0);
   const [savingPlanItem, setSavingPlanItem] = useState(false);
 
@@ -269,23 +283,34 @@ export default function StudentProfilePage() {
       setPlanLoading(true);
       const ws = getPlanWeekStart(planWeekOffset);
       const { data: plan } = await supabase
-        .from("weekly_plans").select("id")
-        .eq("student_id", studentId!).eq("week_start", ws).maybeSingle();
+        .from("weekly_plans")
+        .select("id")
+        .eq("student_id", studentId!)
+        .eq("week_start", ws)
+        .maybeSingle();
       if (cancelled) return;
       if (!plan) {
-        setHasPlan(false); setPlanItems([]); setPlanLoading(false); return;
+        setHasPlan(false);
+        setPlanItems([]);
+        setPlanLoading(false);
+        return;
       }
       setHasPlan(true);
       const { data: items } = await supabase
         .from("plan_items")
-        .select("id, day_of_week, piece_id, exercise_id, program_id, duration_minutes, position, is_done, is_maintenance, piece:pieces(title, composer), exercise:exercises(title, category), programa:programas(title, type)")
-        .eq("plan_id", plan.id).order("position");
+        .select(
+          "id, day_of_week, piece_id, exercise_id, program_id, duration_minutes, position, is_done, is_maintenance, piece:pieces(title, composer), exercise:exercises(title, category), programa:programas(title, type)",
+        )
+        .eq("plan_id", plan.id)
+        .order("position");
       if (cancelled) return;
       setPlanItems((items ?? []) as unknown as PlanItemLocal[]);
       setPlanLoading(false);
     }
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [activeTab, planWeekOffset, studentId]);
 
   async function fetchAll() {
@@ -316,10 +341,15 @@ export default function StudentProfilePage() {
       ]);
 
     if (studentRes.error || piecesRes.error || exercisesRes.error) {
-      console.error('[StudentProfilePage] fetch failed:', studentRes.error ?? piecesRes.error ?? exercisesRes.error)
-      setFetchError('Não foi possível carregar os dados do aluno. Tente recarregar a página.')
-      setLoading(false)
-      return
+      console.error(
+        "[StudentProfilePage] fetch failed:",
+        studentRes.error ?? piecesRes.error ?? exercisesRes.error,
+      );
+      setFetchError(
+        "Não foi possível carregar os dados do aluno. Tente recarregar a página.",
+      );
+      setLoading(false);
+      return;
     }
 
     setStudent(studentRes.data);
@@ -332,8 +362,13 @@ export default function StudentProfilePage() {
 
   async function savePlanItemDuration(id: string, duration: number) {
     setSavingPlanItem(true);
-    await supabase.from("plan_items").update({ duration_minutes: duration }).eq("id", id);
-    setPlanItems(prev => prev.map(i => i.id === id ? { ...i, duration_minutes: duration } : i));
+    await supabase
+      .from("plan_items")
+      .update({ duration_minutes: duration })
+      .eq("id", id);
+    setPlanItems((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, duration_minutes: duration } : i)),
+    );
     setSavingPlanItem(false);
     setEditingPlanItem(null);
     toast.success("Duração atualizada");
@@ -341,7 +376,7 @@ export default function StudentProfilePage() {
 
   async function deletePlanItem(id: string) {
     await supabase.from("plan_items").delete().eq("id", id);
-    setPlanItems(prev => prev.filter(i => i.id !== id));
+    setPlanItems((prev) => prev.filter((i) => i.id !== id));
     setEditingPlanItem(null);
     toast.success("Tarefa removida");
   }
@@ -359,12 +394,66 @@ export default function StudentProfilePage() {
     navigate("/professor/alunos");
   }
 
-  if (!isValidUUID(studentId)) return <Navigate to="/" replace />
+  function parseNames(text: string): string[] {
+    return text
+      .split(/[\n,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  async function handleImport() {
+    if (!studentId || !importMode) return;
+    const names = parseNames(importText);
+    if (names.length === 0) return;
+    setImporting(true);
+    if (importMode === "pieces") {
+      const { data } = await supabase
+        .from("pieces")
+        .insert(
+          names.map((title) => ({
+            student_id: studentId,
+            title,
+            status: "in_progress",
+            difficulty: 6,
+          })),
+        )
+        .select("id, title, composer, status, completion_pct");
+      setPieces((prev) => [
+        ...prev,
+        ...(data ?? []).map((p: any) => ({ ...p, checklist_items: [] })),
+      ]);
+    } else {
+      const { data } = await supabase
+        .from("exercises")
+        .insert(
+          names.map((title) => ({
+            student_id: studentId,
+            title,
+            category: "technique",
+            status: "active",
+            difficulty: 6,
+          })),
+        )
+        .select("id, title, category, status");
+      setExercises((prev) => [...prev, ...(data ?? [])]);
+    }
+    setImportText("");
+    setImportMode(null);
+    setImporting(false);
+    const n = names.length;
+    toast.success(
+      `${n} ${importMode === "pieces" ? (n === 1 ? "peça criada" : "peças criadas") : n === 1 ? "exercício criado" : "exercícios criados"}!`,
+    );
+  }
+
+  if (!isValidUUID(studentId)) return <Navigate to="/" replace />;
 
   if (loading) {
     return (
       <TeacherLayout>
-        <div className="flex justify-center py-12"><Spinner /></div>
+        <div className="flex justify-center py-12">
+          <Spinner />
+        </div>
       </TeacherLayout>
     );
   }
@@ -652,7 +741,7 @@ export default function StudentProfilePage() {
           <p className="text-2xl font-bold text-[#1E3A5F]">{totalMinutes}</p>
           <p className="text-xs text-gray-400 mt-1">min/semana</p>
           <div className="flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mt-1.5">
-            {activeDays.map(d => (
+            {activeDays.map((d) => (
               <span key={d.day_of_week} className="text-[10px] text-gray-400">
                 {DAYS[d.day_of_week]} {d.minutes_available}m
               </span>
@@ -665,10 +754,10 @@ export default function StudentProfilePage() {
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
         {(
           [
-            { key: "plans",      label: "Planejamentos", Icon: MdCalendarMonth },
-            { key: "repertoire", label: "Repertório",    Icon: MdMusicNote     },
-            { key: "programs",   label: "Programas",     Icon: MdLibraryMusic  },
-            { key: "journey",    label: "Jornada",       Icon: MdBarChart      },
+            { key: "plans", label: "Planejamentos", Icon: MdCalendarMonth },
+            { key: "repertoire", label: "Repertório", Icon: MdMusicNote },
+            { key: "programs", label: "Programas", Icon: MdLibraryMusic },
+            { key: "journey", label: "Jornada", Icon: MdBarChart },
           ] as const
         ).map((tab) => (
           <button
@@ -687,179 +776,296 @@ export default function StudentProfilePage() {
       </div>
 
       {/* Tab: Planejamentos */}
-      {activeTab === "plans" && (() => {
-        const ws = getPlanWeekStart(planWeekOffset);
-        const DAY_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-        return (
-          <div>
-            {/* Navegação de semana */}
-            <div className="flex items-center justify-between mb-4">
-              <button onClick={() => setPlanWeekOffset(o => o - 1)}
-                className="p-2 rounded-xl hover:bg-gray-100 transition">
-                <MdChevronLeft size={20} className="text-gray-400" />
-              </button>
-              <div className="text-center">
-                <p className="text-sm font-bold text-[#1E3A5F]">{formatWeekLabel(ws)}</p>
-                {planWeekOffset === 0 && (
-                  <p className="text-[10px] text-[#4A90C4] font-semibold uppercase tracking-wide mt-0.5">semana atual</p>
-                )}
-              </div>
-              <button onClick={() => setPlanWeekOffset(o => o + 1)}
-                className="p-2 rounded-xl hover:bg-gray-100 transition">
-                <MdChevronRight size={20} className="text-gray-400" />
-              </button>
-            </div>
-
-            {/* Botão gerar */}
-            <button
-              onClick={() => navigate(`/professor/alunos/${studentId}/planejamento`)}
-              className={`w-full mb-4 rounded-2xl px-4 py-3 flex items-center justify-between transition group ${
-                hasPlan
-                  ? "bg-gray-50 border border-gray-200 hover:border-[#4A90C4]"
-                  : "bg-[#4A90C4] hover:bg-[#4A90C4]/90"
-              }`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${hasPlan ? "bg-[#D6E4F0]" : "bg-white/15"}`}>
-                  <MdCalendarMonth size={18} className={hasPlan ? "text-[#4A90C4]" : "text-white"} />
+      {activeTab === "plans" &&
+        (() => {
+          const ws = getPlanWeekStart(planWeekOffset);
+          const DAY_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+          return (
+            <div>
+              {/* Navegação de semana */}
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => setPlanWeekOffset((o) => o - 1)}
+                  className="p-2 rounded-xl hover:bg-gray-100 transition"
+                >
+                  <MdChevronLeft size={20} className="text-gray-400" />
+                </button>
+                <div className="text-center">
+                  <p className="text-sm font-bold text-[#1E3A5F]">
+                    {formatWeekLabel(ws)}
+                  </p>
+                  {planWeekOffset === 0 && (
+                    <p className="text-[10px] text-[#4A90C4] font-semibold uppercase tracking-wide mt-0.5">
+                      semana atual
+                    </p>
+                  )}
                 </div>
-                <p className={`font-semibold text-sm ${hasPlan ? "text-[#1E3A5F]" : "text-white"}`}>
-                  {hasPlan ? "Regerar planejamento" : "Gerar planejamento de estudos"}
-                </p>
+                <button
+                  onClick={() => setPlanWeekOffset((o) => o + 1)}
+                  className="p-2 rounded-xl hover:bg-gray-100 transition"
+                >
+                  <MdChevronRight size={20} className="text-gray-400" />
+                </button>
               </div>
-              <MdChevronRight size={18} className={hasPlan ? "text-gray-400 group-hover:text-[#4A90C4]" : "text-white/60 group-hover:text-white"} />
-            </button>
 
-            {/* Board de dias */}
-            {planLoading ? (
-              <div className="flex justify-center py-8"><Spinner /></div>
-            ) : activeDays.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
-                <p className="text-sm text-gray-400">Nenhuma disponibilidade cadastrada.</p>
-              </div>
-            ) : (
-              <div className="board-scroll flex flex-col gap-3 md:flex-row md:items-start md:overflow-x-auto pb-3">
-                {activeDays.map(avail => {
-                  const dayTasks = planItems.filter(i => i.day_of_week === avail.day_of_week);
-                  const totalMin = dayTasks.reduce((s, t) => s + (t.duration_minutes ?? 0), 0);
-                  return (
-                    <div key={avail.day_of_week} className="bg-white rounded-2xl border border-gray-100 overflow-hidden md:flex-1 md:min-w-48">
-                      <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-bold text-gray-700">{DAY_SHORT[avail.day_of_week]}</p>
-                          <p className="text-xs text-gray-400">{planDayDate(ws, avail.day_of_week)}</p>
+              {/* Botão gerar */}
+              <button
+                onClick={() =>
+                  navigate(`/professor/alunos/${studentId}/planejamento`)
+                }
+                className={`w-full mb-4 rounded-2xl px-4 py-3 flex items-center justify-between transition group ${
+                  hasPlan
+                    ? "bg-gray-50 border border-gray-200 hover:border-[#4A90C4]"
+                    : "bg-[#4A90C4] hover:bg-[#4A90C4]/90"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${hasPlan ? "bg-[#D6E4F0]" : "bg-white/15"}`}
+                  >
+                    <MdCalendarMonth
+                      size={18}
+                      className={hasPlan ? "text-[#4A90C4]" : "text-white"}
+                    />
+                  </div>
+                  <p
+                    className={`font-semibold text-sm ${hasPlan ? "text-[#1E3A5F]" : "text-white"}`}
+                  >
+                    {hasPlan
+                      ? "Regerar planejamento"
+                      : "Gerar planejamento de estudos"}
+                  </p>
+                </div>
+                <MdChevronRight
+                  size={18}
+                  className={
+                    hasPlan
+                      ? "text-gray-400 group-hover:text-[#4A90C4]"
+                      : "text-white/60 group-hover:text-white"
+                  }
+                />
+              </button>
+
+              {/* Board de dias */}
+              {planLoading ? (
+                <div className="flex justify-center py-8">
+                  <Spinner />
+                </div>
+              ) : activeDays.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
+                  <p className="text-sm text-gray-400">
+                    Nenhuma disponibilidade cadastrada.
+                  </p>
+                </div>
+              ) : (
+                <div className="board-scroll flex flex-col gap-3 md:flex-row md:items-start md:overflow-x-auto pb-3">
+                  {activeDays.map((avail) => {
+                    const dayTasks = planItems.filter(
+                      (i) => i.day_of_week === avail.day_of_week,
+                    );
+                    const totalMin = dayTasks.reduce(
+                      (s, t) => s + (t.duration_minutes ?? 0),
+                      0,
+                    );
+                    return (
+                      <div
+                        key={avail.day_of_week}
+                        className="bg-white rounded-2xl border border-gray-100 overflow-hidden md:flex-1 md:min-w-48"
+                      >
+                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-bold text-gray-700">
+                              {DAY_SHORT[avail.day_of_week]}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {planDayDate(ws, avail.day_of_week)}
+                            </p>
+                          </div>
+                          {totalMin > 0 && (
+                            <span className="text-xs font-semibold text-[#4A90C4]">
+                              {totalMin} min
+                            </span>
+                          )}
                         </div>
-                        {totalMin > 0 && (
-                          <span className="text-xs font-semibold text-[#4A90C4]">{totalMin} min</span>
-                        )}
-                      </div>
-                      <div className="p-3 space-y-2">
-                        {dayTasks.length === 0 ? (
-                          <p className="text-xs text-gray-300 text-center py-3">
-                            {hasPlan ? "Nenhuma tarefa" : "Sem planejamento"}
-                          </p>
-                        ) : (
-                          dayTasks.map(task => {
-                            const title = task.is_maintenance
-                              ? `Manutenção · ${task.piece?.title ?? "—"}`
-                              : task.piece?.title ?? task.exercise?.title ?? "—";
-                            const cardBg = task.is_maintenance
-                              ? "bg-gray-100 hover:bg-gray-200/70"
-                              : task.exercise_id
-                                ? "bg-rose-50 hover:bg-rose-100/80"
-                                : "bg-[#D6E4F0]/60 hover:bg-[#D6E4F0]";
-                            return (
-                              <button key={task.id}
-                                onClick={() => { setEditingPlanItem(task); setEditDuration(task.duration_minutes ?? 15); }}
-                                className={`w-full text-left rounded-xl p-3 transition group ${cardBg}`}>
-                                <div className="flex items-start gap-2">
-                                  {task.is_maintenance && <MdSync size={14} className="shrink-0 text-[#4A90C4]" />}
-                                  <p className="text-sm font-medium text-gray-700 flex-1 leading-snug line-clamp-2">{title}</p>
-                                  {task.is_done && (
-                                    <span className="shrink-0 w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center mt-0.5">
-                                      <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
-                                        <path d="M5 13l4 4L19 7" />
-                                      </svg>
-                                    </span>
+                        <div className="p-3 space-y-2">
+                          {dayTasks.length === 0 ? (
+                            <p className="text-xs text-gray-300 text-center py-3">
+                              {hasPlan ? "Nenhuma tarefa" : "Sem planejamento"}
+                            </p>
+                          ) : (
+                            dayTasks.map((task) => {
+                              const title = task.is_maintenance
+                                ? `Manutenção · ${task.piece?.title ?? "—"}`
+                                : (task.piece?.title ??
+                                  task.exercise?.title ??
+                                  "—");
+                              const cardBg = task.is_maintenance
+                                ? "bg-gray-100 hover:bg-gray-200/70"
+                                : task.exercise_id
+                                  ? "bg-rose-50 hover:bg-rose-100/80"
+                                  : "bg-[#D6E4F0]/60 hover:bg-[#D6E4F0]";
+                              return (
+                                <button
+                                  key={task.id}
+                                  onClick={() => {
+                                    setEditingPlanItem(task);
+                                    setEditDuration(
+                                      task.duration_minutes ?? 15,
+                                    );
+                                  }}
+                                  className={`w-full text-left rounded-xl p-3 transition group ${cardBg}`}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    {task.is_maintenance && (
+                                      <MdSync
+                                        size={14}
+                                        className="shrink-0 text-[#4A90C4]"
+                                      />
+                                    )}
+                                    <p className="text-sm font-medium text-gray-700 flex-1 leading-snug line-clamp-2">
+                                      {title}
+                                    </p>
+                                    {task.is_done && (
+                                      <span className="shrink-0 w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center mt-0.5">
+                                        <svg
+                                          width="8"
+                                          height="8"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="white"
+                                          strokeWidth={3}
+                                        >
+                                          <path d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      </span>
+                                    )}
+                                  </div>
+                                  {task.programa && (
+                                    <p className="text-xs text-gray-400 mt-1 truncate">
+                                      {task.programa.title}
+                                    </p>
                                   )}
-                                </div>
-                                {task.programa && (
-                                  <p className="text-xs text-gray-400 mt-1 truncate">{task.programa.title}</p>
-                                )}
-                                <p className="text-xs font-semibold text-[#4A90C4] mt-1">{task.duration_minutes} min</p>
-                              </button>
-                            );
-                          })
+                                  <p className="text-xs font-semibold text-[#4A90C4] mt-1">
+                                    {task.duration_minutes} min
+                                  </p>
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Sheet de edição de tarefa */}
+              {editingPlanItem && (
+                <div
+                  className="fixed inset-0 bg-black/40 z-30 flex items-end"
+                  onClick={() => setEditingPlanItem(null)}
+                >
+                  <div
+                    className="bg-white rounded-t-2xl px-6 pt-6 pb-8 w-full max-w-lg mx-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0 pr-3">
+                        <p className="text-base font-bold text-[#1E3A5F] line-clamp-2">
+                          {editingPlanItem.is_maintenance
+                            ? `Manutenção · ${editingPlanItem.piece?.title ?? "—"}`
+                            : (editingPlanItem.piece?.title ??
+                              editingPlanItem.exercise?.title ??
+                              "—")}
+                        </p>
+                        {editingPlanItem.programa && (
+                          <p className="text-sm text-gray-400 mt-1 truncate">
+                            {editingPlanItem.programa.title}
+                          </p>
                         )}
                       </div>
+                      <button
+                        onClick={() => setEditingPlanItem(null)}
+                        className="text-gray-400 shrink-0"
+                      >
+                        <MdClose size={22} />
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Sheet de edição de tarefa */}
-            {editingPlanItem && (
-              <div className="fixed inset-0 bg-black/40 z-30 flex items-end" onClick={() => setEditingPlanItem(null)}>
-                <div className="bg-white rounded-t-2xl px-6 pt-6 pb-8 w-full max-w-lg mx-auto" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1 min-w-0 pr-3">
-                      <p className="text-base font-bold text-[#1E3A5F] line-clamp-2">
-                        {editingPlanItem.is_maintenance
-                          ? `Manutenção · ${editingPlanItem.piece?.title ?? "—"}`
-                          : editingPlanItem.piece?.title ?? editingPlanItem.exercise?.title ?? "—"}
-                      </p>
-                      {editingPlanItem.programa && (
-                        <p className="text-sm text-gray-400 mt-1 truncate">{editingPlanItem.programa.title}</p>
-                      )}
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-8 mb-3">
+                      Duração
+                    </p>
+                    <div className="flex items-center gap-4 mb-10">
+                      <input
+                        type="number"
+                        min={5}
+                        max={180}
+                        value={editDuration}
+                        onChange={(e) =>
+                          setEditDuration(Number(e.target.value))
+                        }
+                        className="w-20 text-center border border-gray-200 rounded-xl px-2 py-2.5 text-base font-semibold text-[#1E3A5F] outline-none focus:border-[#4A90C4]"
+                      />
+                      <span className="text-sm text-gray-400">min</span>
+                      <input
+                        type="range"
+                        min={5}
+                        max={180}
+                        step={5}
+                        value={editDuration}
+                        onChange={(e) =>
+                          setEditDuration(Number(e.target.value))
+                        }
+                        className="flex-1 accent-[#4A90C4] h-2"
+                      />
                     </div>
-                    <button onClick={() => setEditingPlanItem(null)} className="text-gray-400 shrink-0">
-                      <MdClose size={22} />
-                    </button>
-                  </div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-8 mb-3">Duração</p>
-                  <div className="flex items-center gap-4 mb-10">
-                    <input type="number" min={5} max={180} value={editDuration}
-                      onChange={e => setEditDuration(Number(e.target.value))}
-                      className="w-20 text-center border border-gray-200 rounded-xl px-2 py-2.5 text-base font-semibold text-[#1E3A5F] outline-none focus:border-[#4A90C4]"
-                    />
-                    <span className="text-sm text-gray-400">min</span>
-                    <input type="range" min={5} max={180} step={5} value={editDuration}
-                      onChange={e => setEditDuration(Number(e.target.value))}
-                      className="flex-1 accent-[#4A90C4] h-2"
-                    />
-                  </div>
-                  <div className="flex gap-3">
-                    <button onClick={() => deletePlanItem(editingPlanItem.id)}
-                      className="flex-1 py-3 rounded-xl border border-red-100 text-red-400 text-sm font-semibold hover:bg-red-50 transition">
-                      Remover tarefa
-                    </button>
-                    <button onClick={() => savePlanItemDuration(editingPlanItem.id, editDuration)}
-                      disabled={savingPlanItem}
-                      className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold disabled:opacity-50">
-                      {savingPlanItem ? "..." : "Salvar"}
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => deletePlanItem(editingPlanItem.id)}
+                        className="flex-1 py-3 rounded-xl border border-red-100 text-red-400 text-sm font-semibold hover:bg-red-50 transition"
+                      >
+                        Remover tarefa
+                      </button>
+                      <button
+                        onClick={() =>
+                          savePlanItemDuration(editingPlanItem.id, editDuration)
+                        }
+                        disabled={savingPlanItem}
+                        className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold disabled:opacity-50"
+                      >
+                        {savingPlanItem ? "..." : "Salvar"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
+              )}
+            </div>
+          );
+        })()}
 
       {/* Tab: Repertório (Peças + Exercícios) */}
       {activeTab === "repertoire" && (
         <div>
           {/* Sub-tabs */}
           <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-4">
-            {([
-              { key: "pieces" as const,    label: "Peças",      Icon: MdMusicNote },
-              { key: "exercises" as const, label: "Exercícios", Icon: MdSchool    },
-            ]).map((t) => (
-              <button key={t.key} onClick={() => setSubTab(t.key)}
+            {[
+              { key: "pieces" as const, label: "Peças", Icon: MdMusicNote },
+              {
+                key: "exercises" as const,
+                label: "Exercícios",
+                Icon: MdSchool,
+              },
+            ].map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setSubTab(t.key)}
                 className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${
-                  subTab === t.key ? "bg-white text-[#1E3A5F] shadow-sm" : "text-gray-400 hover:text-gray-600"
-                }`}>
-                <t.Icon size={13} />{t.label}
+                  subTab === t.key
+                    ? "bg-white text-[#1E3A5F] shadow-sm"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                <t.Icon size={13} />
+                {t.label}
               </button>
             ))}
           </div>
@@ -868,39 +1074,83 @@ export default function StudentProfilePage() {
           {subTab === "pieces" && (
             <div className="space-y-3">
               {pieces.length === 0 ? (
-                <EmptyState title="Nenhuma peça ainda" description="Adicione a primeira peça do repertório." />
+                <EmptyState
+                  title="Nenhuma peça ainda"
+                  description="Adicione a primeira peça do repertório."
+                />
               ) : (
                 pieces.map((piece) => (
-                  <Link key={piece.id} to={`/professor/alunos/${studentId}/pecas/${piece.id}`}
-                    className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition">
+                  <Link
+                    key={piece.id}
+                    to={`/professor/alunos/${studentId}/pecas/${piece.id}`}
+                    className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
+                  >
                     <div className="relative w-10 h-10 shrink-0">
-                      <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90 absolute inset-0">
-                        <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3" />
-                        <circle cx="18" cy="18" r="15" fill="none" stroke="#4A90C4" strokeWidth="3"
-                          strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`} strokeLinecap="round" />
+                      <svg
+                        viewBox="0 0 36 36"
+                        className="w-10 h-10 -rotate-90 absolute inset-0"
+                      >
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="15"
+                          fill="none"
+                          stroke="#F3F4F6"
+                          strokeWidth="3"
+                        />
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="15"
+                          fill="none"
+                          stroke="#4A90C4"
+                          strokeWidth="3"
+                          strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`}
+                          strokeLinecap="round"
+                        />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="rounded-full overflow-hidden">
-                          <Avatar size={24} name={piece.title} variant="marble" colors={AVATAR_COLORS} />
+                          <Avatar
+                            size={24}
+                            name={piece.title}
+                            variant="marble"
+                            colors={AVATAR_COLORS}
+                          />
                         </div>
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{piece.title}</p>
+                      <p className="text-sm font-semibold text-gray-800 truncate">
+                        {piece.title}
+                      </p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {piece.composer ?? "—"} · {pieceStatusLabel[piece.status] ?? piece.status}
+                        {piece.composer ?? "—"} ·{" "}
+                        {pieceStatusLabel[piece.status] ?? piece.status}
                       </p>
                     </div>
-                    <MdChevronRight size={16} className="text-gray-400 shrink-0" />
+                    <MdChevronRight
+                      size={16}
+                      className="text-gray-400 shrink-0"
+                    />
                   </Link>
                 ))
               )}
               <div className="flex flex-col items-center gap-2 pt-4 pb-2">
-                <Link to={`/professor/alunos/${studentId}/pecas/nova`}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">
-                  <MdAdd size={18} />Nova peça
+                <Link
+                  to={`/professor/alunos/${studentId}/pecas/nova`}
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+                >
+                  <MdAdd size={18} />
+                  Nova peça
                 </Link>
-                <button className="text-xs text-gray-400 hover:text-gray-600 transition">
+                <button
+                  onClick={() => {
+                    setImportMode("pieces");
+                    setImportText("");
+                  }}
+                  className="text-xs text-gray-400 hover:text-gray-600 transition"
+                >
                   ou clique para importar em lote
                 </button>
               </div>
@@ -911,30 +1161,56 @@ export default function StudentProfilePage() {
           {subTab === "exercises" && (
             <div className="space-y-3">
               {exercises.length === 0 ? (
-                <EmptyState title="Nenhum exercício ainda" description="Adicione exercícios técnicos ou teóricos." />
+                <EmptyState
+                  title="Nenhum exercício ainda"
+                  description="Adicione exercícios técnicos ou teóricos."
+                />
               ) : (
                 exercises.map((ex) => (
-                  <Link key={ex.id} to={`/professor/alunos/${studentId}/exercicios/${ex.id}`}
-                    className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition">
+                  <Link
+                    key={ex.id}
+                    to={`/professor/alunos/${studentId}/exercicios/${ex.id}`}
+                    className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
+                  >
                     <div className="shrink-0 rounded-lg overflow-hidden">
-                      <Avatar size={36} name={ex.title} variant="pixel" colors={AVATAR_COLORS} />
+                      <Avatar
+                        size={36}
+                        name={ex.title}
+                        variant="pixel"
+                        colors={AVATAR_COLORS}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{ex.title}</p>
+                      <p className="text-sm font-semibold text-gray-800 truncate">
+                        {ex.title}
+                      </p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {exerciseCategoryLabel[ex.category] ?? ex.category} · {exerciseStatusLabel[ex.status] ?? ex.status}
+                        {exerciseCategoryLabel[ex.category] ?? ex.category} ·{" "}
+                        {exerciseStatusLabel[ex.status] ?? ex.status}
                       </p>
                     </div>
-                    <MdChevronRight size={16} className="text-gray-400 shrink-0" />
+                    <MdChevronRight
+                      size={16}
+                      className="text-gray-400 shrink-0"
+                    />
                   </Link>
                 ))
               )}
               <div className="flex flex-col items-center gap-2 pt-4 pb-2">
-                <Link to={`/professor/alunos/${studentId}/exercicios/novo`}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">
-                  <MdAdd size={18} />Novo exercício
+                <Link
+                  to={`/professor/alunos/${studentId}/exercicios/novo`}
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+                >
+                  <MdAdd size={18} />
+                  Novo exercício
                 </Link>
-                <button className="text-xs text-gray-400 hover:text-gray-600 transition">
+                <button
+                  onClick={() => {
+                    setImportMode("exercises");
+                    setImportText("");
+                  }}
+                  className="text-xs text-gray-400 hover:text-gray-600 transition"
+                >
                   ou clique para importar em lote
                 </button>
               </div>
@@ -989,10 +1265,56 @@ export default function StudentProfilePage() {
       )}
 
       {/* Tab: Jornada */}
-      {activeTab === "journey" && (
-        <StudentJornadaTab studentId={studentId!} />
-      )}
+      {activeTab === "journey" && <StudentJornadaTab studentId={studentId!} />}
 
+      {/* Import modal */}
+      {importMode && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-5"
+          onClick={() => setImportMode(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 w-[60%] space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h3 className="text-base font-bold text-[#1E3A5F]">
+                Importar {importMode === "pieces" ? "peças" : "exercícios"} em
+                lote
+              </h3>
+              <p className="text-sm text-gray-400 leading-relaxed mt-0.5">
+                Digite os nomes separados por vírgula ou um por linha.
+              </p>
+            </div>
+            <textarea
+              autoFocus
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              placeholder={
+                importMode === "pieces"
+                  ? "Sonatina Op.36 nº1\nFur Elise\nNocturno Op.9 nº2"
+                  : "Escala de Dó maior\nArpejo de Sol\nHanon nº1"
+              }
+              rows={6}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition resize-none"
+            />
+            <button
+              onClick={handleImport}
+              disabled={importing || !importText.trim()}
+              className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-50"
+            >
+              {importing
+                ? "Criando..."
+                : (() => {
+                    const n = parseNames(importText).length;
+                    return n > 0
+                      ? `Criar ${n} ${importMode === "pieces" ? (n === 1 ? "peça" : "peças") : n === 1 ? "exercício" : "exercícios"}`
+                      : "Criar";
+                  })()}
+            </button>
+          </div>
+        </div>
+      )}
     </TeacherLayout>
   );
 }
