@@ -259,7 +259,7 @@ export default function StudentPieceDetailPage() {
     piece.catalog_number ? { Icon: MdMenuBook,  label: 'Opus / Catálogo',     value: piece.catalog_number } : null,
     piece.period         ? { Icon: periodIcon[piece.period] ?? MdMusicNote, label: 'Período', value: periodLabel[piece.period] ?? piece.period } : null,
     piece.pedagogical_goal ? { Icon: goalIcon[piece.pedagogical_goal] ?? MdStars, label: 'Objetivo pedagógico', value: piece.pedagogical_goal } : null,
-    piece.difficulty     ? { Icon: MdBolt,      label: 'Dificuldade',         value: `${piece.difficulty}/10` } : null,
+    piece.difficulty     ? { Icon: MdBolt,      label: 'Dificuldade',         value: piece.difficulty <= 3 ? 'Simples' : piece.difficulty <= 6 ? 'Normal' : 'Desafiadora' } : null,
     piece.notes          ? { Icon: MdNotes,     label: 'Notas',               value: piece.notes } : null,
   ].filter((f): f is { Icon: React.ComponentType<{ size?: number; className?: string }>; label: string; value: string } => f !== null)
 
