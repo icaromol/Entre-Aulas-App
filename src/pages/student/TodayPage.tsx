@@ -427,9 +427,9 @@ export default function TodayPage() {
                   item.is_done ? "opacity-60" : ""
                 }`}
               >
-                <div className="px-4 py-4 flex items-start gap-3">
-                  {/* Anel de progresso + checkbox */}
-                  <button onClick={() => handleItemClick(item)} className="mt-0.5 hover:opacity-80 transition">
+                <div className="px-4 py-3 flex items-center gap-3">
+                  {/* Anel de progresso */}
+                  <button onClick={() => handleItemClick(item)} className="hover:opacity-80 transition shrink-0">
                     <ProgressRing
                       pct={item.duration_minutes
                         ? (studiedSecs[item.id] ?? 0) / (item.duration_minutes * 60)
@@ -438,52 +438,35 @@ export default function TodayPage() {
                     />
                   </button>
 
-                  {/* Ícone manutenção */}
-                  {maintenanceIcon && (
-                    <span className="text-base mt-0.5 shrink-0">🔄</span>
-                  )}
-
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-sm font-semibold truncate ${item.is_done ? "line-through text-gray-400" : "text-gray-800"}`}
-                    >
-                      {title}
+                    <p className={`text-sm font-semibold truncate ${item.is_done ? "line-through text-gray-400" : "text-gray-800"}`}>
+                      {maintenanceIcon ? `Manutenção · ${title}` : title}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5 truncate">
                       {subtitle}
+                      {item.duration_minutes ? ` · ${item.duration_minutes} min` : ''}
                     </p>
                   </div>
 
-                  {/* Tempo */}
-                  {item.duration_minutes && (
-                    <span className="text-xs text-gray-400 shrink-0 mt-0.5">
-                      {item.duration_minutes} min
-                    </span>
+                  {/* Botão iniciar */}
+                  {!item.is_done && (
+                    <button
+                      onClick={() => navigate("/aluno/pomodoro", {
+                        state: {
+                          planItemId: item.id,
+                          title: subtitle ? `${title} — ${subtitle}` : title,
+                          durationMinutes: item.duration_minutes,
+                          studentId,
+                        },
+                      })}
+                      className="shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-xl bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
+                    >
+                      <MdPlayArrow size={18} />
+                      <span className="text-[10px] font-semibold leading-none">Iniciar</span>
+                    </button>
                   )}
                 </div>
-
-                {/* Botão por item */}
-                {!item.is_done && (
-                  <div className="px-4 pb-3">
-                    <button
-                      onClick={() =>
-                        navigate("/aluno/pomodoro", {
-                          state: {
-                            planItemId: item.id,
-                            title: subtitle ? `${title} — ${subtitle}` : title,
-                            durationMinutes: item.duration_minutes,
-                            studentId,
-                          },
-                        })
-                      }
-                      className="w-full py-2 rounded-xl bg-[#D6E4F0] text-[#1E3A5F] text-xs font-semibold hover:bg-[#4A90C4] hover:text-white transition flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <MdPlayArrow size={14} />
-                      Começar estudo!
-                    </button>
-                  </div>
-                )}
               </div>
             );
           })}
