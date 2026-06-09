@@ -11,7 +11,7 @@ export default function ModeSelectPage() {
 
   async function handleTeacher() {
     setMode('teacher')
-    navigate('/professor/alunos', { replace: true })
+    navigate('/professor/jornada', { replace: true })
   }
 
   async function handleStudent() {
@@ -79,18 +79,16 @@ export default function ModeSelectPage() {
             <button
               onClick={handleActivatePersonal}
               disabled={activating}
-              className="flex flex-col items-center gap-3 p-6 bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#4A90C4] hover:shadow-md transition group disabled:opacity-50"
+              className="flex flex-col items-center gap-3 p-6 bg-white rounded-2xl border-2 border-gray-100 hover:border-[#4A90C4] hover:shadow-md transition group disabled:opacity-50"
             >
-              <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-[#D6E4F0] transition">
-                <MdMusicNote size={28} className="text-gray-300 group-hover:text-[#4A90C4] transition" />
+              <div className="w-14 h-14 rounded-2xl bg-[#D6E4F0] flex items-center justify-center group-hover:bg-[#4A90C4] transition">
+                <MdMusicNote size={28} className="text-[#1E3A5F] group-hover:text-white transition" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-bold text-gray-400 group-hover:text-[#1E3A5F] transition">
+                <p className="text-sm font-bold text-[#1E3A5F]">
                   {activating ? 'Ativando...' : 'Meus estudos'}
                 </p>
-                <p className="text-xs text-[#4A90C4] mt-0.5 leading-tight font-medium">
-                  {activating ? '' : 'Quero estudar também'}
-                </p>
+                <p className="text-xs text-gray-400 mt-0.5 leading-tight">Praticar e organizar repertório</p>
               </div>
             </button>
           )}
