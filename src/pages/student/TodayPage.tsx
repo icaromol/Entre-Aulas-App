@@ -345,16 +345,17 @@ export default function TodayPage() {
     }
   }
 
-  const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
-    + freeSessions.reduce((s, f) => s + f.minutes, 0);
+  // Total planejado — só itens do plano, sessões livres não inflam o alvo
+  const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
 
-  // Minutos estudados: plan_items concluídos + sessões livres
+  // Minutos estudados: plan_items concluídos + sessões livres (bônus)
   const studiedMinutes = items
     .filter(i => i.is_done)
     .reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
     + freeSessions.reduce((s, f) => s + f.minutes, 0);
 
-  const pct = totalMinutes > 0 ? Math.min(100, Math.round((studiedMinutes / totalMinutes) * 100)) : 0;
+  const denominator = totalMinutes > 0 ? totalMinutes : studiedMinutes;
+  const pct = denominator > 0 ? Math.min(100, Math.round((studiedMinutes / denominator) * 100)) : 0;
 
   // Para missão do dia (base em itens)
   const done = items.filter((i) => i.is_done).length + freeSessions.length;
@@ -410,7 +411,7 @@ export default function TodayPage() {
               Progresso de hoje
             </span>
             <span className="text-xs font-bold text-[#1E3A5F]">
-              {studiedMinutes}/{totalMinutes} min
+              {totalMinutes > 0 ? `${studiedMinutes}/${totalMinutes} min` : `${studiedMinutes} min`}
             </span>
           </div>
           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -550,9 +551,7 @@ export default function TodayPage() {
         </div>
         <div className="text-left">
           <p className="text-base font-bold text-white">Início rápido</p>
-          <p className="text-xs text-white/60 mt-0.5">
-            {totalMinutes > 0 ? `${totalMinutes} min planejados` : '25 min'}
-          </p>
+          <p className="text-xs text-white/60 mt-0.5">20 min · 5 min pausa</p>
         </div>
       </button>
 
