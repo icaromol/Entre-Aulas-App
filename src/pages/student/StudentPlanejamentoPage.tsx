@@ -281,6 +281,12 @@ export default function StudentPlanejamentoPage() {
     setSaving(true)
     setError('')
     try {
+      // Professor em modo estudante usa o próprio teacherId
+      let teacherIdForPlan: string | null = null
+      if (profile?.role === 'teacher' && profile.teacherId) {
+        teacherIdForPlan = profile.teacherId
+      }
+
       const weekStarts = [...new Set(editableDays.map(d => d.weekStart))]
       for (const ws of weekStarts) {
         let planId: string
@@ -291,7 +297,7 @@ export default function StudentPlanejamentoPage() {
           await supabase.from('plan_items').delete().eq('plan_id', planId)
         } else {
           const { data: created, error: err } = await supabase
-            .from('weekly_plans').insert({ student_id: studentId!, week_start: ws, teacher_id: null }).select('id').single()
+            .from('weekly_plans').insert({ student_id: studentId!, week_start: ws, teacher_id: teacherIdForPlan }).select('id').single()
           if (err || !created) throw err ?? new Error('Erro ao criar plano semanal.')
           planId = created.id
         }
