@@ -415,7 +415,7 @@ export default function TodayPage() {
   return (
     <StudentLayout>
       {/* Header com navegação de dias */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-8 mt-4">
         <button
           onClick={() => setViewDay((d) => (d + 6) % 7)}
           className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
