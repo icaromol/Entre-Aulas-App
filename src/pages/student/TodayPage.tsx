@@ -316,11 +316,11 @@ export default function TodayPage() {
             <>
               <p className="text-sm font-semibold text-gray-700">Jornada não iniciada</p>
               <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                {hasTeacher
+                {hasTeacher && profile?.role === 'student'
                   ? 'Seu professor precisa criar um plano de estudos para você.'
                   : 'Crie um plano antes de continuar.'}
               </p>
-              {!hasTeacher && (
+              {!(hasTeacher && profile?.role === 'student') && (
                 <button
                   onClick={() => navigate('/aluno/planejamento')}
                   className="mt-4 px-5 py-2 rounded-xl bg-[#1E3A5F] text-white text-xs font-semibold hover:bg-[#1E3A5F]/90 transition"
