@@ -195,12 +195,37 @@ export default function PomodoroPage() {
   const [currentCycle, setCurrentCycle] = useState(1);
   const [completedCycles, setCompletedCycles] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0);
   const [totalSecs, setTotalSecs] = useState(0);
   const [showEarlyDialog, setShowEarlyDialog] = useState(false);
+  // Clock-based timer — immune to browser tab throttling
   const activeCycle = useRef<CyclePreset | null>(null);
   const startedAt = useRef<string | null>(null);
-  const workSecs = useRef(0);
+  // phaseStartedAt: Date.now() when the current phase (or resume) began; null when paused
+  const phaseStartedAt = useRef<number | null>(null);
+  // pausedElapsed: seconds already elapsed before the current run segment
+  const pausedElapsed = useRef<number>(0);
+  // phaseDuration: total seconds for the current phase
+  const phaseDuration = useRef<number>(0);
+  // workSecsAccum: real work seconds accumulated across pauses
+  const workSecsAccum = useRef<number>(0);
+  // finalWorkSecs: frozen at save time, used by the finished screen
+  const finalWorkSecs = useRef<number>(0);
+  // transitionFired: guards phase-transition effect from double-firing
+  const transitionFired = useRef(false);
+  // workPhaseStartedAt: Date.now() when current work phase began (null if paused/break)
+  const workPhaseStartedAt = useRef<number | null>(null);
+  // tick counter just to force re-renders
+  const [, forceRender] = useState(0);
+
+  function getTimeLeft(): number {
+    if (phaseStartedAt.current === null) {
+      return Math.max(0, phaseDuration.current - pausedElapsed.current);
+    }
+    const elapsed = pausedElapsed.current + (Date.now() - phaseStartedAt.current) / 1000;
+    return Math.max(0, phaseDuration.current - elapsed);
+  }
+
+  const timeLeft = getTimeLeft();
 
   // ── Finish screen ──
   const [dayGroups, setDayGroups] = useState<DayGroup[]>([]);
@@ -226,61 +251,75 @@ export default function PomodoroPage() {
         } as CyclePreset);
     activeCycle.current = preset;
     startedAt.current = new Date().toISOString();
-    workSecs.current = 0;
+    workSecsAccum.current = 0;
     const secs = preset.workMinutes * 60;
+    phaseDuration.current = secs;
+    pausedElapsed.current = 0;
+    phaseStartedAt.current = Date.now();
+    workPhaseStartedAt.current = Date.now();
+    transitionFired.current = false;
     setCurrentCycle(1);
     setCompletedCycles(0);
     setPhase("work");
-    setTimeLeft(secs);
     setTotalSecs(secs);
     setIsPaused(false);
     openFinishModal();
   }, []);
 
-  // ── Timer tick ──
+  // ── Timer tick — just a re-render trigger; real time comes from Date.now() ──
   useEffect(() => {
     if ((phase !== "work" && phase !== "break") || isPaused) return;
-    const id = setInterval(() => {
-      if (phase === "work") workSecs.current += 1;
-      setTimeLeft((prev) => Math.max(0, prev - 1));
-    }, 1000);
+    const id = setInterval(() => forceRender((n) => n + 1), 250);
     return () => clearInterval(id);
   }, [phase, isPaused]);
 
-  // ── Phase transitions ──
+  // ── Phase transitions — driven by computed timeLeft ──
   useEffect(() => {
-    if (timeLeft !== 0) return;
+    if (timeLeft > 0) { transitionFired.current = false; return; }
     if (phase !== "work" && phase !== "break") return;
+    if (transitionFired.current) return;
+    transitionFired.current = true;
     const c = activeCycle.current;
     if (!c) return;
 
     if (phase === "work") {
+      // Accumulate real work seconds for this phase
+      if (workPhaseStartedAt.current !== null) {
+        workSecsAccum.current += (Date.now() - workPhaseStartedAt.current) / 1000;
+        workPhaseStartedAt.current = null;
+      }
       const newCompleted = completedCycles + 1;
       setCompletedCycles(newCompleted);
 
       if (currentCycle < c.totalCycles) {
-        // Há mais ciclos — vai para pausa
         sound.pomodoroSection();
         const secs = c.breakMinutes * 60;
-        setPhase("break");
-        setTimeLeft(secs);
+        phaseDuration.current = secs;
+        pausedElapsed.current = 0;
+        phaseStartedAt.current = Date.now();
+        transitionFired.current = false;
         setTotalSecs(secs);
+        setPhase("break");
       } else {
-        // Todos os ciclos completos — salva direto
         sound.pomodoroSuccess();
         saveSession();
       }
     } else {
-      // Pausa acabou — próximo ciclo de trabalho
+      // Break ended — next work cycle
       const next = currentCycle + 1;
       setCurrentCycle(next);
       const secs = c.workMinutes * 60;
-      setPhase("work");
-      setTimeLeft(secs);
+      phaseDuration.current = secs;
+      pausedElapsed.current = 0;
+      phaseStartedAt.current = Date.now();
+      workPhaseStartedAt.current = Date.now();
+      transitionFired.current = false;
       setTotalSecs(secs);
       setIsPaused(false);
+      setPhase("work");
     }
-  }, [timeLeft, phase, currentCycle, completedCycles]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft === 0, phase]);
 
   // ── Start ──
   function startSession(preset?: CyclePreset) {
@@ -293,12 +332,16 @@ export default function PomodoroPage() {
     };
     activeCycle.current = c;
     startedAt.current = new Date().toISOString();
-    workSecs.current = 0;
+    workSecsAccum.current = 0;
     const secs = c.workMinutes * 60;
+    phaseDuration.current = secs;
+    pausedElapsed.current = 0;
+    phaseStartedAt.current = Date.now();
+    workPhaseStartedAt.current = Date.now();
+    transitionFired.current = false;
     setCurrentCycle(1);
     setCompletedCycles(0);
     setPhase("work");
-    setTimeLeft(secs);
     setTotalSecs(secs);
     setIsPaused(false);
     setShowEarlyDialog(false);
@@ -408,6 +451,14 @@ export default function PomodoroPage() {
 
     const endedAt = new Date().toISOString();
 
+    // Flush any in-progress work segment
+    if (phase === "work" && workPhaseStartedAt.current !== null) {
+      workSecsAccum.current += (Date.now() - workPhaseStartedAt.current) / 1000;
+      workPhaseStartedAt.current = null;
+    }
+    const totalWorkSecs = Math.round(workSecsAccum.current);
+    finalWorkSecs.current = totalWorkSecs;
+
     const { data: sessionData, error } = await supabase
       .from("study_sessions")
       .insert({
@@ -418,7 +469,7 @@ export default function PomodoroPage() {
         cycle_total: c.totalCycles,
         started_at: startedAt.current,
         ended_at: endedAt,
-        duration_seconds: workSecs.current,
+        duration_seconds: totalWorkSecs,
         difficulty_felt: difficulty || null,
         notes: comment || null,
       })
@@ -432,7 +483,7 @@ export default function PomodoroPage() {
     }
 
     // ── Feedback imediato — não espera o banco ──
-    const minutesXp = Math.floor(workSecs.current / 60);
+    const minutesXp = Math.floor(totalWorkSecs / 60);
     const bonusXp   = completedCycles * 5;
     const totalXp   = minutesXp + bonusXp;
     if (totalXp > 0) {
@@ -514,7 +565,7 @@ export default function PomodoroPage() {
             })
         : Promise.resolve(),
 
-      linkSessionItems(sessionId, sid, checklistIds, nav?.planItemId ?? null, workSecs.current),
+      linkSessionItems(sessionId, sid, checklistIds, nav?.planItemId ?? null, totalWorkSecs),
     ]);
   }
 
@@ -745,7 +796,28 @@ export default function PomodoroPage() {
         {/* Botões */}
         <div className="flex gap-3 mt-5">
           <Button
-            onClick={() => setIsPaused((p) => !p)}
+            onClick={() => {
+              setIsPaused((p) => {
+                const pausing = !p;
+                if (pausing) {
+                  // Freeze: save elapsed so far
+                  if (phaseStartedAt.current !== null) {
+                    pausedElapsed.current += (Date.now() - phaseStartedAt.current) / 1000;
+                    phaseStartedAt.current = null;
+                  }
+                  // Also accumulate work seconds if in work phase
+                  if (phase === "work" && workPhaseStartedAt.current !== null) {
+                    workSecsAccum.current += (Date.now() - workPhaseStartedAt.current) / 1000;
+                    workPhaseStartedAt.current = null;
+                  }
+                } else {
+                  // Resume: restart wall-clock references
+                  phaseStartedAt.current = Date.now();
+                  if (phase === "work") workPhaseStartedAt.current = Date.now();
+                }
+                return pausing;
+              });
+            }}
             variant="outline"
             className="flex-1 h-12 rounded-2xl text-sm font-semibold border-gray-200 flex items-center justify-center gap-2"
           >
@@ -963,7 +1035,7 @@ export default function PomodoroPage() {
         </div>
         <h1 className="text-xl font-bold text-[#1E3A5F]">Sessão encerrada!</h1>
         <p className="text-sm text-gray-400 mt-1">
-          {fmtStudied(workSecs.current)}
+          {fmtStudied(finalWorkSecs.current)}
         </p>
       </div>
 
