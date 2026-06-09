@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { Spinner } from '@/components/ui/Spinner'
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -13,7 +14,7 @@ export function AuthGuard({ children, allowedRole }: AuthGuardProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground text-sm">Carregando...</p>
+        <Spinner />
       </div>
     )
   }
