@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { MdPause, MdPlayArrow, MdStop } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
@@ -123,6 +124,7 @@ export default function PomodoroPage() {
     setTimeLeft(secs)
     setTotalSecs(secs)
     setIsPaused(false)
+    openFinishModal()
   }, [])
 
   // ── Timer tick ──
@@ -154,10 +156,9 @@ export default function PomodoroPage() {
         setTimeLeft(secs)
         setTotalSecs(secs)
       } else {
-        // Todos os ciclos completos — pré-marca o item da sessão
+        // Todos os ciclos completos
         sound.pomodoroSuccess()
         setPhase('finished')
-        openFinishModal(true)
       }
     } else {
       // Pausa acabou — próximo ciclo de trabalho
@@ -188,6 +189,7 @@ export default function PomodoroPage() {
     setTotalSecs(secs)
     setIsPaused(false)
     setShowEarlyDialog(false)
+    openFinishModal()
   }
 
   // ── End early ──
@@ -197,12 +199,11 @@ export default function PomodoroPage() {
       setShowEarlyDialog(true)
     } else {
       setPhase('finished')
-      openFinishModal(false)
     }
   }
 
-  // ── Fetch items for finish screen ──
-  async function openFinishModal(_allCyclesDone: boolean) {
+  // ── Fetch items ──
+  async function openFinishModal() {
     setLoadingItems(true)
     const sid = nav?.studentId
     if (!sid) { setLoadingItems(false); return }
@@ -444,7 +445,7 @@ export default function PomodoroPage() {
                   Descartar
                 </button>
                 <button
-                  onClick={() => { setShowEarlyDialog(false); setPhase('finished'); openFinishModal(false) }}
+                  onClick={() => { setShowEarlyDialog(false); setPhase('finished') }}
                   className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-sm text-white font-medium hover:bg-[#1E3A5F]/90 transition"
                 >
                   Salvar
@@ -454,27 +455,22 @@ export default function PomodoroPage() {
           </div>
         )}
 
-        {/* Header */}
-        <div className="mb-2">
-          <h1 className="text-base font-bold text-[#1E3A5F]">Pomodoro</h1>
-          {nav?.title && <p className="text-xs text-gray-400 mt-0.5">{nav.title}</p>}
-        </div>
-
         {/* Cronômetro */}
-        <div className="flex flex-col items-center py-4">
-          <div className={`text-xs font-semibold mb-4 px-3 py-1 rounded-full ${
+        <div className="flex flex-col items-center">
+          <div className={`text-xs font-semibold mb-3 px-3 py-1 rounded-full ${
             isWork ? 'bg-[#D6E4F0] text-[#1E3A5F]' : 'bg-green-100 text-green-600'
           }`}>
             {isWork ? `Ciclo ${currentCycle} de ${c?.totalCycles}` : 'Pausa'}
           </div>
 
-          <div className="relative w-[80vw] max-w-xs aspect-square">
+          {/* min(80vw, 80vh) — para no primeiro que chegar */}
+          <div className="relative" style={{ width: 'min(80vw, 80vh)', height: 'min(80vw, 80vh)' }}>
             <svg viewBox="0 0 120 120" className="-rotate-90 w-full h-full">
-              <circle cx="60" cy="60" r="54" fill="none" stroke="#F3F4F6" strokeWidth="6"/>
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#F3F4F6" strokeWidth="5"/>
               <circle
                 cx="60" cy="60" r="54" fill="none"
                 stroke={isWork ? '#1E3A5F' : '#4ADE80'}
-                strokeWidth="6"
+                strokeWidth="5"
                 strokeLinecap="round"
                 strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
                 strokeDashoffset={dashOffset}
@@ -495,11 +491,11 @@ export default function PomodoroPage() {
 
           {/* Dots de ciclos */}
           {c && c.totalCycles > 1 && (
-            <div className="flex gap-2 mt-5">
+            <div className="flex gap-2 mt-4">
               {Array.from({ length: c.totalCycles }).map((_, i) => (
                 <div key={i} className={`w-2.5 h-2.5 rounded-full transition ${
-                  i < completedCycles              ? 'bg-[#1E3A5F]'
-                  : i === currentCycle - 1 && isWork ? 'bg-[#4A90C4]'
+                  i < completedCycles                  ? 'bg-[#1E3A5F]'
+                  : i === currentCycle - 1 && isWork   ? 'bg-[#4A90C4]'
                   : 'bg-gray-200'
                 }`}/>
               ))}
@@ -508,21 +504,93 @@ export default function PomodoroPage() {
         </div>
 
         {/* Botões */}
-        <div className="flex gap-3 mt-2">
+        <div className="flex gap-3 mt-5">
           <Button
             onClick={() => setIsPaused(p => !p)}
             variant="outline"
-            className="flex-1 h-12 rounded-2xl text-sm font-semibold border-gray-200"
+            className="flex-1 h-12 rounded-2xl text-sm font-semibold border-gray-200 flex items-center justify-center gap-2"
           >
-            {isPaused ? 'Retomar' : 'Pausar'}
+            {isPaused ? <><MdPlayArrow size={18}/> Retomar</> : <><MdPause size={18}/> Pausar</>}
           </Button>
           <Button
             onClick={handleEndEarly}
             variant="outline"
-            className="flex-1 h-12 rounded-2xl text-sm font-semibold text-red-500 border-red-200 hover:bg-red-50"
+            className="flex-1 h-12 rounded-2xl text-sm font-semibold text-red-500 border-red-200 hover:bg-red-50 flex items-center justify-center gap-2"
           >
-            Encerrar sessão
+            <MdStop size={18}/> Encerrar
           </Button>
+        </div>
+
+        {/* Checklist inline */}
+        <div className="mt-5 space-y-4">
+          {/* O que você está trabalhando */}
+          {loadingItems ? (
+            <div className="flex justify-center py-4"><Spinner size={16} /></div>
+          ) : dayItems.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-4">
+              <p className="text-sm font-semibold text-gray-600 mb-3">O que você está trabalhando?</p>
+              <div className="space-y-2">
+                {dayItems.map(item => {
+                  const checked = workedIds.has(item.id)
+                  return (
+                    <button key={item.id}
+                      onClick={() => setWorkedIds(prev => {
+                        const next = new Set(prev); checked ? next.delete(item.id) : next.add(item.id); return next
+                      })}
+                      className="w-full flex items-center gap-3 text-left"
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
+                        checked ? 'bg-[#1E3A5F] border-[#1E3A5F]' : 'border-gray-300'
+                      }`}>
+                        {checked && <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}><path d="M5 13l4 4L19 7"/></svg>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-700 truncate">{item.title}</p>
+                        <p className="text-xs text-gray-400 truncate">{item.subtitle}</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Dificuldade */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4">
+            <p className="text-sm font-semibold text-gray-600 mb-3">Como está sendo?</p>
+            <div className="flex gap-2">
+              {([
+                { key: 'easy', label: 'Fácil',  emoji: '😊' },
+                { key: 'ok',   label: 'Ok',      emoji: '😐' },
+                { key: 'hard', label: 'Difícil', emoji: '😓' },
+              ] as const).map(d => (
+                <button key={d.key} onClick={() => setDifficulty(d.key)}
+                  className={`flex-1 flex flex-col items-center py-2.5 rounded-xl border transition ${
+                    difficulty === d.key
+                      ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white'
+                      : 'bg-white border-gray-200 text-gray-600 hover:border-[#4A90C4]'
+                  }`}>
+                  <span className="text-xl">{d.emoji}</span>
+                  <span className="text-xs font-medium mt-1">{d.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Observações */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4">
+            <p className="text-sm font-semibold text-gray-600 mb-2">
+              Observações <span className="font-normal text-gray-400">(opcional)</span>
+            </p>
+            <textarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              placeholder="Dificuldades, dúvidas, observações..."
+              rows={3}
+              maxLength={500}
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none"
+            />
+          </div>
         </div>
       </StudentLayout>
     )
@@ -533,101 +601,18 @@ export default function PomodoroPage() {
   // ─────────────────────────────────────────────────────
   return (
     <StudentLayout>
-      <div className="flex flex-col items-center pt-4 pb-6">
-        <p className="text-4xl mb-2">🎉</p>
+      <div className="flex flex-col items-center pt-6 pb-8">
         <h1 className="text-xl font-bold text-[#1E3A5F]">Sessão encerrada!</h1>
         <p className="text-sm text-gray-400 mt-1">{fmtStudied(workSecs.current)}</p>
       </div>
 
-      {/* O que você trabalhou */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
-        <p className="text-sm font-semibold text-gray-600 mb-3">O que você trabalhou?</p>
-        {loadingItems ? (
-          <Spinner size={16} />
-        ) : dayItems.length === 0 ? (
-          <p className="text-xs text-gray-400 py-4 text-center">Nenhum item pendente. Tudo em dia! 🎉</p>
-        ) : (
-          <div className="space-y-2">
-            {dayItems.map(item => {
-              const checked = workedIds.has(item.id)
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setWorkedIds(prev => {
-                    const next = new Set(prev)
-                    checked ? next.delete(item.id) : next.add(item.id)
-                    return next
-                  })}
-                  className="w-full flex items-center gap-3 text-left"
-                >
-                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
-                    checked ? 'bg-[#1E3A5F] border-[#1E3A5F]' : 'border-gray-300'
-                  }`}>
-                    {checked && (
-                      <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
-                        <path d="M5 13l4 4L19 7"/>
-                      </svg>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-700 truncate">{item.title}</p>
-                    <p className="text-xs text-gray-400 truncate">{item.subtitle}</p>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Como foi */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
-        <p className="text-sm font-semibold text-gray-600 mb-3">Como foi a sessão?</p>
-        <div className="flex gap-2">
-          {([
-            { key: 'easy', label: 'Fácil',   emoji: '😊' },
-            { key: 'ok',   label: 'Ok',       emoji: '😐' },
-            { key: 'hard', label: 'Difícil',  emoji: '😓' },
-          ] as const).map(d => (
-            <button
-              key={d.key}
-              onClick={() => setDifficulty(d.key)}
-              className={`flex-1 flex flex-col items-center py-2.5 rounded-xl border transition ${
-                difficulty === d.key
-                  ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white'
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-[#4A90C4]'
-              }`}
-            >
-              <span className="text-xl">{d.emoji}</span>
-              <span className="text-xs font-medium mt-1">{d.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Comentários */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
-        <p className="text-sm font-semibold text-gray-600 mb-2">
-          Comentários <span className="font-normal text-gray-400">(opcional)</span>
-        </p>
-        <textarea
-          value={comment}
-          onChange={e => setComment(e.target.value)}
-          placeholder="Dificuldades, dúvidas, observações..."
-          rows={3}
-          maxLength={500}
-          className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none"
-        />
-      </div>
-
-      {/* Botões */}
       <div className="flex gap-3">
         <Button
           onClick={() => navigate('/aluno/hoje')}
           variant="outline"
           className="flex-1 h-12 rounded-2xl text-sm text-red-500 border-red-200 hover:bg-red-50"
         >
-          Excluir e voltar
+          Descartar
         </Button>
         <Button
           onClick={saveSession}
