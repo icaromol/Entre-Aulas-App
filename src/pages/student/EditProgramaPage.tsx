@@ -9,17 +9,9 @@ import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 import type { ProgramaType } from '@/types/programs'
+import { PROGRAM_TYPES } from '@/lib/programTypes'
 
-const TYPES: { value: ProgramaType; label: string; emoji: string; needsDeadline: boolean }[] = [
-  { value: 'regular',      label: 'Aulas Regulares', emoji: '📚', needsDeadline: false },
-  { value: 'recital',      label: 'Recital',          emoji: '🎭', needsDeadline: true  },
-  { value: 'concerto',     label: 'Concerto',         emoji: '🎹', needsDeadline: true  },
-  { value: 'show',         label: 'Show',             emoji: '🎤', needsDeadline: true  },
-  { value: 'gravacao',     label: 'Gravação',         emoji: '🎙️', needsDeadline: true  },
-  { value: 'exame',        label: 'Exame',            emoji: '📋', needsDeadline: true  },
-  { value: 'participacao', label: 'Participação',     emoji: '🎵', needsDeadline: false },
-  { value: 'outro',        label: 'Outro',            emoji: '📁', needsDeadline: false },
-]
+const TYPES = Object.entries(PROGRAM_TYPES).map(([value, cfg]) => ({ value: value as ProgramaType, ...cfg }))
 
 export default function StudentEditProgramaPage() {
   const { programId } = useParams()
@@ -96,7 +88,7 @@ export default function StudentEditProgramaPage() {
                     ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
                 }`}>
-                <span>{t.emoji}</span>{t.label}
+                <t.Icon size={16} />{t.label}
               </button>
             ))}
           </div>

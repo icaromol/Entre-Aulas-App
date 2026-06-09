@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MdAccessTime, MdStar } from 'react-icons/md'
+import { MdAccessTime, MdStar, MdHistory } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
@@ -71,7 +71,7 @@ function sessionWeekStart(startedAt: string): string {
 function planItemLabel(si: SessionItem): string | null {
   const p = si.plan_item
   if (!p) return null
-  if (p.is_maintenance) return `🔄 ${p.piece?.title ?? 'Manutenção'}`
+  if (p.is_maintenance) return p.piece?.title ?? 'Manutenção'
   if (p.exercise) return p.exercise.title
   if (p.piece)    return p.piece.title
   return null
@@ -180,7 +180,9 @@ export default function HistoryPage() {
       {/* Empty state */}
       {sessions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-          <p className="text-4xl mb-3">📚</p>
+          <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+            <MdHistory size={24} color="white" />
+          </div>
           <p className="text-sm font-semibold text-gray-600">Nenhuma sessão ainda</p>
           <p className="text-xs text-gray-400 mt-1">
             Complete uma sessão de pomodoro para ver o histórico aqui.

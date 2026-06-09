@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import {
   MdArrowBack, MdAutoAwesome,
   MdCheckBox, MdCheckBoxOutlineBlank, MdWarningAmber, MdAdd, MdClose,
-  MdSchool, MdMusicNote, MdLibraryMusic, MdMic, MdFolder, MdSettings, MdTimer,
+  MdSettings, MdTimer, MdSync,
 } from 'react-icons/md'
 import { ProportionalSliderGroup } from '@/components/ui/ProportionalSliderGroup'
 import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
@@ -22,6 +22,7 @@ import {
   type ResolvedProgram,
 } from '@/lib/planGenerator'
 import type { Programa } from '@/types/programs'
+import { PROGRAM_TYPES } from '@/lib/programTypes'
 
 const HORIZON_OPTIONS = [
   { value: 'week'   as const, label: 'Semana',   weeks: 1 },
@@ -30,12 +31,7 @@ const HORIZON_OPTIONS = [
 ]
 
 function programIcon(type: string, size = 18) {
-  const icons: Record<string, React.ElementType> = {
-    regular: MdSchool, recital: MdMusicNote, concerto: MdLibraryMusic,
-    show: MdMic, gravacao: MdMic, exame: MdSchool,
-    participacao: MdMusicNote, outro: MdFolder,
-  }
-  const Icon = icons[type] ?? MdLibraryMusic
+  const Icon = (PROGRAM_TYPES[type] ?? PROGRAM_TYPES.outro).Icon
   return <Icon size={size} className="text-white" />
 }
 
@@ -630,7 +626,7 @@ const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | '
                     <div key={i} onClick={() => setEditingTask({ date: col.date, idx: i })}
                       className={`w-full text-left rounded-xl p-3 transition group cursor-pointer ${taskCardClass(task)}`}>
                       <div className="flex items-start gap-2">
-                        {task.isMaintenance && <span className="text-sm shrink-0 mt-0.5">🔄</span>}
+                        {task.isMaintenance && <MdSync size={14} className="shrink-0 mt-0.5 text-[#4A90C4]" />}
                         <p className="text-sm font-medium text-gray-700 flex-1 leading-snug line-clamp-2">{taskTitle(task)}</p>
                         <button onClick={e => { e.stopPropagation(); deleteTask(col.date, i) }}
                           className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 shrink-0 transition mt-0.5">

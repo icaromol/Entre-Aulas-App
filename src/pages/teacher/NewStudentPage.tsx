@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MdArrowBack, MdPerson, MdMusicNote, MdAccessTime, MdNotes, MdAdd } from 'react-icons/md'
+import {
+  MdArrowBack, MdPerson, MdMusicNote, MdAccessTime, MdNotes, MdAdd,
+  MdPiano, MdMic, MdGraphicEq, MdSchool, MdTrendingUp, MdEmojiEvents,
+} from 'react-icons/md'
+import type { IconType } from 'react-icons'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { grantTeacherXp } from '@/lib/teacherXpHelpers'
@@ -10,21 +14,21 @@ import { sound } from '@/lib/soundEffects'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
-const INSTRUMENTS = [
-  { value: 'Violão',   emoji: '🎸' },
-  { value: 'Piano',    emoji: '🎹' },
-  { value: 'Guitarra', emoji: '🎸' },
-  { value: 'Baixo',    emoji: '🎸' },
-  { value: 'Bateria',  emoji: '🥁' },
-  { value: 'Canto',    emoji: '🎤' },
-  { value: 'Violino',  emoji: '🎻' },
-  { value: 'Saxofone', emoji: '🎷' },
+const INSTRUMENTS: { value: string; Icon: IconType }[] = [
+  { value: 'Violão',   Icon: MdMusicNote },
+  { value: 'Piano',    Icon: MdPiano     },
+  { value: 'Guitarra', Icon: MdMusicNote },
+  { value: 'Baixo',    Icon: MdGraphicEq },
+  { value: 'Bateria',  Icon: MdGraphicEq },
+  { value: 'Canto',    Icon: MdMic       },
+  { value: 'Violino',  Icon: MdMusicNote },
+  { value: 'Saxofone', Icon: MdMusicNote },
 ]
 
-const LEVELS = [
-  { value: 'beginner',     label: 'Iniciante',     emoji: '🌱', bars: 1 },
-  { value: 'intermediate', label: 'Intermediário', emoji: '📈', bars: 2 },
-  { value: 'advanced',     label: 'Avançado',      emoji: '🎓', bars: 3 },
+const LEVELS: { value: string; label: string; Icon: IconType; bars: number }[] = [
+  { value: 'beginner',     label: 'Iniciante',     Icon: MdSchool,       bars: 1 },
+  { value: 'intermediate', label: 'Intermediário', Icon: MdTrendingUp,   bars: 2 },
+  { value: 'advanced',     label: 'Avançado',      Icon: MdEmojiEvents,  bars: 3 },
 ]
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -225,7 +229,7 @@ export default function NewStudentPage() {
                       : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
                   }`}
                 >
-                  <span className="text-xl leading-none">{inst.emoji}</span>
+                  <inst.Icon size={20} />
                   <span className="leading-none">{inst.value}</span>
                 </button>
               ))}
@@ -261,7 +265,7 @@ export default function NewStudentPage() {
                         : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
                     }`}
                   >
-                    <span className="text-2xl leading-none">{lvl.emoji}</span>
+                    <lvl.Icon size={22} />
                     <span className="text-xs font-semibold leading-none">{lvl.label}</span>
                     <div className="flex gap-1">
                       {[1, 2, 3].map(bar => (

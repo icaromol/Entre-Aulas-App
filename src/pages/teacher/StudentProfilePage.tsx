@@ -20,15 +20,16 @@ import {
   MdClose,
   MdAdd,
   MdMic,
-  MdFolder,
   MdPiano,
   MdTrendingUp,
   MdBarChart,
   MdEmojiEvents,
   MdGraphicEq,
+  MdSync,
 } from "react-icons/md";
 import Avatar from "boring-avatars";
 import { supabase } from "@/lib/supabase";
+import { PROGRAM_TYPES } from "@/lib/programTypes";
 import { getMonday, formatWeekStart, formatWeekLabel } from "@/lib/weekUtils";
 import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from "@/components/layout/TeacherLayout";
@@ -177,17 +178,8 @@ const exerciseStatusLabel: Record<string, string> = {
 };
 
 function programIcon(type: string) {
-  const map: Record<string, React.ReactNode> = {
-    regular: <MdSchool size={20} className="text-white" />,
-    recital: <MdMusicNote size={20} className="text-white" />,
-    concerto: <MdLibraryMusic size={20} className="text-white" />,
-    show: <MdMic size={20} className="text-white" />,
-    gravacao: <MdMic size={20} className="text-white" />,
-    exame: <MdSchool size={20} className="text-white" />,
-    participacao: <MdMusicNote size={20} className="text-white" />,
-    outro: <MdFolder size={20} className="text-white" />,
-  };
-  return map[type] ?? <MdLibraryMusic size={20} className="text-white" />;
+  const Icon = (PROGRAM_TYPES[type] ?? PROGRAM_TYPES.outro).Icon
+  return <Icon size={20} className="text-white" />;
 }
 
 function daysUntilLabel(date: string) {
@@ -780,7 +772,7 @@ export default function StudentProfilePage() {
                                 onClick={() => { setEditingPlanItem(task); setEditDuration(task.duration_minutes ?? 15); }}
                                 className={`w-full text-left rounded-xl p-3 transition group ${cardBg}`}>
                                 <div className="flex items-start gap-2">
-                                  {task.is_maintenance && <span className="text-sm shrink-0">🔄</span>}
+                                  {task.is_maintenance && <MdSync size={14} className="shrink-0 text-[#4A90C4]" />}
                                   <p className="text-sm font-medium text-gray-700 flex-1 leading-snug line-clamp-2">{title}</p>
                                   {task.is_done && (
                                     <span className="shrink-0 w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center mt-0.5">

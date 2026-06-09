@@ -457,7 +457,9 @@ export default function TodayPage() {
       {/* Lista de itens */}
       {items.length === 0 && freeSessions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
-          <p className="text-4xl mb-3">🎵</p>
+          <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+            <MdPlayArrow size={24} color="white" />
+          </div>
           {hasAnyPlan === false ? (
             <>
               <p className="text-sm font-semibold text-gray-700">

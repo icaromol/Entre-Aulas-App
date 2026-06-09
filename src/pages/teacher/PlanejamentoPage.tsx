@@ -4,8 +4,7 @@ import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   MdArrowBack, MdAutoAwesome, MdBalance, MdCheck,
-  MdCheckBox, MdCheckBoxOutlineBlank, MdWarningAmber, MdAdd, MdClose,
-  MdSchool, MdMusicNote, MdLibraryMusic, MdMic, MdFolder,
+  MdCheckBox, MdCheckBoxOutlineBlank, MdWarningAmber, MdAdd, MdClose, MdSync,
 } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
@@ -25,6 +24,7 @@ import {
   type ResolvedProgram,
 } from '@/lib/planGenerator'
 import type { Programa } from '@/types/programs'
+import { PROGRAM_TYPES } from '@/lib/programTypes'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -34,18 +34,8 @@ const HORIZON_OPTIONS = [
   { value: 'month'  as const, label: 'Mês',      weeks: 4 },
 ]
 
-const TYPE_EMOJI: Record<string, string> = {
-  regular: '📚', recital: '🎭', concerto: '🎹', show: '🎤',
-  gravacao: '🎙️', exame: '📋', participacao: '🎵', outro: '📁',
-}
-
 function programIcon(type: string, size = 18) {
-  const icons: Record<string, React.ElementType> = {
-    regular: MdSchool, recital: MdMusicNote, concerto: MdLibraryMusic,
-    show: MdMic, gravacao: MdMic, exame: MdSchool,
-    participacao: MdMusicNote, outro: MdFolder,
-  }
-  const Icon = icons[type] ?? MdLibraryMusic
+  const Icon = (PROGRAM_TYPES[type] ?? PROGRAM_TYPES.outro).Icon
   return <Icon size={size} className="text-white" />
 }
 
@@ -737,7 +727,7 @@ export default function PlanejamentoPage() {
                     <button key={i} onClick={() => setEditingTask({ date: col.date, idx: i })}
                       className={`w-full text-left rounded-xl p-3 transition group ${taskCardClass(task)}`}>
                       <div className="flex items-start gap-2">
-                        {task.isMaintenance && <span className="text-sm shrink-0 mt-0.5">🔄</span>}
+                        {task.isMaintenance && <MdSync size={14} className="shrink-0 mt-0.5 text-[#4A90C4]" />}
                         <p className="text-sm font-medium text-gray-700 flex-1 leading-snug line-clamp-2">
                           {taskTitle(task)}
                         </p>
@@ -899,7 +889,7 @@ export default function PlanejamentoPage() {
                       {item.title}
                     </p>
                     <p className="text-xs text-gray-400 truncate mt-0.5">
-                      {TYPE_EMOJI[item.programTitle] ?? ''} {item.programTitle}
+                      {item.programTitle}
                     </p>
                   </button>
                 ))}

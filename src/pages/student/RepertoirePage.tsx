@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Avatar from 'boring-avatars'
-import { MdAdd } from 'react-icons/md'
+import { MdAdd, MdMusicNote, MdFitnessCenter, MdLibraryMusic } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
+import { PROGRAM_TYPES } from '@/lib/programTypes'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
 
@@ -42,11 +43,6 @@ const exerciseStatusLabel: Record<string, string> = {
 const typeLabel: Record<string, string> = {
   regular: 'Aulas Regulares', recital: 'Recital', concerto: 'Concerto', show: 'Show',
   gravacao: 'Gravação', exame: 'Exame', participacao: 'Participação', outro: 'Outro',
-}
-
-const typeEmoji: Record<string, string> = {
-  regular: '📚', recital: '🎭', concerto: '🎹', show: '🎤',
-  gravacao: '🎙️', exame: '📋', participacao: '🎵', outro: '📁',
 }
 
 function daysUntil(date: string) {
@@ -163,7 +159,9 @@ export default function RepertoirePage() {
         <div className="space-y-3">
           {pieces.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-              <p className="text-4xl mb-3">🎼</p>
+              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+                <MdMusicNote size={24} color="white" />
+              </div>
               <p className="text-sm font-semibold text-gray-600">Nenhuma peça cadastrada</p>
               <p className="text-xs text-gray-400 mt-1">Adicione sua primeira peça!</p>
             </div>
@@ -262,7 +260,9 @@ export default function RepertoirePage() {
         <div className="space-y-3">
           {exercises.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-              <p className="text-4xl mb-3">🎹</p>
+              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+                <MdFitnessCenter size={24} color="white" />
+              </div>
               <p className="text-sm font-semibold text-gray-600">Nenhum exercício cadastrado</p>
               <p className="text-xs text-gray-400 mt-1">Adicione seu primeiro exercício!</p>
             </div>
@@ -297,17 +297,22 @@ export default function RepertoirePage() {
         <div className="space-y-3">
           {programas.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-              <p className="text-4xl mb-3">🎭</p>
+              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+                <MdLibraryMusic size={24} color="white" />
+              </div>
               <p className="text-sm font-semibold text-gray-600">Nenhum programa cadastrado</p>
               <p className="text-xs text-gray-400 mt-1">Crie seu primeiro programa!</p>
             </div>
           ) : (
             programas.map(prog => {
               const days = prog.deadline ? daysUntil(prog.deadline) : null
+              const ProgIcon = (PROGRAM_TYPES[prog.type] ?? PROGRAM_TYPES.outro).Icon
               return (
                 <button key={prog.id} onClick={() => navigate(`/aluno/repertorio/programas/${prog.id}`)}
                   className="w-full bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4]/40 transition text-left">
-                  <span className="text-2xl shrink-0">{typeEmoji[prog.type] ?? '📁'}</span>
+                  <div className="w-9 h-9 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                    <ProgIcon size={18} color="white" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800 truncate">{prog.title}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
