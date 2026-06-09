@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MdPause, MdPlayArrow, MdStop } from 'react-icons/md'
+import { MdPause, MdPlayArrow, MdStop, MdEmojiEvents } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
@@ -603,6 +603,9 @@ export default function PomodoroPage() {
   return (
     <StudentLayout>
       <div className="flex flex-col items-center pt-6 pb-8">
+        <div className="w-16 h-16 rounded-full bg-[#D6E4F0] flex items-center justify-center mb-3">
+          <MdEmojiEvents size={36} color="#1E3A5F" />
+        </div>
         <h1 className="text-xl font-bold text-[#1E3A5F]">Sessão encerrada!</h1>
         <p className="text-sm text-gray-400 mt-1">{fmtStudied(workSecs.current)}</p>
       </div>
