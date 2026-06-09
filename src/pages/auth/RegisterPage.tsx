@@ -1,210 +1,326 @@
-import { useState, useEffect } from 'react'
-import { Spinner } from '@/components/ui/Spinner'
-import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom'
-import { FcGoogle } from 'react-icons/fc'
-import { MdPerson, MdSchool, MdArrowBack, MdCheck, MdCheckCircle } from 'react-icons/md'
-import { supabase } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect } from "react";
+import { Spinner } from "@/components/ui/Spinner";
+import {
+  Link,
+  useSearchParams,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import { FcGoogle } from "react-icons/fc";
+import {
+  MdPerson,
+  MdSchool,
+  MdArrowBack,
+  MdCheck,
+  MdCheckCircle,
+} from "react-icons/md";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
 
-type Role = 'teacher' | 'student'
+type Role = "teacher" | "student";
 
-const ROLES: { value: Role; label: string; tag: string; features: string[]; Icon: typeof MdPerson }[] = [
+const ROLES: {
+  value: Role;
+  label: string;
+  features: string[];
+  Icon: typeof MdPerson;
+}[] = [
   {
-    value: 'teacher',
-    label: 'Sim, dou aulas',
-    tag: 'Professor',
-    features: ['Gerenciar alunos e turmas', 'Criar repertório e exercícios', 'Planejar estudos dos alunos', 'Área de estudo pessoal inclusa'],
+    value: "teacher",
+    label: "Para dar aulas e estudar",
+    features: [
+      "Gerenciar alunos e turmas",
+      "Criar repertório e exercícios",
+      "Planejar estudos dos alunos",
+      "Área de estudo pessoal inclusa",
+    ],
     Icon: MdSchool,
   },
   {
-    value: 'student',
-    label: 'Não, só estudo',
-    tag: 'Estudante',
-    features: ['Organizar seu repertório', 'Pomodoro e sessões de estudo', 'Acompanhar seu progresso'],
+    value: "student",
+    label: "Somente para o meu estudo",
+    features: [
+      "Organizar seu repertório",
+      "Pomodoro e sessões de estudo",
+      "Acompanhar seu progresso",
+    ],
     Icon: MdPerson,
   },
-]
+];
 
 const INSTRUMENTS = [
-  'Violão', 'Guitarra', 'Baixo', 'Piano', 'Teclado',
-  'Bateria', 'Canto', 'Violino', 'Viola', 'Violoncelo',
-  'Flauta', 'Saxofone', 'Trompete', 'Percussão', 'Outro',
-]
+  "Violão",
+  "Guitarra",
+  "Baixo",
+  "Piano",
+  "Teclado",
+  "Bateria",
+  "Canto",
+  "Violino",
+  "Viola",
+  "Violoncelo",
+  "Flauta",
+  "Saxofone",
+  "Trompete",
+  "Percussão",
+  "Outro",
+];
 
 export default function RegisterPage() {
-  const [searchParams] = useSearchParams()
-  const location = useLocation()
-  const navigate = useNavigate()
-  const inviteStudentId = searchParams.get('invite')
-  const inviteToken     = searchParams.get('token')
-  const autoSignup = (location.state as { autoSignup?: boolean } | null)?.autoSignup ?? searchParams.get('auto') === '1'
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const inviteStudentId = searchParams.get("invite");
+  const inviteToken = searchParams.get("token");
+  const autoSignup =
+    (location.state as { autoSignup?: boolean } | null)?.autoSignup ??
+    searchParams.get("auto") === "1";
 
-  const [inviteStudent, setInviteStudent] = useState<{ first_name: string; last_name: string } | null>(null)
-  const [inviteInvalid, setInviteInvalid] = useState(false)
+  const [inviteStudent, setInviteStudent] = useState<{
+    first_name: string;
+    last_name: string;
+  } | null>(null);
+  const [inviteInvalid, setInviteInvalid] = useState(false);
 
   // Step 1
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   // Step 2 — instrumento(s)
   // Estudante: string única; Professor: array (pode ensinar vários)
-  const [instrument, setInstrument]   = useState<string>('')
-  const [instruments, setInstruments] = useState<string[]>([])
-  const [step, setStep] = useState<1 | 2>(1)
+  const [instrument, setInstrument] = useState<string>("");
+  const [instruments, setInstruments] = useState<string[]>([]);
+  const [step, setStep] = useState<1 | 2>(1);
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!inviteStudentId || !inviteToken) {
-      if (inviteStudentId) setInviteInvalid(true)
-      return
+      if (inviteStudentId) setInviteInvalid(true);
+      return;
     }
     supabase
-      .from('students')
-      .select('first_name, last_name')
-      .eq('id', inviteStudentId)
-      .eq('invite_token', inviteToken)
-      .is('profile_id', null)
-      .gt('invite_expires_at', new Date().toISOString())
+      .from("students")
+      .select("first_name, last_name")
+      .eq("id", inviteStudentId)
+      .eq("invite_token", inviteToken)
+      .is("profile_id", null)
+      .gt("invite_expires_at", new Date().toISOString())
       .single()
-      .then(({ data }) => { if (data) setInviteStudent(data); else setInviteInvalid(true) })
-  }, [inviteStudentId, inviteToken])
+      .then(({ data }) => {
+        if (data) setInviteStudent(data);
+        else setInviteInvalid(true);
+      });
+  }, [inviteStudentId, inviteToken]);
 
   function toggleTeacherInstrument(inst: string) {
-    setInstruments(prev =>
-      prev.includes(inst) ? prev.filter(i => i !== inst) : [...prev, inst]
-    )
+    setInstruments((prev) =>
+      prev.includes(inst) ? prev.filter((i) => i !== inst) : [...prev, inst],
+    );
   }
 
   function handleRoleSelect(role: Role) {
-    setSelectedRole(role)
-    setInstrument('')
-    setInstruments([])
+    setSelectedRole(role);
+    setInstrument("");
+    setInstruments([]);
     // Se for convite (aluno), não precisa de passo 2
-    if (!inviteStudentId) setStep(2)
+    if (!inviteStudentId) setStep(2);
   }
 
   // Fluxo autoSignup — já autenticado via Google, escolhe role aqui
   async function handleDirectSignup() {
-    if (!selectedRole) return
-    setError('')
-    setLoading(true)
+    if (!selectedRole) return;
+    setError("");
+    setLoading(true);
 
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user) { navigate('/login', { replace: true }); return }
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) {
+      navigate("/login", { replace: true });
+      return;
+    }
 
-    const user = session.user
-    const googleName = user.user_metadata?.full_name ?? ''
-    const firstName = user.user_metadata?.given_name || googleName.split(' ')[0] || ''
-    const lastName  = user.user_metadata?.family_name || googleName.split(' ').slice(1).join(' ') || ''
+    const user = session.user;
+    const googleName = user.user_metadata?.full_name ?? "";
+    const firstName =
+      user.user_metadata?.given_name || googleName.split(" ")[0] || "";
+    const lastName =
+      user.user_metadata?.family_name ||
+      googleName.split(" ").slice(1).join(" ") ||
+      "";
 
-    const { error: rpcErr } = await supabase.rpc('complete_user_profile', {
-      p_role:       selectedRole,
+    const { error: rpcErr } = await supabase.rpc("complete_user_profile", {
+      p_role: selectedRole,
       p_first_name: firstName,
-      p_last_name:  lastName,
+      p_last_name: lastName,
       p_avatar_url: user.user_metadata?.avatar_url ?? null,
-    })
+    });
 
-    if (rpcErr) { setError('Erro ao criar perfil. Tente novamente.'); setLoading(false); return }
+    if (rpcErr) {
+      setError("Erro ao criar perfil. Tente novamente.");
+      setLoading(false);
+      return;
+    }
 
-    if (selectedRole === 'student') {
-      await supabase.from('students').insert({
-        profile_id:    user.id,
-        teacher_id:    null,
-        first_name:    firstName,
-        last_name:     lastName,
+    if (selectedRole === "student") {
+      await supabase.from("students").insert({
+        profile_id: user.id,
+        teacher_id: null,
+        first_name: firstName,
+        last_name: lastName,
         contact_email: user.email,
-        instrument:    instrument || null,
-        status:        'active',
-      })
+        instrument: instrument || null,
+        status: "active",
+      });
     } else {
       // Salvar instrumentos do professor
       if (instruments.length > 0) {
-        await supabase.from('teachers')
-          .update({ instruments: instruments.join(', ') })
-          .eq('profile_id', user.id)
+        await supabase
+          .from("teachers")
+          .update({ instruments: instruments.join(", ") })
+          .eq("profile_id", user.id);
       }
     }
 
-    window.location.replace(selectedRole === 'teacher' ? '/professor/alunos' : '/aluno/hoje')
+    window.location.replace(
+      selectedRole === "teacher" ? "/professor/alunos" : "/aluno/hoje",
+    );
   }
 
   // Fluxo normal: OAuth Google — passa instrumento no pending_signup
   async function handleGoogleSignup() {
-    if (!inviteStudentId && !selectedRole) return
-    setError('')
-    setLoading(true)
+    if (!inviteStudentId && !selectedRole) return;
+    setError("");
+    setLoading(true);
 
-    const role: Role = inviteStudentId ? 'student' : selectedRole!
+    const role: Role = inviteStudentId ? "student" : selectedRole!;
     const pending = inviteStudentId
-      ? { type: 'signup' as const, role, inviteStudentId, inviteToken: inviteToken ?? '', firstName: inviteStudent?.first_name, lastName: inviteStudent?.last_name }
-      : { type: 'signup' as const, role, instrument: role === 'student' ? instrument : undefined, instruments: role === 'teacher' ? instruments : undefined }
+      ? {
+          type: "signup" as const,
+          role,
+          inviteStudentId,
+          inviteToken: inviteToken ?? "",
+          firstName: inviteStudent?.first_name,
+          lastName: inviteStudent?.last_name,
+        }
+      : {
+          type: "signup" as const,
+          role,
+          instrument: role === "student" ? instrument : undefined,
+          instruments: role === "teacher" ? instruments : undefined,
+        };
 
-    sessionStorage.setItem('pending_signup', JSON.stringify(pending))
+    sessionStorage.setItem("pending_signup", JSON.stringify(pending));
 
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
+    });
 
-    if (error) { setError('Não foi possível conectar com o Google. Tente novamente.'); setLoading(false) }
+    if (error) {
+      setError("Não foi possível conectar com o Google. Tente novamente.");
+      setLoading(false);
+    }
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
   const subtitle = autoSignup
-    ? 'Sua conta Google foi conectada. Como quer usar o estudamus?'
+    ? "Sua conta Google foi conectada. Como quer usar o estudamus?"
     : inviteStudentId
-      ? inviteInvalid ? 'Link de convite inválido ou expirado.'
-        : inviteStudent ? `Olá, ${inviteStudent.first_name}! Crie sua conta para acessar o estudamus.`
-        : 'Verificando convite...'
-      : step === 1 ? 'Você usa o estudamus para dar aulas?' : selectedRole === 'student' ? 'Qual instrumento você toca?' : 'Quais instrumentos você ensina?'
+      ? inviteInvalid
+        ? "Link de convite inválido ou expirado."
+        : inviteStudent
+          ? `Olá, ${inviteStudent.first_name}! Crie sua conta para acessar o estudamus.`
+          : "Verificando convite..."
+      : step === 1
+        ? "Como você quer usar a plataforma?"
+        : selectedRole === "student"
+          ? "Qual instrumento você toca?"
+          : "Quais instrumentos você ensina?";
 
-  const canProceedStep1 = inviteStudentId ? (!!inviteStudent && !inviteInvalid) : !!selectedRole
+  const canProceedStep1 = inviteStudentId
+    ? !!inviteStudent && !inviteInvalid
+    : !!selectedRole;
   // Instrumento é opcional — pode pular
-  const canProceedStep2 = true
+  const canProceedStep2 = true;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
-
         <div className="text-center mb-8">
-          <img src="/estudamus_logo.png" alt="estudamus" className="h-10 mx-auto mb-3" />
-          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+          <img
+            src="/estudamus_logo.png"
+            alt="estudamus"
+            className="h-10 mx-auto"
+          />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-8 pt-7 pb-8 space-y-6">
+          {!inviteStudentId && (
+            <p className="text-base font-bold text-[#1E3A5F] text-center leading-snug">{subtitle}</p>
+          )}
+          {inviteStudentId && (
+            <p className="text-sm text-gray-500 text-center">{subtitle}</p>
+          )}
           {error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
           {/* PASSO 1 — Escolha de role */}
           {(step === 1 || autoSignup) && !inviteStudentId && (
             <div className="flex flex-col gap-3">
-              {ROLES.map(({ value, label, tag, features, Icon }) => {
-                const selected = selectedRole === value
+              {ROLES.map(({ value, label, features, Icon }) => {
+                const selected = selectedRole === value;
                 return (
-                  <button key={value} type="button"
-                    onClick={() => autoSignup ? setSelectedRole(value) : handleRoleSelect(value)}
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() =>
+                      autoSignup
+                        ? setSelectedRole(value)
+                        : handleRoleSelect(value)
+                    }
                     className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${
-                      selected ? 'border-[#1E3A5F] bg-[#D6E4F0]' : 'border-gray-200 bg-white hover:border-[#4A90C4]'
-                    }`}>
-                    <div className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${selected ? 'bg-[#1E3A5F]' : 'bg-gray-100'}`}>
-                      <Icon size={22} className={selected ? 'text-white' : 'text-gray-400'} />
+                      selected
+                        ? "border-[#1E3A5F] bg-[#D6E4F0]"
+                        : "border-gray-200 bg-white hover:border-[#4A90C4]"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${selected ? "bg-[#1E3A5F]" : "bg-gray-100"}`}
+                    >
+                      <Icon
+                        size={22}
+                        className={selected ? "text-white" : "text-gray-400"}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-sm font-bold ${selected ? 'text-[#1E3A5F]' : 'text-gray-700'}`}>{label}</span>
-                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${selected ? 'bg-[#1E3A5F] text-white' : 'bg-gray-100 text-gray-400'}`}>{tag}</span>
+                      <div className="mb-2">
+                        <span
+                          className={`text-sm font-bold ${selected ? "text-[#1E3A5F]" : "text-gray-700"}`}
+                        >
+                          {label}
+                        </span>
                       </div>
                       <ul className="space-y-0.5">
-                        {features.map(f => (
+                        {features.map((f) => (
                           <li key={f} className="flex items-center gap-1.5">
-                            <MdCheckCircle size={12} className={selected ? 'text-[#1E3A5F]' : 'text-gray-300'} />
-                            <span className={`text-xs ${selected ? 'text-[#1E3A5F]' : 'text-gray-400'}`}>{f}</span>
+                            <MdCheckCircle
+                              size={12}
+                              className={
+                                selected ? "text-[#1E3A5F]" : "text-gray-300"
+                              }
+                            />
+                            <span
+                              className={`text-xs ${selected ? "text-[#1E3A5F]" : "text-gray-400"}`}
+                            >
+                              {f}
+                            </span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   </button>
-                )
+                );
               })}
             </div>
           )}
@@ -212,18 +328,29 @@ export default function RegisterPage() {
           {/* PASSO 2 — Instrumento(s) */}
           {step === 2 && !autoSignup && selectedRole && (
             <>
-              <button onClick={() => setStep(1)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition -mt-1 mb-1">
+              <button
+                onClick={() => setStep(1)}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
+              >
                 <MdArrowBack size={14} /> Voltar
               </button>
 
-              {selectedRole === 'student' ? (
+              {selectedRole === "student" ? (
                 // Estudante — escolha única
                 <div className="grid grid-cols-3 gap-2">
-                  {INSTRUMENTS.map(inst => (
-                    <button key={inst} type="button" onClick={() => setInstrument(inst === instrument ? '' : inst)}
+                  {INSTRUMENTS.map((inst) => (
+                    <button
+                      key={inst}
+                      type="button"
+                      onClick={() =>
+                        setInstrument(inst === instrument ? "" : inst)
+                      }
                       className={`py-2 px-1 rounded-xl border text-xs font-medium transition ${
-                        instrument === inst ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
-                      }`}>
+                        instrument === inst
+                          ? "bg-[#1E3A5F] text-white border-[#1E3A5F]"
+                          : "bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]"
+                      }`}
+                    >
                       {inst}
                     </button>
                   ))}
@@ -231,60 +358,98 @@ export default function RegisterPage() {
               ) : (
                 // Professor — múltipla escolha
                 <div className="grid grid-cols-3 gap-2">
-                  {INSTRUMENTS.map(inst => {
-                    const sel = instruments.includes(inst)
+                  {INSTRUMENTS.map((inst) => {
+                    const sel = instruments.includes(inst);
                     return (
-                      <button key={inst} type="button" onClick={() => toggleTeacherInstrument(inst)}
+                      <button
+                        key={inst}
+                        type="button"
+                        onClick={() => toggleTeacherInstrument(inst)}
                         className={`relative py-2 px-1 rounded-xl border text-xs font-medium transition ${
-                          sel ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
-                        }`}>
-                        {sel && <MdCheck size={10} className="absolute top-1 right-1 opacity-70" />}
+                          sel
+                            ? "bg-[#1E3A5F] text-white border-[#1E3A5F]"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]"
+                        }`}
+                      >
+                        {sel && (
+                          <MdCheck
+                            size={10}
+                            className="absolute top-1 right-1 opacity-70"
+                          />
+                        )}
                         {inst}
                       </button>
-                    )
+                    );
                   })}
                 </div>
               )}
-
-              <p className="text-xs text-gray-400 text-center">Opcional — pode pular</p>
             </>
           )}
 
           {/* Botão de ação */}
           {inviteStudentId && !inviteStudent ? (
-            <div className="flex justify-center py-4"><Spinner /></div>
+            <div className="flex justify-center py-4">
+              <Spinner />
+            </div>
           ) : autoSignup ? (
-            <Button onClick={handleDirectSignup} disabled={loading || !canProceedStep1}
-              className="w-full h-11 rounded-xl bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white disabled:opacity-40">
-              {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" /> : 'Continuar'}
+            <Button
+              onClick={handleDirectSignup}
+              disabled={loading || !canProceedStep1}
+              className="w-full h-11 rounded-xl bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white disabled:opacity-40"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />
+              ) : (
+                "Continuar"
+              )}
             </Button>
           ) : step === 1 ? (
             // Passo 1: só mostra botão se for convite (role já definido pelo invite)
             inviteStudentId && (
-              <Button onClick={handleGoogleSignup} disabled={loading || !canProceedStep1} variant="outline"
-                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40">
-                {loading ? <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <FcGoogle size={20} />}
-                {loading ? 'Redirecionando...' : 'Continuar com Google'}
+              <Button
+                onClick={handleGoogleSignup}
+                disabled={loading || !canProceedStep1}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <FcGoogle size={20} />
+                )}
+                {loading ? "Redirecionando..." : "Continuar com Google"}
               </Button>
             )
           ) : (
             // Passo 2: botão final
-            <Button onClick={handleGoogleSignup} disabled={loading || !canProceedStep2} variant="outline"
-              className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40">
-              {loading ? <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <FcGoogle size={20} />}
-              {loading ? 'Redirecionando...' : 'Continuar com Google'}
+            <Button
+              onClick={handleGoogleSignup}
+              disabled={loading || !canProceedStep2}
+              variant="outline"
+              className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <FcGoogle size={20} />
+              )}
+              {loading ? "Redirecionando..." : "Continuar com Google"}
             </Button>
           )}
         </div>
 
         {!inviteStudentId && !autoSignup && (
           <p className="text-center text-sm text-gray-500 mt-6">
-            Já tem conta?{' '}
-            <Link to="/login" className="text-[#4A90C4] font-medium hover:underline">Entrar</Link>
+            Já tem conta?{" "}
+            <Link
+              to="/login"
+              className="text-[#4A90C4] font-medium hover:underline"
+            >
+              Entrar
+            </Link>
           </p>
         )}
-
       </div>
     </div>
-  )
+  );
 }
