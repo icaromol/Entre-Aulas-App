@@ -327,7 +327,7 @@ export default function JourneyPage() {
               />
             </div>
             <p className="text-xs text-gray-400">
-              {todayMission.done} de {todayMission.total} itens concluídos
+              {todayMission.done} de {todayMission.total} itens concluídos com pomodoro
             </p>
           </>
         )}

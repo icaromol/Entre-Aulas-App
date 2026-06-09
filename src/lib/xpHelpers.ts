@@ -136,8 +136,9 @@ export async function grantXp(
   reason: XpReason,
   sourceId: string | null = null,
   attribute: XpAttribute | null = null,
+  amountOverride?: number,
 ): Promise<{ newAchievements: string[] }> {
-  const amount = XP_AMOUNTS[reason]
+  const amount = amountOverride ?? XP_AMOUNTS[reason]
 
   const { error } = await supabase.from('student_xp_events').insert({
     student_id: studentId,

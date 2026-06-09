@@ -6,7 +6,7 @@ import {
   MdChevronRight,
   MdPlayArrow,
   MdDeleteOutline,
-  MdFrontHand,
+  MdCheckCircle,
 } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
@@ -172,6 +172,7 @@ export default function TodayPage() {
   const [pendingItem, setPendingItem] = useState<PlanItem | null>(null);
   const [skipConfirm, setSkipConfirm] = useState(false);
   const SKIP_KEY = "estudamus_skip_pomodoro_confirm";
+  const [manualTooltip, setManualTooltip] = useState<{ x: number; y: number } | null>(null);
 
   const weekStart = formatWeekStart(getMonday(new Date()));
 
@@ -302,7 +303,11 @@ export default function TodayPage() {
           toComplete.map((item) =>
             supabase
               .from("plan_items")
-              .update({ is_done: true, done_at: new Date().toISOString(), completed_manually: false })
+              .update({
+                is_done: true,
+                done_at: new Date().toISOString(),
+                completed_manually: false,
+              })
               .eq("id", item.id),
           ),
         );
@@ -372,6 +377,9 @@ export default function TodayPage() {
 
     if (!newDone || !studentId) return;
 
+    // Conclusão manual não conta XP, badges nem missão do dia
+    if (manually) return;
+
     // Determina atributo pelo tipo do item
     const category = (item as PlanItem & { exercise?: { category?: string } })
       .exercise?.category;
@@ -394,9 +402,9 @@ export default function TodayPage() {
     if (hasRankUp(newAchievements)) fireStars();
     else fireBasic();
 
-    // Missão do dia: todos os itens de hoje concluídos
+    // Missão do dia: todos os itens de hoje concluídos sem conclusão manual
     const totalNow = updatedItems.length;
-    const doneNow = updatedItems.filter((i) => i.is_done).length;
+    const doneNow = updatedItems.filter((i) => i.is_done && !i.completed_manually).length;
     if (totalNow > 0 && doneNow === totalNow) {
       const { newAchievements: mAch } = await grantXp(
         studentId,
@@ -446,8 +454,6 @@ export default function TodayPage() {
       ? Math.min(100, Math.round((studiedMinutes / denominator) * 100))
       : 0;
 
-  // Para missão do dia (base em itens)
-  const done = items.filter((i) => i.is_done).length + freeSessions.length;
   const total = items.length + freeSessions.length;
 
   if (loading) {
@@ -497,6 +503,15 @@ export default function TodayPage() {
       {/* Progresso do dia */}
       {total > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
+          {pct >= 100 && (
+            <div className="flex items-center gap-2 mb-3">
+              <MdCheckCircle size={20} className="text-green-500 shrink-0" />
+              <p className="text-sm font-bold text-[#1E3A5F]">
+                Você <span className="font-bold">já</span> completou o estudo de
+                hoje.
+              </p>
+            </div>
+          )}
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-gray-600">
               Progresso de hoje
@@ -509,7 +524,7 @@ export default function TodayPage() {
           </div>
           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#4A90C4] rounded-full transition-all duration-500"
+              className={`h-full rounded-full transition-all duration-500 ${pct >= 100 ? "bg-green-500" : "bg-[#4A90C4]"}`}
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -591,19 +606,20 @@ export default function TodayPage() {
                         {maintenanceIcon ? `Manutenção · ${title}` : title}
                       </p>
                       {item.completed_manually && (
-                        <div className="group/manual relative shrink-0">
-                          <MdFrontHand size={15} className="text-[#1E3A5F] opacity-60 group-hover/manual:opacity-100 transition cursor-default" />
-                          <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 bg-[#1E3A5F] text-white text-xs rounded-xl px-3 py-2 opacity-0 group-hover/manual:opacity-100 transition z-10 shadow-lg">
-                            <p className="font-semibold mb-0.5">Conclusão manual</p>
-                            <p className="text-white/70 leading-snug">Concluído sem uma sessão pomodoro.</p>
-                          </div>
-                        </div>
+                        <span
+                          className="text-[#1E3A5F] font-bold text-sm leading-none cursor-default select-none shrink-0"
+                          onMouseEnter={(e) => {
+                            const r = (e.target as HTMLElement).getBoundingClientRect();
+                            setManualTooltip({ x: r.left + r.width / 2, y: r.top });
+                          }}
+                          onMouseLeave={() => setManualTooltip(null)}
+                        >*</span>
                       )}
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5 truncate">
-                      {subtitle}
+                      {maintenanceIcon ? "" : subtitle}
                       {item.duration_minutes
-                        ? ` · ${item.duration_minutes} min`
+                        ? `${!maintenanceIcon && subtitle ? " · " : ""}${item.duration_minutes} min`
                         : ""}
                     </p>
                   </div>
@@ -697,13 +713,19 @@ export default function TodayPage() {
         </Button>
       </div>
 
-      {/* Conclusão */}
-      {total > 0 && done === total && (
-        <div className="mt-5 bg-[#D6E4F0] rounded-2xl p-4 text-center">
-          <p className="text-2xl mb-1">🎉</p>
-          <p className="text-sm font-bold text-[#1E3A5F]">
-            Parabéns! Você completou o estudo de hoje.
-          </p>
+      {/* Tooltip conclusão manual — fora do card para evitar herança de opacidade */}
+      {manualTooltip && (
+        <div
+          className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
+          style={{
+            backgroundColor: '#1E3A5F',
+            top: manualTooltip.y - 8,
+            left: manualTooltip.x,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <p className="font-semibold mb-0.5">Conclusão manual</p>
+          <p style={{ color: 'rgba(255,255,255,0.75)' }} className="leading-snug">Não conta XP, badges nem missões.</p>
         </div>
       )}
 

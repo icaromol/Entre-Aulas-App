@@ -175,7 +175,7 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
 
       supabase
         .from('study_sessions')
-        .select('started_at')
+        .select('started_at, duration_seconds')
         .eq('student_id', sid)
         .gte('started_at', weekStart + 'T00:00:00')
         .lt('started_at', weekEndIso),
@@ -242,13 +242,14 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
     if (weekPlanResult.data) {
       const { data: allWeekItems } = await supabase
         .from('plan_items')
-        .select('id, is_done, day_of_week')
+        .select('id, is_done, day_of_week, completed_manually')
         .eq('plan_id', weekPlanResult.data.id)
 
       const allItems = allWeekItems ?? []
       const dayItems = allItems.filter(i => i.day_of_week === todayDow)
       const total = dayItems.length
-      const done  = dayItems.filter(i => i.is_done).length
+      // missão diária só conta itens concluídos sem conclusão manual
+      const done  = dayItems.filter(i => i.is_done && !i.completed_manually).length
       todayMission = {
         total,
         done,
@@ -256,7 +257,8 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
         completed: total > 0 && done === total,
       }
       weekItemStats = {
-        doneItems:   allItems.filter(i => i.is_done).length,
+        // missão semanal de itens só conta concluídos sem conclusão manual
+        doneItems:   allItems.filter(i => i.is_done && !i.completed_manually).length,
         totalItems:  allItems.length,
         plannedDays: new Set(allItems.map(i => i.day_of_week)).size,
       }
@@ -277,10 +279,12 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
     }
 
     // ─── Missões semanais ─────────────────────────────────────────────────
-    const weekSessions   = weekSessionsResult.data ?? []
+    const weekSessions    = weekSessionsResult.data ?? []
     const weekDaysStudied = new Set(weekSessions.map(s => s.started_at.slice(0, 10))).size
-    const weekPomodoros  = weekSessions.length
-    const weekItems      = (weekItemsResult.data ?? []).length
+    // sessões de pelo menos 10 minutos (600 segundos)
+    const weekPomodoros   = weekSessions.filter(s => (s.duration_seconds ?? 0) >= 600).length
+    // itens já filtram completed_manually=false via XP events (só grantXp quando não manual)
+    const weekItems       = (weekItemsResult.data ?? []).length
 
     const weeklyMissions: WeeklyMission[] = [
       {
@@ -294,7 +298,7 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
       },
       {
         key:       'weekly_mission_pomodoros',
-        label:     'Completar 3 sessões de estudo',
+        label:     'Completar 3 sessões de pelo menos 10 min',
         xpReward:  60,
         target:    3,
         current:   weekPomodoros,
@@ -303,7 +307,7 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
       },
       {
         key:       'weekly_mission_items',
-        label:     'Marcar 5 itens como concluídos',
+        label:     'Concluir 5 itens via pomodoro',
         xpReward:  50,
         target:    5,
         current:   weekItems,
