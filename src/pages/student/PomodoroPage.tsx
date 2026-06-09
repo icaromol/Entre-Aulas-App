@@ -73,11 +73,16 @@ function autoPreset(durationMinutes: number): CyclePreset {
 
 type Phase = "idle" | "work" | "break" | "finished";
 
-interface DayItem {
+interface ChecklistEntry {
   id: string;
-  kind: "checklist";
   title: string;
-  subtitle: string;
+}
+
+interface DayGroup {
+  sourceId: string;
+  sourceTitle: string;
+  kind: "piece" | "exercise";
+  items: ChecklistEntry[];
 }
 
 
@@ -196,7 +201,8 @@ export default function PomodoroPage() {
   const workSecs = useRef(0);
 
   // ── Finish screen ──
-  const [dayItems, setDayItems] = useState<DayItem[]>([]);
+  const [dayGroups, setDayGroups] = useState<DayGroup[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [workedIds, setWorkedIds] = useState<Set<string>>(new Set());
   const [difficulty, setDifficulty] = useState<"easy" | "ok" | "hard" | "">("");
   const [comment, setComment] = useState("");
@@ -333,20 +339,28 @@ export default function PomodoroPage() {
       return;
     }
 
-    const items: DayItem[] = [];
+    const groups: DayGroup[] = [];
 
     for (const piece of (piecesRes.data ?? []) as any[]) {
-      for (const ci of (piece.checklist_items ?? []) as any[]) {
-        items.push({ id: ci.id, kind: "checklist", title: ci.title, subtitle: piece.title });
-      }
+      if ((piece.checklist_items ?? []).length === 0) continue;
+      groups.push({
+        sourceId: piece.id,
+        sourceTitle: piece.title,
+        kind: "piece",
+        items: (piece.checklist_items as ChecklistEntry[]),
+      });
     }
     for (const ex of (exercisesRes.data ?? []) as any[]) {
-      for (const ci of (ex.checklist_items ?? []) as any[]) {
-        items.push({ id: ci.id, kind: "checklist", title: ci.title, subtitle: ex.title });
-      }
+      if ((ex.checklist_items ?? []).length === 0) continue;
+      groups.push({
+        sourceId: ex.id,
+        sourceTitle: ex.title,
+        kind: "exercise",
+        items: (ex.checklist_items as ChecklistEntry[]),
+      });
     }
 
-    setDayItems(items);
+    setDayGroups(groups);
     setLoadingItems(false);
   }
 
@@ -663,55 +677,100 @@ export default function PomodoroPage() {
               <Spinner size={16} />
             </div>
           ) : (
-            dayItems.length > 0 && (
+            dayGroups.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 p-4">
                 <p className="text-sm font-semibold text-gray-600 mb-3">
                   Selecione os itens que você está trabalhando.
                 </p>
                 <div className="space-y-2">
-                  {dayItems.map((item) => {
-                    const checked = workedIds.has(item.id);
+                  {dayGroups.map((group) => {
+                    const expanded = expandedGroups.has(group.sourceId);
+                    const groupChecked = group.items.every((ci) => workedIds.has(ci.id));
+                    const groupIndeterminate = !groupChecked && group.items.some((ci) => workedIds.has(ci.id));
+
+                    function toggleGroup() {
+                      setWorkedIds((prev) => {
+                        const next = new Set(prev);
+                        if (groupChecked) group.items.forEach((ci) => next.delete(ci.id));
+                        else group.items.forEach((ci) => next.add(ci.id));
+                        return next;
+                      });
+                    }
+
+                    function toggleItem(id: string) {
+                      setWorkedIds((prev) => {
+                        const next = new Set(prev);
+                        next.has(id) ? next.delete(id) : next.add(id);
+                        return next;
+                      });
+                    }
+
                     return (
-                      <button
-                        key={item.id}
-                        onClick={() =>
-                          setWorkedIds((prev) => {
-                            const next = new Set(prev);
-                            checked ? next.delete(item.id) : next.add(item.id);
-                            return next;
-                          })
-                        }
-                        className="w-full flex items-center gap-3 text-left"
-                      >
-                        <div
-                          className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
-                            checked
-                              ? "bg-[#1E3A5F] border-[#1E3A5F]"
-                              : "border-gray-300"
-                          }`}
-                        >
-                          {checked && (
-                            <svg
-                              width="10"
-                              height="10"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="white"
-                              strokeWidth={3}
-                            >
-                              <path d="M5 13l4 4L19 7" />
+                      <div key={group.sourceId}>
+                        {/* Linha do grupo (peça/exercício) */}
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={toggleGroup}
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
+                              groupChecked
+                                ? "bg-[#1E3A5F] border-[#1E3A5F]"
+                                : groupIndeterminate
+                                  ? "bg-[#4A90C4]/20 border-[#4A90C4]"
+                                  : "border-gray-300"
+                            }`}
+                          >
+                            {groupChecked && (
+                              <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                                <path d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                            {groupIndeterminate && (
+                              <div className="w-2 h-0.5 bg-[#4A90C4] rounded-full" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => setExpandedGroups((prev) => {
+                              const next = new Set(prev);
+                              next.has(group.sourceId) ? next.delete(group.sourceId) : next.add(group.sourceId);
+                              return next;
+                            })}
+                            className="flex-1 flex items-center justify-between gap-2 text-left py-0.5"
+                          >
+                            <span className="text-sm font-semibold text-gray-700 truncate">{group.sourceTitle}</span>
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}
+                              className={`shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`}>
+                              <path d="M9 18l6-6-6-6" />
                             </svg>
-                          )}
+                          </button>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-700 truncate">
-                            {item.title}
-                          </p>
-                          <p className="text-xs text-gray-400 truncate">
-                            {item.subtitle}
-                          </p>
-                        </div>
-                      </button>
+
+                        {/* Itens do checklist (expandidos) */}
+                        {expanded && (
+                          <div className="mt-1 ml-8 space-y-1.5 border-l-2 border-gray-100 pl-3">
+                            {group.items.map((ci) => {
+                              const checked = workedIds.has(ci.id);
+                              return (
+                                <button
+                                  key={ci.id}
+                                  onClick={() => toggleItem(ci.id)}
+                                  className="w-full flex items-center gap-3 text-left py-0.5"
+                                >
+                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition ${
+                                    checked ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-gray-300"
+                                  }`}>
+                                    {checked && (
+                                      <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                                        <path d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  <span className="text-xs text-gray-600 truncate">{ci.title}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
