@@ -463,8 +463,8 @@ export default function PomodoroPage() {
             {isWork ? `Ciclo ${currentCycle} de ${c?.totalCycles}` : 'Pausa'}
           </div>
 
-          {/* min(80vw, 80vh) — para no primeiro que chegar */}
-          <div className="relative" style={{ width: 'min(80vw, 80vh)', height: 'min(80vw, 80vh)' }}>
+          {/* min(60vw, 60vh) — para no primeiro que chegar */}
+          <div className="relative" style={{ width: 'min(60vw, 60vh)', height: 'min(60vw, 60vh)' }}>
             <svg viewBox="0 0 120 120" className="-rotate-90 w-full h-full">
               <circle cx="60" cy="60" r="54" fill="none" stroke="#F3F4F6" strokeWidth="5"/>
               <circle
@@ -588,7 +588,8 @@ export default function PomodoroPage() {
               placeholder="Dificuldades, dúvidas, observações..."
               rows={3}
               maxLength={500}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none"
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-y"
+              style={{ minHeight: '72px' }}
             />
           </div>
         </div>
