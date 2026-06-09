@@ -91,6 +91,8 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [hasTeacher, setHasTeacher] = useState<boolean | null>(null);
+  const [hasAnyPlan, setHasAnyPlan] = useState<boolean | null>(null);
   const [viewDay, setViewDay] = useState(getTodayDayOfWeek());
   const [pendingItem, setPendingItem] = useState<PlanItem | null>(null);
 
@@ -114,7 +116,7 @@ export default function TodayPage() {
     if (!studentId) {
       const { data: student, error: studentError } = await supabase
         .from("students")
-        .select("id")
+        .select("id, teacher_id")
         .eq("profile_id", profile!.id)
         .single();
 
@@ -125,6 +127,7 @@ export default function TodayPage() {
         return;
       }
       setStudentId(student.id);
+      setHasTeacher(!!student.teacher_id);
       await fetchItems(student.id);
     } else {
       await fetchItems(studentId);
@@ -147,10 +150,17 @@ export default function TodayPage() {
     }
 
     if (!plan) {
+      // Verifica se há algum plano em qualquer semana
+      const { count } = await supabase
+        .from('weekly_plans')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_id', sid)
+      setHasAnyPlan((count ?? 0) > 0)
       setItems([]);
       setLoading(false);
       return;
     }
+    setHasAnyPlan(true);
 
     const { data: planItems, error: itemsError } = await supabase
       .from("plan_items")
@@ -302,12 +312,31 @@ export default function TodayPage() {
       {items.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
           <p className="text-4xl mb-3">🎵</p>
-          <p className="text-sm font-semibold text-gray-700">
-            Nenhum item para hoje
-          </p>
-          <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-            Pode aproveitar! Que tal fazer um estudo extra com o botão abaixo?
-          </p>
+          {hasAnyPlan === false ? (
+            <>
+              <p className="text-sm font-semibold text-gray-700">Jornada não iniciada</p>
+              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                {hasTeacher
+                  ? 'Seu professor precisa criar um plano de estudos para você.'
+                  : 'Crie um plano antes de continuar.'}
+              </p>
+              {!hasTeacher && (
+                <button
+                  onClick={() => navigate('/aluno/planejamento')}
+                  className="mt-4 px-5 py-2 rounded-xl bg-[#1E3A5F] text-white text-xs font-semibold hover:bg-[#1E3A5F]/90 transition"
+                >
+                  Criar plano
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-gray-700">Nenhum item para hoje</p>
+              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                Pode aproveitar! Que tal fazer um estudo extra com o botão abaixo?
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
