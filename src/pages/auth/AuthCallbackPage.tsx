@@ -66,11 +66,11 @@ export default function AuthCallbackPage() {
         .single()
 
       if (profile?.role === 'teacher') {
-        navigate('/professor/alunos', { replace: true })
+        window.location.replace('/professor/alunos')
       } else if (profile?.role === 'student') {
-        navigate('/aluno/hoje', { replace: true })
+        window.location.replace('/aluno/hoje')
       } else {
-        navigate('/cadastro', { replace: true, state: { autoSignup: true } })
+        window.location.replace('/cadastro?auto=1')
       }
     }
 
@@ -81,7 +81,7 @@ export default function AuthCallbackPage() {
         subscription.unsubscribe()
         processUser(session.user)
       } else if (event === 'INITIAL_SESSION' && !session) {
-        navigate('/login', { replace: true })
+        window.location.replace('/login')
       }
     })
 

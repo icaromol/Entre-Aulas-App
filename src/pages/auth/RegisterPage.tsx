@@ -19,7 +19,7 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const inviteStudentId = searchParams.get('invite')
   const inviteToken     = searchParams.get('token')
-  const autoSignup = (location.state as { autoSignup?: boolean } | null)?.autoSignup ?? false
+  const autoSignup = (location.state as { autoSignup?: boolean } | null)?.autoSignup ?? searchParams.get('auto') === '1'
 
   const [inviteStudent, setInviteStudent] = useState<{ first_name: string; last_name: string } | null>(null)
   const [inviteInvalid, setInviteInvalid] = useState(false)
