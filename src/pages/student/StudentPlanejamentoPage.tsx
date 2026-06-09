@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
-  MdArrowBack, MdAutoAwesome, MdBalance, MdCheck,
+  MdArrowBack, MdAutoAwesome,
   MdCheckBox, MdCheckBoxOutlineBlank, MdWarningAmber, MdAdd, MdClose,
-  MdSchool, MdMusicNote, MdLibraryMusic, MdMic, MdFolder,
+  MdSchool, MdMusicNote, MdLibraryMusic, MdMic, MdFolder, MdSettings, MdTimer,
 } from 'react-icons/md'
+import { ProportionalSliderGroup } from '@/components/ui/ProportionalSliderGroup'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
@@ -91,6 +92,8 @@ export default function StudentPlanejamentoPage() {
   const [selectedWeekIdx, setSelectedWeekIdx] = useState(0)
   const [pickerItems, setPickerItems]         = useState<PickerItem[]>([])
   const [pomodoroWork, setPomodoroWork]       = useState(15)
+  const [pomodoroBreak, setPomodoroBreak]     = useState(5)
+  const [showPomodoroConfig, setShowPomodoroConfig] = useState(false)
 
   const [editingTask, setEditingTask] = useState<{ date: string; idx: number } | null>(null)
   const [addingToDay, setAddingToDay] = useState<{ date: string; dow: number; weekStart: string } | null>(null)
@@ -148,6 +151,17 @@ export default function StudentPlanejamentoPage() {
 
   const totalWeight = [...selectedIds].reduce((s, id) => s + (weights[id] ?? 0), 0)
   const weightOk    = totalWeight === 100 && selectedIds.size > 0
+
+  // Estabiliza o array de itens do slider — não inclui `weights` para evitar recriação durante drag
+  const sliderItems = useMemo(
+    () => programs.filter(p => selectedIds.has(p.id)).map(p => ({ id: p.id, label: p.title })),
+    [programs, selectedIds]
+  )
+
+  // Estabiliza o callback do slider para não invalidar o hook a cada render
+  const handleSliderChange = useCallback((id: string, value: number) => {
+    setWeights(w => ({ ...w, [id]: value }))
+  }, [])
 
   async function handleGenerate() {
     setError('')
@@ -394,64 +408,87 @@ export default function StudentPlanejamentoPage() {
           <div className="space-y-5">
 
             <div className="bg-[#D6E4F0]/50 border border-[#4A90C4]/20 rounded-2xl px-5 py-3">
-              <p className="text-xs font-semibold text-[#1E3A5F]">Ciclo pomodoro · {levelLabel[studentLevel]}</p>
-              <p className="text-xs text-[#1E3A5F]/60 mt-0.5">
-                {studentLevel === 'beginner' ? '10 min trabalho · 5 min pausa' :
-                 studentLevel === 'intermediate' ? '15 min trabalho · 5 min pausa' :
-                 '25 min trabalho · 5 min pausa'}
-              </p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                    <MdTimer size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-[#1E3A5F]">Ciclo pomodoro · {levelLabel[studentLevel]}</p>
+                    <p className="text-xs text-[#1E3A5F]/60 mt-0.5">
+                      {pomodoroWork} min trabalho · {pomodoroBreak} min pausa
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPomodoroConfig(v => !v)}
+                  className="p-1.5 rounded-lg hover:bg-[#4A90C4]/10 transition text-[#4A90C4]"
+                  title="Configurar ciclo">
+                  <MdSettings size={16} />
+                </button>
+              </div>
+              {showPomodoroConfig && (
+                <div className="mt-3 pt-3 border-t border-[#4A90C4]/20 space-y-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-[#1E3A5F]">Trabalho: {pomodoroWork} min</p>
+                    <input
+                      type="range" min={5} max={60} step={5}
+                      value={pomodoroWork}
+                      onChange={e => setPomodoroWork(Number(e.target.value))}
+                      className="w-full accent-[#4A90C4]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-[#1E3A5F]">Pausa: {pomodoroBreak} min</p>
+                    <input
+                      type="range" min={1} max={30} step={1}
+                      value={pomodoroBreak}
+                      onChange={e => setPomodoroBreak(Number(e.target.value))}
+                      className="w-full accent-[#4A90C4]"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-600">Programas</h2>
-                <button onClick={() => distributeWeights(selectedIds)}
-                  className="flex items-center gap-1 text-xs text-[#4A90C4] hover:text-[#1E3A5F] transition">
-                  <MdBalance size={13} /> Auto-balancear
-                </button>
-              </div>
+              <h2 className="text-sm font-semibold text-gray-600">Programas</h2>
               <div className="space-y-2">
                 {programs.map(prog => {
                   const sel = selectedIds.has(prog.id)
                   return (
-                    <div key={prog.id} className={`rounded-xl border transition ${sel ? 'border-[#4A90C4] bg-[#D6E4F0]/30' : 'border-gray-100 bg-gray-50'}`}>
-                      <div className="flex items-center gap-3 p-3">
-                        <button onClick={() => toggleProgram(prog.id)} className="text-[#4A90C4] shrink-0">
-                          {sel ? <MdCheckBox size={20} /> : <MdCheckBoxOutlineBlank size={20} className="text-gray-300" />}
-                        </button>
-                        <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center shrink-0">
-                          {programIcon(prog.type, 16)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">{prog.title}</p>
-                          {prog.deadline && (
-                            <p className="text-xs text-gray-400">
-                              {new Date(prog.deadline + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                            </p>
-                          )}
-                        </div>
-                        {sel && <span className="text-sm font-bold text-[#1E3A5F] shrink-0 w-10 text-right">{weights[prog.id] ?? 0}%</span>}
+                    <div key={prog.id}
+                      className={`rounded-xl border transition flex items-center gap-3 p-3 ${sel ? 'border-[#4A90C4] bg-[#D6E4F0]/30' : 'border-gray-100 bg-gray-50'}`}>
+                      <button onClick={() => toggleProgram(prog.id)} className="text-[#4A90C4] shrink-0">
+                        {sel ? <MdCheckBox size={20} /> : <MdCheckBoxOutlineBlank size={20} className="text-gray-300" />}
+                      </button>
+                      <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                        {programIcon(prog.type, 16)}
                       </div>
-                      {sel && (
-                        <div className="px-3 pb-3 flex items-center gap-2">
-                          <input type="range" min={0} max={100} step={1} value={weights[prog.id] ?? 0}
-                            onChange={e => setWeights(w => ({ ...w, [prog.id]: Number(e.target.value) }))}
-                            className="flex-1 accent-[#4A90C4] h-2" />
-                          <input type="number" min={0} max={100} value={weights[prog.id] ?? 0}
-                            onChange={e => setWeights(w => ({ ...w, [prog.id]: Math.max(0, Math.min(100, Number(e.target.value))) }))}
-                            className="w-12 text-center text-xs border border-gray-200 rounded-lg px-1 py-1.5 outline-none focus:border-[#4A90C4]" />
-                        </div>
-                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{prog.title}</p>
+                        {prog.deadline && (
+                          <p className="text-xs text-gray-400">
+                            {new Date(prog.deadline + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                          </p>
+                        )}
+                      </div>
+                      {sel && <span className="text-sm font-bold text-[#1E3A5F] shrink-0">{weights[prog.id] ?? 0}%</span>}
                     </div>
                   )
                 })}
               </div>
-              {selectedIds.size > 0 && (
-                <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-xl ${weightOk ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
-                  {weightOk ? <MdCheck size={14} /> : <MdWarningAmber size={14} />}
-                  {weightOk ? 'Os pesos somam 100% — tudo certo!' : `Os pesos somam ${totalWeight}%. Ajuste para chegar a 100%.`}
+
+              {selectedIds.size > 1 && (
+                <div className="pt-2 border-t border-gray-100">
+                  <ProportionalSliderGroup
+                    items={sliderItems}
+                    onChange={handleSliderChange}
+                  />
                 </div>
               )}
+
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
