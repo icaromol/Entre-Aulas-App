@@ -461,13 +461,56 @@ export default function PomodoroPage() {
             .select("checklist_item_id")
             .eq("student_id", sid)
             .in("checklist_item_id", [...completedIds])
-            .then(({ data: existing }) => {
+            .then(async ({ data: existing }) => {
               const existingSet = new Set((existing ?? []).map((r: any) => r.checklist_item_id));
               const toInsert = [...completedIds].filter((id) => !existingSet.has(id));
-              if (toInsert.length > 0)
-                return supabase.from("checklist_completions").insert(
-                  toInsert.map((id) => ({ checklist_item_id: id, student_id: sid, completed_at: new Date().toISOString() }))
-                );
+              if (toInsert.length === 0) return;
+
+              await supabase.from("checklist_completions").insert(
+                toInsert.map((id) => ({ checklist_item_id: id, student_id: sid, session_id: sessionId, completed_at: new Date().toISOString() }))
+              );
+
+              // Check if any piece reached 100% and auto-complete it
+              const { data: ciRows } = await supabase
+                .from("checklist_items")
+                .select("piece_id")
+                .in("id", toInsert)
+                .not("piece_id", "is", null);
+
+              const pieceIds = [...new Set((ciRows ?? []).map((r: any) => r.piece_id as string))];
+              for (const pid of pieceIds) {
+                const { data: allItems } = await supabase
+                  .from("checklist_items")
+                  .select("id, is_optional")
+                  .eq("piece_id", pid);
+                const mandatory = (allItems ?? []).filter((i: any) => !i.is_optional);
+                if (mandatory.length === 0) continue;
+
+                const { data: doneRows } = await supabase
+                  .from("checklist_completions")
+                  .select("checklist_item_id")
+                  .eq("student_id", sid)
+                  .in("checklist_item_id", mandatory.map((i: any) => i.id));
+                const doneIds = new Set((doneRows ?? []).map((r: any) => r.checklist_item_id));
+                const pct = Math.round((doneIds.size / mandatory.length) * 100);
+
+                if (pct < 100) continue;
+
+                await supabase.from("pieces").update({ status: "completed" }).eq("id", pid);
+
+                const { data: xpExisting } = await supabase
+                  .from("student_xp_events")
+                  .select("id")
+                  .eq("student_id", sid)
+                  .eq("reason", "piece_completed")
+                  .eq("source_id", pid)
+                  .maybeSingle();
+
+                if (!xpExisting) {
+                  toast.success("🎉 Peça concluída! +10 XP");
+                  await grantXp(sid, "piece_completed", pid, null, 10);
+                }
+              }
             })
         : Promise.resolve(),
 

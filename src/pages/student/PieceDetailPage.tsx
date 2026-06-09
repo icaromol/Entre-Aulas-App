@@ -30,9 +30,8 @@ interface ChecklistItem {
   is_optional: boolean; completed: boolean
 }
 
-interface SessionItem {
-  piece_id: string | null
-  plan_item: { checklist_item: { title: string } | null } | null
+interface SessionCompletion {
+  checklist_item: { id: string; title: string } | null
 }
 
 interface StudySession {
@@ -42,7 +41,7 @@ interface StudySession {
   cycle_name: string
   difficulty_felt: 'easy' | 'ok' | 'hard' | null
   notes: string | null
-  session_items: SessionItem[]
+  checklist_completions: SessionCompletion[]
 }
 
 const periodLabel: Record<string, string> = {
@@ -50,10 +49,10 @@ const periodLabel: Record<string, string> = {
   modern: 'Moderno', contemporary: 'Contemporâneo', popular: 'Popular', other: 'Outro',
 }
 
-const difficultyLabel: Record<string, { label: string; color: string }> = {
-  easy: { label: 'Simples',     color: 'bg-green-50 text-green-600' },
-  ok:   { label: 'Normal',      color: 'bg-blue-50 text-[#4A90C4]' },
-  hard: { label: 'Desafiadora', color: 'bg-red-50 text-red-500' },
+const difficultyEmoji: Record<string, string> = {
+  easy: '😊',
+  ok:   '😐',
+  hard: '😓',
 }
 
 const statusOptions = [
@@ -128,14 +127,29 @@ export default function StudentPieceDetailPage() {
     if (!studentId || !pieceId) return
     setLoadingHistory(true)
 
-    // Find session IDs via session_items.piece_id (set during saveSession in PomodoroPage)
-    const { data: siData } = await supabase
-      .from('session_items')
-      .select('session_id')
+    // Get checklist item IDs for this piece
+    const { data: ciData } = await supabase
+      .from('checklist_items')
+      .select('id')
       .eq('piece_id', pieceId)
 
+    const pieceItemIds = (ciData ?? []).map((r: { id: string }) => r.id)
+    if (pieceItemIds.length === 0) {
+      setSessions([])
+      setLoadingHistory(false)
+      return
+    }
+
+    // Find session IDs via checklist_completions.session_id for this piece's items
+    const { data: ccData } = await supabase
+      .from('checklist_completions')
+      .select('session_id')
+      .eq('student_id', studentId)
+      .in('checklist_item_id', pieceItemIds)
+      .not('session_id', 'is', null)
+
     const sessionIds = [...new Set(
-      (siData ?? []).map((r: { session_id: string }) => r.session_id).filter(Boolean)
+      (ccData ?? []).map((r: { session_id: string }) => r.session_id).filter(Boolean)
     )]
 
     if (sessionIds.length === 0) {
@@ -148,11 +162,8 @@ export default function StudentPieceDetailPage() {
       .from('study_sessions')
       .select(`
         id, started_at, duration_seconds, cycle_name, difficulty_felt, notes,
-        session_items(
-          piece_id,
-          plan_item:plan_items(
-            checklist_item:checklist_items(title)
-          )
+        checklist_completions(
+          checklist_item:checklist_items(id, title)
         )
       `)
       .eq('student_id', studentId)
@@ -416,11 +427,11 @@ export default function StudentPieceDetailPage() {
             </div>
           ) : (
             sessions.map(session => {
-              const workedItems = session.session_items
-                .filter(si => si.piece_id === pieceId)
-                .map(si => si.plan_item?.checklist_item?.title)
-                .filter((t): t is string => !!t)
-              const diff = session.difficulty_felt ? difficultyLabel[session.difficulty_felt] : null
+              const pieceItemIdSet = new Set(checklist.map(c => c.id))
+              const completedInSession = session.checklist_completions
+                .map(cc => cc.checklist_item)
+                .filter((ci): ci is NonNullable<typeof ci> => !!ci && pieceItemIdSet.has(ci.id))
+              const emoji = session.difficulty_felt ? difficultyEmoji[session.difficulty_felt] : null
 
               return (
                 <div key={session.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 space-y-3">
@@ -433,19 +444,15 @@ export default function StudentPieceDetailPage() {
                         {fmtTime(session.started_at)} · {session.cycle_name} · {fmtDuration(session.duration_seconds)}
                       </p>
                     </div>
-                    {diff && (
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${diff.color}`}>
-                        {diff.label}
-                      </span>
-                    )}
+                    {emoji && <span className="text-xl shrink-0">{emoji}</span>}
                   </div>
 
-                  {workedItems.length > 0 && (
+                  {completedInSession.length > 0 && (
                     <div className="space-y-1.5">
-                      {workedItems.map((title, i) => (
-                        <div key={i} className="flex items-center gap-2">
+                      {completedInSession.map(ci => (
+                        <div key={ci.id} className="flex items-center gap-2">
                           <MdCheckCircle size={13} className="text-[#4A90C4] shrink-0" />
-                          <span className="text-xs text-gray-600">{title}</span>
+                          <span className="text-xs text-gray-600">{ci.title}</span>
                         </div>
                       ))}
                     </div>
