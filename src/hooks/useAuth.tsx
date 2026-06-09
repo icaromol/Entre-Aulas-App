@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (fetchingRef.current === u.id) return
     fetchingRef.current = u.id
 
-    const { data } = await supabase.from('profiles').select('*').eq('id', u.id).single()
+    const { data } = await supabase.from('profiles').select('*').eq('id', u.id).maybeSingle()
     if (!data) { setUser(u); setProfile(null); setLoading(false); fetchingRef.current = null; return }
 
     let teacherId: string | null = null
