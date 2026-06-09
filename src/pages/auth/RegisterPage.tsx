@@ -7,13 +7,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
-import {
-  MdPerson,
-  MdSchool,
-  MdArrowBack,
-  MdCheck,
-  MdCheckCircle,
-} from "react-icons/md";
+import { MdPerson, MdSchool, MdCheckCircle, MdArrowBack } from "react-icons/md";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 
@@ -328,13 +322,6 @@ export default function RegisterPage() {
           {/* PASSO 2 — Instrumento(s) */}
           {step === 2 && !autoSignup && selectedRole && (
             <>
-              <button
-                onClick={() => setStep(1)}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
-              >
-                <MdArrowBack size={14} /> Voltar
-              </button>
-
               {selectedRole === "student" ? (
                 // Estudante — escolha única
                 <div className="grid grid-cols-3 gap-2">
@@ -365,18 +352,12 @@ export default function RegisterPage() {
                         key={inst}
                         type="button"
                         onClick={() => toggleTeacherInstrument(inst)}
-                        className={`relative py-2 px-1 rounded-xl border text-xs font-medium transition ${
+                        className={`py-2 px-1 rounded-xl border text-xs font-medium transition ${
                           sel
                             ? "bg-[#1E3A5F] text-white border-[#1E3A5F]"
                             : "bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]"
                         }`}
                       >
-                        {sel && (
-                          <MdCheck
-                            size={10}
-                            className="absolute top-1 right-1 opacity-70"
-                          />
-                        )}
                         {inst}
                       </button>
                     );
@@ -421,20 +402,28 @@ export default function RegisterPage() {
               </Button>
             )
           ) : (
-            // Passo 2: botão final
-            <Button
-              onClick={handleGoogleSignup}
-              disabled={loading || !canProceedStep2}
-              variant="outline"
-              className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <FcGoogle size={20} />
-              )}
-              {loading ? "Redirecionando..." : "Continuar com Google"}
-            </Button>
+            // Passo 2: botão final + voltar
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={handleGoogleSignup}
+                disabled={loading || !canProceedStep2}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <FcGoogle size={20} />
+                )}
+                {loading ? "Redirecionando..." : "Continuar com Google"}
+              </Button>
+              <button
+                onClick={() => setStep(1)}
+                className="flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition py-1"
+              >
+                <MdArrowBack size={13} /> Voltar
+              </button>
+            </div>
           )}
         </div>
 
