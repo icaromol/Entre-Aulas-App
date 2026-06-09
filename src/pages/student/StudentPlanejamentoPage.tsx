@@ -7,6 +7,7 @@ import {
   MdSchool, MdMusicNote, MdLibraryMusic, MdMic, MdFolder, MdSettings, MdTimer,
 } from 'react-icons/md'
 import { ProportionalSliderGroup } from '@/components/ui/ProportionalSliderGroup'
+import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
@@ -85,6 +86,7 @@ export default function StudentPlanejamentoPage() {
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false)
   const [maintenanceBudget, setMaintenanceBudget]   = useState(20)
   const [hasCompletedPieces, setHasCompletedPieces] = useState(false)
+  const [hasAvailability, setHasAvailability] = useState(false)
   const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
 
   const [editableDays, setEditableDays]       = useState<GeneratedDay[]>([])
@@ -523,9 +525,17 @@ export default function StudentPlanejamentoPage() {
               </div>
             )}
 
+            {studentId && (
+              <AvailabilityEditor
+                studentId={studentId}
+                onLoaded={setHasAvailability}
+                onSaved={setHasAvailability}
+              />
+            )}
+
             {error && <p className="text-sm text-red-500">{error}</p>}
 
-            <Button onClick={handleGenerate} disabled={!weightOk || generating}
+            <Button onClick={handleGenerate} disabled={!weightOk || !hasAvailability || generating}
               className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10 flex items-center gap-2">
               <MdAutoAwesome size={16} />
               {generating ? 'Gerando...' : 'Gerar planejamento automático'}
