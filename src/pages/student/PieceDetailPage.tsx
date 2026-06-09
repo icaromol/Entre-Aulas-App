@@ -196,20 +196,15 @@ export default function StudentPieceDetailPage() {
     setPiece(prev => prev ? { ...prev, completion_pct: pct } : prev)
 
     if (pct === 100 && !item.completed) {
-      // Auto-complete status
       await supabase.from('pieces').update({ status: 'completed' }).eq('id', pieceId!)
       setPiece(prev => prev ? { ...prev, status: 'completed' } : prev)
 
-      // XP once per piece — check if already granted
-      const { data: existing } = await supabase
-        .from('student_xp_events')
-        .select('id')
-        .eq('student_id', studentId)
-        .eq('reason', 'piece_completed')
-        .eq('source_id', pieceId!)
+      const { data: xpExisting } = await supabase
+        .from('student_xp_events').select('id')
+        .eq('student_id', studentId).eq('reason', 'piece_completed').eq('source_id', pieceId!)
         .maybeSingle()
 
-      if (!existing) {
+      if (!xpExisting) {
         sound.xpEarn()
         fireStars()
         toast.success('🎉 Peça concluída! +10 XP')
@@ -218,6 +213,9 @@ export default function StudentPieceDetailPage() {
       } else {
         toast.success('Peça concluída!')
       }
+    } else if (pct < 100 && piece?.status === 'completed') {
+      await supabase.from('pieces').update({ status: 'in_progress' }).eq('id', pieceId!)
+      setPiece(prev => prev ? { ...prev, status: 'in_progress' } : prev)
     }
   }
 
@@ -229,7 +227,20 @@ export default function StudentPieceDetailPage() {
       piece_id: pieceId!, title: newItemTitle.trim(),
       category: 'Personalizado', position: maxPosition, is_default: false, is_optional: false,
     }).select().single()
-    if (data) { setChecklist(prev => [...prev, { ...data, completed: false }]); toast.success('Item adicionado') }
+    if (data) {
+      const updated = [...checklist, { ...data, completed: false }]
+      setChecklist(updated)
+      toast.success('Item adicionado')
+
+      // New mandatory item drops completion below 100% — revert to in_progress
+      if (piece?.status === 'completed') {
+        await supabase.from('pieces').update({ status: 'in_progress' }).eq('id', pieceId!)
+        setPiece(prev => prev ? { ...prev, status: 'in_progress' } : prev)
+        const mandatory = updated.filter(c => !c.is_optional)
+        const pct = Math.round((mandatory.filter(c => c.completed).length / mandatory.length) * 100)
+        setPiece(prev => prev ? { ...prev, completion_pct: pct } : prev)
+      }
+    }
     setNewItemTitle(''); setAddingItem(false)
   }
 
