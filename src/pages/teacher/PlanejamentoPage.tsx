@@ -479,17 +479,21 @@ export default function PlanejamentoPage() {
         </div>
 
         {programs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-[#D6E4F0] flex items-center justify-center mb-4">
-              <MdAutoAwesome size={24} className="text-[#1E3A5F]" />
+          <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#D6E4F0] flex items-center justify-center">
+              <MdAutoAwesome size={28} className="text-[#1E3A5F]" />
             </div>
-            <p className="text-base font-bold text-[#1E3A5F] mb-2">Nenhum programa ativo</p>
-            <p className="text-sm text-gray-400 max-w-xs leading-relaxed mb-5">
-              Crie ao menos um programa para o aluno antes de gerar o planejamento.
-            </p>
-            <Button onClick={() => navigate(`/professor/alunos/${studentId}/programas/novo`)}
-              className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl px-6">
-              Criar programa
+            <div>
+              <p className="text-base font-bold text-[#1E3A5F] mb-1">Nenhum programa ativo</p>
+              <p className="text-sm text-gray-400 max-w-xs leading-relaxed">
+                Você precisa de ao menos um programa para gerar o planejamento.
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate(`/professor/alunos/${studentId}/programas/novo`)}
+              className="flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl px-6 h-11"
+            >
+              <MdAdd size={18} /> Criar primeiro programa
             </Button>
           </div>
         ) : (
