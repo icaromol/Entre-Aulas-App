@@ -42,6 +42,15 @@ const ROLES: {
   },
 ];
 
+const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+const AVAIL_MIN = 5
+const AVAIL_MAX = 720
+function toSliderPos(m: number) { return Math.round(Math.log(m / AVAIL_MIN) / Math.log(AVAIL_MAX / AVAIL_MIN) * 100) }
+function fromSliderPos(p: number) { return Math.max(AVAIL_MIN, Math.round(AVAIL_MIN * Math.pow(AVAIL_MAX / AVAIL_MIN, p / 100) / 5) * 5) }
+function fmtMin(m: number) { if (m < 60) return `${m}min`; const h = Math.floor(m / 60), r = m % 60; return r === 0 ? `${h}h` : `${h}h${r}min` }
+interface DayAvail { day: number; active: boolean; minutes: number }
+const DEFAULT_AVAIL = (): DayAvail[] => DAYS.map((_, i) => ({ day: i, active: false, minutes: 30 }))
+
 const INSTRUMENTS = [
   "Violão",
   "Guitarra",
@@ -79,10 +88,11 @@ export default function RegisterPage() {
   // Step 1
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   // Step 2 — instrumento(s)
-  // Estudante: string única; Professor: array (pode ensinar vários)
   const [instrument, setInstrument] = useState<string>("");
   const [instruments, setInstruments] = useState<string[]>([]);
-  const [step, setStep] = useState<1 | 2>(1);
+  // Step 3 — disponibilidade semanal
+  const [availability, setAvailability] = useState<DayAvail[]>(DEFAULT_AVAIL());
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -112,12 +122,29 @@ export default function RegisterPage() {
     );
   }
 
+  function toggleDay(i: number) {
+    setAvailability(prev => prev.map(d => d.day === i ? { ...d, active: !d.active } : d))
+  }
+
+  function setDayMinutes(i: number, minutes: number) {
+    setAvailability(prev => prev.map(d => d.day === i ? { ...d, minutes } : d))
+  }
+
   function handleRoleSelect(role: Role) {
     setSelectedRole(role);
     setInstrument("");
     setInstruments([]);
-    // Se for convite (aluno), não precisa de passo 2
+    setAvailability(DEFAULT_AVAIL());
     if (!inviteStudentId) setStep(2);
+  }
+
+  async function saveAvailability(studentId: string) {
+    const activeDays = availability.filter(d => d.active)
+    if (activeDays.length === 0) return
+    await supabase.from("student_availability").delete().eq("student_id", studentId)
+    await supabase.from("student_availability").insert(
+      activeDays.map(d => ({ student_id: studentId, day_of_week: d.day, is_active: true, minutes_available: d.minutes }))
+    )
   }
 
   // Fluxo autoSignup — já autenticado via Google, escolhe role aqui
@@ -157,7 +184,7 @@ export default function RegisterPage() {
     }
 
     if (selectedRole === "student") {
-      await supabase.from("students").insert({
+      const { data: newStudent } = await supabase.from("students").insert({
         profile_id: user.id,
         teacher_id: null,
         first_name: firstName,
@@ -165,19 +192,19 @@ export default function RegisterPage() {
         contact_email: user.email,
         instrument: instrument || null,
         status: "active",
-      });
+      }).select("id").single();
+      if (newStudent) await saveAvailability(newStudent.id);
     } else {
-      // Salvar instrumentos do professor
       if (instruments.length > 0) {
-        await supabase
-          .from("teachers")
-          .update({ instruments: instruments.join(", ") })
-          .eq("profile_id", user.id);
+        await supabase.from("teachers").update({ instruments: instruments.join(", ") }).eq("profile_id", user.id);
       }
+      // Busca o students row do professor para salvar disponibilidade
+      const { data: profStudent } = await supabase.from("students").select("id").eq("profile_id", user.id).maybeSingle();
+      if (profStudent) await saveAvailability(profStudent.id);
     }
 
     window.location.replace(
-      selectedRole === "teacher" ? "/professor/alunos" : "/aluno/hoje",
+      selectedRole === "teacher" ? "/modo" : "/aluno/hoje",
     );
   }
 
@@ -202,6 +229,7 @@ export default function RegisterPage() {
           role,
           instrument: role === "student" ? instrument : undefined,
           instruments: role === "teacher" ? instruments : undefined,
+          availability: availability.filter(d => d.active).map(d => ({ day: d.day, minutes: d.minutes })),
         };
 
     sessionStorage.setItem("pending_signup", JSON.stringify(pending));
@@ -229,15 +257,14 @@ export default function RegisterPage() {
           : "Verificando convite..."
       : step === 1
         ? "Como você quer usar a plataforma?"
-        : selectedRole === "student"
-          ? "Qual instrumento você toca?"
-          : "Quais instrumentos você ensina?";
+        : step === 2
+          ? selectedRole === "student" ? "Qual instrumento você toca?" : "Quais instrumentos você ensina?"
+          : "Seus dias de estudo";
 
   const canProceedStep1 = inviteStudentId
     ? !!inviteStudent && !inviteInvalid
     : !!selectedRole;
-  // Instrumento é opcional — pode pular
-  const canProceedStep2 = true;
+  // Instrumento e disponibilidade são opcionais
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -367,60 +394,72 @@ export default function RegisterPage() {
             </>
           )}
 
+          {/* PASSO 3 — Disponibilidade semanal */}
+          {step === 3 && !autoSignup && selectedRole && (
+            <div className="space-y-2">
+              {availability.map(day => (
+                <div key={day.day} className="flex items-center gap-3">
+                  <button type="button" onClick={() => toggleDay(day.day)}
+                    className={`w-12 text-xs font-semibold py-1.5 rounded-lg border transition shrink-0 ${
+                      day.active ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'bg-white text-gray-400 border-gray-200 hover:border-[#4A90C4]'
+                    }`}>
+                    {DAYS[day.day]}
+                  </button>
+                  {day.active && (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input type="range" min={0} max={100} step={1}
+                        value={toSliderPos(day.minutes)}
+                        onChange={e => setDayMinutes(day.day, fromSliderPos(Number(e.target.value)))}
+                        className="flex-1 accent-[#1E3A5F]" />
+                      <span className="text-xs font-bold text-[#1E3A5F] w-12 text-right shrink-0">
+                        {fmtMin(day.minutes)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <p className="text-xs text-gray-400 text-center pt-1">Opcional — pode pular</p>
+            </div>
+          )}
+
           {/* Botão de ação */}
           {inviteStudentId && !inviteStudent ? (
-            <div className="flex justify-center py-4">
-              <Spinner />
-            </div>
+            <div className="flex justify-center py-4"><Spinner /></div>
           ) : autoSignup ? (
-            <Button
-              onClick={handleDirectSignup}
-              disabled={loading || !canProceedStep1}
-              className="w-full h-11 rounded-xl bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white disabled:opacity-40"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />
-              ) : (
-                "Continuar"
-              )}
+            <Button onClick={handleDirectSignup} disabled={loading || !canProceedStep1}
+              className="w-full h-11 rounded-xl bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white disabled:opacity-40">
+              {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" /> : "Continuar"}
             </Button>
           ) : step === 1 ? (
-            // Passo 1: só mostra botão se for convite (role já definido pelo invite)
             inviteStudentId && (
-              <Button
-                onClick={handleGoogleSignup}
-                disabled={loading || !canProceedStep1}
-                variant="outline"
-                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <FcGoogle size={20} />
-                )}
+              <Button onClick={handleGoogleSignup} disabled={loading || !canProceedStep1} variant="outline"
+                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40">
+                {loading ? <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <FcGoogle size={20} />}
                 {loading ? "Redirecionando..." : "Continuar com Google"}
               </Button>
             )
-          ) : (
-            // Passo 2: botão final + voltar
+          ) : step === 2 ? (
+            // Passo 2 → avança para passo 3
             <div className="flex flex-col gap-2">
-              <Button
-                onClick={handleGoogleSignup}
-                disabled={loading || !canProceedStep2}
-                variant="outline"
-                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <FcGoogle size={20} />
-                )}
+              <Button onClick={() => setStep(3)}
+                className="w-full h-11 rounded-xl bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white">
+                Continuar
+              </Button>
+              <button onClick={() => setStep(1)}
+                className="flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition py-1">
+                <MdArrowBack size={13} /> Voltar
+              </button>
+            </div>
+          ) : (
+            // Passo 3: botão final Google + voltar
+            <div className="flex flex-col gap-2">
+              <Button onClick={handleGoogleSignup} disabled={loading} variant="outline"
+                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40">
+                {loading ? <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <FcGoogle size={20} />}
                 {loading ? "Redirecionando..." : "Continuar com Google"}
               </Button>
-              <button
-                onClick={() => setStep(1)}
-                className="flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition py-1"
-              >
+              <button onClick={() => setStep(2)}
+                className="flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition py-1">
                 <MdArrowBack size={13} /> Voltar
               </button>
             </div>

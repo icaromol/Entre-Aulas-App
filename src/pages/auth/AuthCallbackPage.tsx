@@ -12,6 +12,7 @@ interface PendingSignup {
   lastName?: string
   instrument?: string
   instruments?: string[]
+  availability?: { day: number; minutes: number }[]
 }
 
 export default function AuthCallbackPage() {
@@ -50,7 +51,7 @@ export default function AuthCallbackPage() {
             .is('profile_id', null)
             .gt('invite_expires_at', new Date().toISOString())
         } else if (pending.role === 'student') {
-          await supabase.from('students').insert({
+          const { data: newStudent } = await supabase.from('students').insert({
             profile_id:    user.id,
             teacher_id:    null,
             first_name:    firstName,
@@ -58,11 +59,24 @@ export default function AuthCallbackPage() {
             contact_email: user.email,
             instrument:    pending.instrument || null,
             status:        'active',
-          })
-        } else if (pending.role === 'teacher' && pending.instruments && pending.instruments.length > 0) {
-          await supabase.from('teachers')
-            .update({ instruments: pending.instruments.join(', ') })
-            .eq('profile_id', user.id)
+          }).select('id').single()
+          if (newStudent && pending.availability?.length) {
+            await supabase.from('student_availability').insert(
+              pending.availability.map(d => ({ student_id: newStudent.id, day_of_week: d.day, is_active: true, minutes_available: d.minutes }))
+            )
+          }
+        } else if (pending.role === 'teacher') {
+          if (pending.instruments && pending.instruments.length > 0) {
+            await supabase.from('teachers').update({ instruments: pending.instruments.join(', ') }).eq('profile_id', user.id)
+          }
+          if (pending.availability?.length) {
+            const { data: profStudent } = await supabase.from('students').select('id').eq('profile_id', user.id).maybeSingle()
+            if (profStudent) {
+              await supabase.from('student_availability').insert(
+                pending.availability.map(d => ({ student_id: profStudent.id, day_of_week: d.day, is_active: true, minutes_available: d.minutes }))
+              )
+            }
+          }
         }
       }
 
