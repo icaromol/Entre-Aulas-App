@@ -115,6 +115,9 @@ export default function PlanejamentoPage() {
   // Edit-task sheet
   const [editingTask, setEditingTask] = useState<{ date: string; idx: number } | null>(null)
 
+  // Conflict dialog
+  const [showConflictDialog, setShowConflictDialog] = useState(false)
+
   // Add-task sheet
   const [addingToDay, setAddingToDay]               = useState<{ date: string; dow: number; weekStart: string } | null>(null)
   const [addTab, setAddTab]                         = useState<'program' | 'custom'>('program')
@@ -366,7 +369,23 @@ export default function PlanejamentoPage() {
   // ── Save ────────────────────────────────────────────────────────────────────
 
   async function handleSave() {
+    // Verifica se há planos existentes nas semanas geradas
+    const weekStarts = [...new Set(editableDays.map(d => d.weekStart))]
+    const { data: existingPlans } = await supabase
+      .from('weekly_plans')
+      .select('id')
+      .eq('student_id', studentId!)
+      .in('week_start', weekStarts)
+    if (existingPlans && existingPlans.length > 0) {
+      setShowConflictDialog(true)
+      return
+    }
+    await doSave('replace')
+  }
+
+  async function doSave(mode: 'replace' | 'merge') {
     setSaving(true)
+    setShowConflictDialog(false)
     setError('')
     try {
       const { data: teacher } = await supabase
@@ -380,7 +399,9 @@ export default function PlanejamentoPage() {
           .from('weekly_plans').select('id').eq('student_id', studentId!).eq('week_start', ws).single()
         if (existing) {
           planId = existing.id
-          await supabase.from('plan_items').delete().eq('plan_id', planId)
+          if (mode === 'replace') {
+            await supabase.from('plan_items').delete().eq('plan_id', planId)
+          }
         } else {
           const { data: created, error: err } = await supabase
             .from('weekly_plans').insert({ student_id: studentId!, week_start: ws, teacher_id: teacher.id }).select('id').single()
@@ -390,6 +411,16 @@ export default function PlanejamentoPage() {
 
         const rows: object[] = []
         for (const day of editableDays.filter(d => d.weekStart === ws)) {
+          // em modo merge, calcula o próximo position após os itens existentes
+          let posOffset = 0
+          if (mode === 'merge' && existing) {
+            const { count } = await supabase
+              .from('plan_items')
+              .select('id', { count: 'exact', head: true })
+              .eq('plan_id', planId)
+              .eq('day_of_week', day.dayOfWeek)
+            posOffset = count ?? 0
+          }
           day.tasks.forEach((task, pos) => {
             rows.push({
               plan_id:          planId,
@@ -399,7 +430,7 @@ export default function PlanejamentoPage() {
               day_of_week:      day.dayOfWeek,
               duration_minutes: task.durationMinutes,
               is_done:          false,
-              position:         pos,
+              position:         posOffset + pos,
               is_maintenance:   task.isMaintenance,
             })
           })
@@ -756,6 +787,40 @@ export default function PlanejamentoPage() {
           {saving ? 'Salvando...' : 'Confirmar e Salvar'}
         </Button>
       </div>
+
+      {/* Dialog de conflito — plano existente */}
+      {showConflictDialog && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <p className="text-base font-bold text-[#1E3A5F] mb-1">Já existe um planejamento</p>
+            <p className="text-sm text-gray-500 mb-5">
+              Uma ou mais semanas já possuem itens planejados. O que deseja fazer?
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => doSave('replace')}
+                className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition text-left px-4"
+              >
+                <span className="block font-semibold">Substituir</span>
+                <span className="block text-xs text-white/70 mt-0.5">Remove os itens existentes e insere os novos</span>
+              </button>
+              <button
+                onClick={() => doSave('merge')}
+                className="w-full py-3 rounded-xl border border-[#4A90C4] text-[#1E3A5F] text-sm font-semibold hover:bg-[#D6E4F0] transition text-left px-4"
+              >
+                <span className="block font-semibold">Adicionar</span>
+                <span className="block text-xs text-gray-400 mt-0.5">Mantém os itens existentes e adiciona os novos</span>
+              </button>
+              <button
+                onClick={() => setShowConflictDialog(false)}
+                className="w-full py-3 rounded-xl border border-gray-200 text-sm text-gray-500 hover:border-gray-300 transition"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit-task sheet */}
       {editingTask && editTask && (
