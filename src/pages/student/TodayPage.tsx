@@ -7,6 +7,7 @@ import {
   MdPlayArrow,
   MdDeleteOutline,
   MdCheckCircle,
+  MdSelfImprovement,
 } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
@@ -473,7 +474,7 @@ export default function TodayPage() {
       {items.length === 0 && freeSessions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
           <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
-            <MdPlayArrow size={24} color="white" />
+            <MdSelfImprovement size={24} color="white" />
           </div>
           {hasAnyPlan === false ? (
             <>
@@ -497,11 +498,10 @@ export default function TodayPage() {
           ) : (
             <>
               <p className="text-sm font-semibold text-gray-700">
-                Nenhum item para hoje
+                Dia livre!
               </p>
               <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                Pode aproveitar! Que tal fazer um estudo extra com o botão
-                abaixo?
+                Nenhuma tarefa programada. Aproveite para um estudo livre ou explore o repertório.
               </p>
             </>
           )}
