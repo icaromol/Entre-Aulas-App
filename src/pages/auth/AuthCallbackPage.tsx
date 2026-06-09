@@ -12,7 +12,6 @@ interface PendingSignup {
   lastName?: string
   instrument?: string
   instruments?: string[]
-  availability?: { day: number; minutes: number }[]
 }
 
 export default function AuthCallbackPage() {
@@ -51,7 +50,7 @@ export default function AuthCallbackPage() {
             .is('profile_id', null)
             .gt('invite_expires_at', new Date().toISOString())
         } else if (pending.role === 'student') {
-          const { data: newStudent } = await supabase.from('students').insert({
+          await supabase.from('students').insert({
             profile_id:    user.id,
             teacher_id:    null,
             first_name:    firstName,
@@ -59,23 +58,10 @@ export default function AuthCallbackPage() {
             contact_email: user.email,
             instrument:    pending.instrument || null,
             status:        'active',
-          }).select('id').single()
-          if (newStudent && pending.availability?.length) {
-            await supabase.from('student_availability').insert(
-              pending.availability.map(d => ({ student_id: newStudent.id, day_of_week: d.day, is_active: true, minutes_available: d.minutes }))
-            )
-          }
+          })
         } else if (pending.role === 'teacher') {
           if (pending.instruments && pending.instruments.length > 0) {
             await supabase.from('teachers').update({ instruments: pending.instruments.join(', ') }).eq('profile_id', user.id)
-          }
-          if (pending.availability?.length) {
-            const { data: profStudent } = await supabase.from('students').select('id').eq('profile_id', user.id).maybeSingle()
-            if (profStudent) {
-              await supabase.from('student_availability').insert(
-                pending.availability.map(d => ({ student_id: profStudent.id, day_of_week: d.day, is_active: true, minutes_available: d.minutes }))
-              )
-            }
           }
         }
       }
@@ -102,10 +88,8 @@ export default function AuthCallbackPage() {
       }
     }
 
-    // Usar onAuthStateChange em vez de getSession() para garantir
-    // que os tokens do hash/code da URL já foram processados
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
         subscription.unsubscribe()
         processUser(session.user)
       } else if (event === 'INITIAL_SESSION' && !session) {
@@ -113,7 +97,13 @@ export default function AuthCallbackPage() {
       }
     })
 
-    return () => subscription.unsubscribe()
+    // Fallback: se o onAuthStateChange não disparar em 8s, redireciona pro login
+    const timeout = setTimeout(() => {
+      subscription.unsubscribe()
+      window.location.replace('/login')
+    }, 8000)
+
+    return () => { subscription.unsubscribe(); clearTimeout(timeout) }
   }, [navigate])
 
   return (
