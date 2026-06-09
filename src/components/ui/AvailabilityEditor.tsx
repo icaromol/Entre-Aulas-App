@@ -120,11 +120,11 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
         <div className="space-y-3">
           <div className="space-y-2">
             {availability.map(day => (
-              <div key={day.day} className="flex items-center gap-3">
+              <div key={day.day} className="flex items-center gap-2 min-w-0">
                 <button
                   type="button"
                   onClick={() => toggleDay(day.day)}
-                  className={`w-12 text-xs font-semibold py-1.5 rounded-lg border transition ${
+                  className={`w-11 shrink-0 text-xs font-semibold py-1.5 rounded-lg border transition ${
                     day.active
                       ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
                       : 'bg-white text-gray-400 border-gray-200'
@@ -133,14 +133,14 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
                   {DAYS[day.day]}
                 </button>
                 {day.active && (
-                  <div className="flex items-center gap-3 flex-1">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
                     <input
                       type="range" min={0} max={100} step={1}
                       value={toSliderPos(day.minutes)}
                       onChange={e => setMinutes(day.day, fromSliderPos(Number(e.target.value)))}
-                      className="flex-1 accent-[#1E3A5F]"
+                      className="flex-1 min-w-0 accent-[#1E3A5F]"
                     />
-                    <span className="text-xs font-bold text-[#1E3A5F] w-14 text-right shrink-0">
+                    <span className="text-xs font-bold text-[#1E3A5F] w-12 text-right shrink-0">
                       {fmtMin(day.minutes)}
                     </span>
                   </div>
