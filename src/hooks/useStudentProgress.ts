@@ -82,7 +82,7 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
       load(opts.studentId)
       return
     }
-    if (!profile || profile.role !== 'student') {
+    if (!profile || !profile.studentId) {
       setLoading(false)
       return
     }
