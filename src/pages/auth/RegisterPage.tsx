@@ -2,15 +2,27 @@ import { useState, useEffect } from 'react'
 import { Spinner } from '@/components/ui/Spinner'
 import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import { FcGoogle } from 'react-icons/fc'
-import { MdPerson, MdSchool, MdArrowBack, MdCheck } from 'react-icons/md'
+import { MdPerson, MdSchool, MdArrowBack, MdCheck, MdCheckCircle } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 
 type Role = 'teacher' | 'student'
 
-const ROLES: { value: Role; label: string; desc: string; Icon: typeof MdPerson }[] = [
-  { value: 'teacher', label: 'Professor',  desc: 'Gerencio alunos e turmas',          Icon: MdSchool },
-  { value: 'student', label: 'Estudante',  desc: 'Estudo e organizo meu próprio repertório', Icon: MdPerson },
+const ROLES: { value: Role; label: string; tag: string; features: string[]; Icon: typeof MdPerson }[] = [
+  {
+    value: 'teacher',
+    label: 'Sim, dou aulas',
+    tag: 'Professor',
+    features: ['Gerenciar alunos e turmas', 'Criar repertório e exercícios', 'Planejar estudos dos alunos', 'Área de estudo pessoal inclusa'],
+    Icon: MdSchool,
+  },
+  {
+    value: 'student',
+    label: 'Não, só estudo',
+    tag: 'Estudante',
+    features: ['Organizar seu repertório', 'Pomodoro e sessões de estudo', 'Acompanhar seu progresso'],
+    Icon: MdPerson,
+  },
 ]
 
 const INSTRUMENTS = [
@@ -145,7 +157,7 @@ export default function RegisterPage() {
       ? inviteInvalid ? 'Link de convite inválido ou expirado.'
         : inviteStudent ? `Olá, ${inviteStudent.first_name}! Crie sua conta para acessar o estudamus.`
         : 'Verificando convite...'
-      : step === 1 ? 'Criar conta' : selectedRole === 'student' ? 'Qual instrumento você toca?' : 'Quais instrumentos você ensina?'
+      : step === 1 ? 'Você usa o estudamus para dar aulas?' : selectedRole === 'student' ? 'Qual instrumento você toca?' : 'Quais instrumentos você ensina?'
 
   const canProceedStep1 = inviteStudentId ? (!!inviteStudent && !inviteInvalid) : !!selectedRole
   // Instrumento é opcional — pode pular
@@ -165,18 +177,35 @@ export default function RegisterPage() {
 
           {/* PASSO 1 — Escolha de role */}
           {(step === 1 || autoSignup) && !inviteStudentId && (
-            <div className="grid grid-cols-2 gap-3">
-              {ROLES.map(({ value, label, desc, Icon }) => (
-                <button key={value} type="button"
-                  onClick={() => autoSignup ? setSelectedRole(value) : handleRoleSelect(value)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition text-center ${
-                    selectedRole === value ? 'border-[#1E3A5F] bg-[#D6E4F0]' : 'border-gray-200 bg-white hover:border-[#4A90C4]'
-                  }`}>
-                  <Icon size={28} className={selectedRole === value ? 'text-[#1E3A5F]' : 'text-gray-400'} />
-                  <span className={`text-sm font-semibold ${selectedRole === value ? 'text-[#1E3A5F]' : 'text-gray-600'}`}>{label}</span>
-                  <span className="text-xs text-gray-400 leading-tight">{desc}</span>
-                </button>
-              ))}
+            <div className="flex flex-col gap-3">
+              {ROLES.map(({ value, label, tag, features, Icon }) => {
+                const selected = selectedRole === value
+                return (
+                  <button key={value} type="button"
+                    onClick={() => autoSignup ? setSelectedRole(value) : handleRoleSelect(value)}
+                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${
+                      selected ? 'border-[#1E3A5F] bg-[#D6E4F0]' : 'border-gray-200 bg-white hover:border-[#4A90C4]'
+                    }`}>
+                    <div className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${selected ? 'bg-[#1E3A5F]' : 'bg-gray-100'}`}>
+                      <Icon size={22} className={selected ? 'text-white' : 'text-gray-400'} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-sm font-bold ${selected ? 'text-[#1E3A5F]' : 'text-gray-700'}`}>{label}</span>
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${selected ? 'bg-[#1E3A5F] text-white' : 'bg-gray-100 text-gray-400'}`}>{tag}</span>
+                      </div>
+                      <ul className="space-y-0.5">
+                        {features.map(f => (
+                          <li key={f} className="flex items-center gap-1.5">
+                            <MdCheckCircle size={12} className={selected ? 'text-[#1E3A5F]' : 'text-gray-300'} />
+                            <span className={`text-xs ${selected ? 'text-[#1E3A5F]' : 'text-gray-400'}`}>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           )}
 
