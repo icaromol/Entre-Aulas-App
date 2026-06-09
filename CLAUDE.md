@@ -22,6 +22,12 @@ boring-avatars (beam=aluno, marble=peça, pixel=exercício)
 
 **SEMPRE usar ícones de `react-icons/md` — nunca emojis no código.** Emojis são proibidos em JSX e em arrays de constantes (campos `emoji: '...'`). Usar componentes importados: `<MdMusicNote size={20} />`. Em arrays de opções, armazenar `Icon: MdFoo` e renderizar com `const Icon = item.Icon; return <Icon size={...} />`.
 
+**Empty states e ícones decorativos:** usar círculo `w-12 h-12 rounded-full bg-[#1E3A5F]` com ícone branco centralizado. Nunca usar emoji gigante (`text-4xl`).
+
+**Exceção permitida:** emojis de feedback emocional no modal de finalizar pomodoro (😊 😐 😓) e saudações de texto puro ("Olá 👋").
+
+**Tipos de programa centralizados em `src/lib/programTypes.ts`** — importar `PROGRAM_TYPES` em vez de recriar o mapeamento localmente.
+
 ## Design System
 
 Paleta fixa — não usar outras cores além dessas:
