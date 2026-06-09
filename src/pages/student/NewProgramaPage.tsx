@@ -57,7 +57,8 @@ export default function StudentNewProgramaPage() {
           return
         }
         setStudentId(data.id)
-        setTeacherId(data.teacher_id)
+        // Professor em modo estudante: usa o próprio teacherId como referência
+        setTeacherId(data.teacher_id ?? profile.teacherId ?? null)
         Promise.all([
           supabase.from('pieces').select('id, title, composer').eq('student_id', data.id).order('title'),
           supabase.from('exercises').select('id, title, category').eq('student_id', data.id).order('title'),
