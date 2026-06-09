@@ -55,7 +55,7 @@ function shortDate(isoDate: string): string {
 
 function taskCardClass(task: PlannedTask) {
   if (task.isMaintenance)             return 'bg-gray-100 hover:bg-gray-200/70'
-  if (task.sourceType === 'exercise') return 'bg-rose-50 hover:bg-rose-100/80'
+  if (task.sourceType === 'exercise') return 'bg-purple-50 hover:bg-purple-100/80'
   return 'bg-[#D6E4F0]/60 hover:bg-[#D6E4F0]'
 }
 

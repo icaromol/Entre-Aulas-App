@@ -49,7 +49,7 @@ function itemDisplay(item: PlanItem): {
 
 function itemCardClass(item: PlanItem): string {
   if (item.is_maintenance) return "bg-white border-gray-100";
-  if (item.exercise_id) return "bg-rose-50 border-rose-100";
+  if (item.exercise_id) return "bg-purple-50 border-purple-100";
   return "bg-[#D6E4F0]/30 border-[#D6E4F0]";
 }
 
