@@ -156,9 +156,9 @@ export default function PomodoroPage() {
         setTimeLeft(secs)
         setTotalSecs(secs)
       } else {
-        // Todos os ciclos completos
+        // Todos os ciclos completos — salva direto
         sound.pomodoroSuccess()
-        setPhase('finished')
+        saveSession()
       }
     } else {
       // Pausa acabou — próximo ciclo de trabalho
@@ -198,7 +198,7 @@ export default function PomodoroPage() {
       setIsPaused(true)
       setShowEarlyDialog(true)
     } else {
-      setPhase('finished')
+      saveSession()
     }
   }
 
@@ -445,7 +445,7 @@ export default function PomodoroPage() {
                   Descartar
                 </button>
                 <button
-                  onClick={() => { setShowEarlyDialog(false); setPhase('finished') }}
+                  onClick={() => { setShowEarlyDialog(false); saveSession() }}
                   className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-sm text-white font-medium hover:bg-[#1E3A5F]/90 transition"
                 >
                   Salvar
