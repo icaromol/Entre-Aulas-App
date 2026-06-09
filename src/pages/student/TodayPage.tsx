@@ -82,7 +82,7 @@ export default function TodayPage() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [studentId, setStudentId] = useState<string | null>(null);
+  const [studentId, setStudentId] = useState<string | null>(profile?.studentId ?? null);
   const [hasTeacher, setHasTeacher] = useState<boolean | null>(null);
   const [hasAnyPlan, setHasAnyPlan] = useState<boolean | null>(null);
   const [viewDay, setViewDay] = useState(getTodayDayOfWeek());
@@ -120,27 +120,27 @@ export default function TodayPage() {
   async function fetchDayPlan() {
     setLoading(true);
 
-    if (!studentId) {
-      const { data: student, error: studentError } = await supabase
-        .from("students")
-        .select("id, teacher_id")
-        .eq("profile_id", profile!.id)
-        .single();
-
-      if (studentError || !student) {
-        console.error("[TodayPage] student fetch failed:", studentError);
-        setFetchError(
-          "Não foi possível carregar seu perfil. Tente recarregar a página.",
-        );
-        setLoading(false);
-        return;
-      }
-      setStudentId(student.id);
-      setHasTeacher(!!student.teacher_id);
-      await fetchItems(student.id);
-    } else {
-      await fetchItems(studentId);
+    const sid = studentId ?? profile?.studentId ?? null;
+    if (!sid) {
+      setFetchError(
+        "Perfil de aluno não encontrado. Tente recarregar a página.",
+      );
+      setLoading(false);
+      return;
     }
+
+    if (!studentId) {
+      setStudentId(sid);
+      // Busca teacher_id para exibir mensagem correta no empty state
+      const { data: student } = await supabase
+        .from("students")
+        .select("teacher_id")
+        .eq("id", sid)
+        .single();
+      setHasTeacher(!!student?.teacher_id);
+    }
+
+    await fetchItems(sid);
   }
 
   async function fetchItems(sid: string) {

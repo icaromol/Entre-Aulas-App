@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { MdPause, MdPlayArrow, MdStop, MdEmojiEvents } from "react-icons/md";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/Spinner";
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { Button } from "@/components/ui/button";
@@ -99,6 +100,7 @@ function fmtStudied(secs: number): string {
 export default function PomodoroPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const nav = location.state as {
     planItemId?: string;
     title?: string;
@@ -238,7 +240,7 @@ export default function PomodoroPage() {
   // ── Fetch items ──
   async function openFinishModal() {
     setLoadingItems(true);
-    const sid = nav?.studentId;
+    const sid = nav?.studentId ?? profile?.studentId;
     if (!sid) {
       setLoadingItems(false);
       return;
@@ -306,7 +308,7 @@ export default function PomodoroPage() {
   // ── Save ──
   async function saveSession() {
     setSaving(true);
-    const sid = nav?.studentId;
+    const sid = nav?.studentId ?? profile?.studentId;
     const c = activeCycle.current;
     if (!sid || !c) {
       setSaving(false);

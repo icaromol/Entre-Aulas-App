@@ -96,15 +96,9 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
     if (overrideSid) {
       sid = overrideSid
     } else {
-      // 1. Resolver student_id a partir do profile logado
-      const { data: student } = await supabase
-        .from('students')
-        .select('id')
-        .eq('profile_id', profile!.id)
-        .single()
-
-      if (!student) { setLoading(false); return }
-      sid = student.id
+      const resolved = profile?.studentId
+      if (!resolved) { setLoading(false); return }
+      sid = resolved
     }
 
     const weekStart    = formatWeekStart(getMonday(new Date()))

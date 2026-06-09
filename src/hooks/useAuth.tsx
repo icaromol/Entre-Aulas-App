@@ -83,6 +83,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     teacherId = (teacherRes.data as { id: string } | null)?.id ?? null
     studentId = (studentRes.data as { id: string } | null)?.id ?? null
 
+    // Professor sem registro de aluno: cria automaticamente para modo estudante
+    if (data.role === 'teacher' && teacherId && !studentId) {
+      const { data: created } = await supabase
+        .from('students')
+        .insert({
+          teacher_id: teacherId,
+          profile_id: u.id,
+          first_name: data.first_name,
+          last_name:  data.last_name,
+          status:     'active',
+        })
+        .select('id')
+        .single()
+      studentId = created?.id ?? null
+    }
+
     const fullProfile: Profile = { ...data, teacherId, studentId }
     Clarity.identify(u.id, undefined, undefined, `${data.first_name} ${data.last_name}`)
     Clarity.setTag('role', data.role)
