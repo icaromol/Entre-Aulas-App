@@ -68,24 +68,30 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
 
   async function handleSave() {
     setSaving(true)
-    try {
-      await supabase.from('student_availability').delete().eq('student_id', studentId)
-      await supabase.from('student_availability').insert(
-        availability.map(d => ({
-          student_id: studentId,
-          day_of_week: d.day,
-          is_active: d.active,
-          minutes_available: d.active ? d.minutes : null,
-        }))
-      )
-      toast.success('Disponibilidade salva!')
-      setExpanded(false)
-      onSaved?.(availability.some(d => d.active))
-    } catch {
-      toast.error('Erro ao salvar disponibilidade.')
-    } finally {
+    const { error: delErr } = await supabase
+      .from('student_availability').delete().eq('student_id', studentId)
+    if (delErr) {
+      toast.error(`Erro ao salvar: ${delErr.message}`)
       setSaving(false)
+      return
     }
+    const { error: insErr } = await supabase.from('student_availability').insert(
+      availability.map(d => ({
+        student_id: studentId,
+        day_of_week: d.day,
+        is_active: d.active,
+        minutes_available: d.active ? d.minutes : null,
+      }))
+    )
+    if (insErr) {
+      toast.error(`Erro ao salvar: ${insErr.message}`)
+      setSaving(false)
+      return
+    }
+    toast.success('Disponibilidade salva!')
+    setExpanded(false)
+    onSaved?.(availability.some(d => d.active))
+    setSaving(false)
   }
 
   if (!loaded) return null
