@@ -47,9 +47,11 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
           return { day: i, active: found?.is_active ?? false, minutes: found?.minutes_available ?? 30 }
         })
       : defaultAvail()
+    const hasAny = loaded.some(d => d.active)
     setAvailability(loaded)
+    if (!hasAny) setExpanded(true)
     setLoaded(true)
-    onLoaded?.(loaded.some(d => d.active))
+    onLoaded?.(hasAny)
   }, [studentId, onLoaded])
 
   useEffect(() => { load() }, [load])
@@ -107,21 +109,6 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
           <MdCheckCircle size={18} className="text-green-500 ml-auto" />
         )}
       </div>
-
-      {!hasAny && !expanded && (
-        <div className="space-y-3">
-          <p className="text-xs text-gray-400">
-            Configure seus dias disponíveis para gerar o planejamento.
-          </p>
-          <button
-            type="button"
-            onClick={() => setExpanded(true)}
-            className="text-xs font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition"
-          >
-            Configurar agora
-          </button>
-        </div>
-      )}
 
       {expanded && (
         <div className="space-y-3">
