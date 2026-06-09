@@ -206,12 +206,16 @@ export default function TodayPage() {
 
       const rows = (sessionRows ?? []) as any[];
 
-      // Para fallback (session_items sem duration_seconds): dividir duração da sessão
-      // proporcionalmente pelo nº de plan_items daquela sessão
+      // Fallback: buscar count total de session_items por sessão (para dividir proporcionalmente)
+      const sessionIds = [...new Set(rows.filter(r => r.duration_seconds == null).map(r => r.session_id).filter(Boolean))];
       const sessionItemCount: Record<string, number> = {};
-      for (const row of rows) {
-        if (row.duration_seconds == null && row.session_id) {
-          sessionItemCount[row.session_id] = (sessionItemCount[row.session_id] ?? 0) + 1;
+      if (sessionIds.length > 0) {
+        const { data: countRows } = await supabase
+          .from("session_items")
+          .select("session_id")
+          .in("session_id", sessionIds);
+        for (const r of (countRows ?? []) as any[]) {
+          sessionItemCount[r.session_id] = (sessionItemCount[r.session_id] ?? 0) + 1;
         }
       }
 

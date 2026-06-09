@@ -480,17 +480,24 @@ export default function PomodoroPage() {
         const totalWeight   = Object.values(itemWeight).reduce((s, v) => s + v, 0)
         const totalWorkSecs = workSecs.current
 
-        await supabase.from("session_items").insert(
-          planItemIds.map((planItemId) => {
-            const weight = itemWeight[planItemId]
-            const proportionalSecs = Math.round((weight / totalWeight) * totalWorkSecs)
-            return {
-              session_id:       sessionData.id,
-              plan_item_id:     planItemId,
-              duration_seconds: proportionalSecs,
-            }
-          }),
-        )
+        const rows = planItemIds.map((planItemId) => {
+          const weight = itemWeight[planItemId]
+          const proportionalSecs = Math.round((weight / totalWeight) * totalWorkSecs)
+          // duration_seconds requer migração: ADD COLUMN IF NOT EXISTS duration_seconds integer
+          return {
+            session_id:       sessionData.id,
+            plan_item_id:     planItemId,
+            duration_seconds: proportionalSecs,
+          }
+        })
+
+        const { error: siError } = await supabase.from("session_items").insert(rows)
+        if (siError) {
+          // Migração ainda não rodada — inserir sem duration_seconds
+          await supabase.from("session_items").insert(
+            rows.map(({ duration_seconds: _, ...r }) => r)
+          )
+        }
       }
     }
 
