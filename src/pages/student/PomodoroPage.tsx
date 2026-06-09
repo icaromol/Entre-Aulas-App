@@ -106,7 +106,8 @@ async function linkSessionItems(
   totalWorkSecs: number,
 ): Promise<void> {
   const itemData: Record<string, { weight: number; piece_id: string | null; exercise_id: string | null }> = {}
-  const weekStart = formatWeekStart(getMonday(new Date()))
+  const weekStart  = formatWeekStart(getMonday(new Date()))
+  const todayDow   = new Date().getDay()
 
   if (directPlanItemId) {
     const { data: piRow } = await supabase
@@ -130,9 +131,11 @@ async function linkSessionItems(
       if (plan?.id) {
         const queries: Promise<{ data: PlanItemRef[] | null }>[] = []
         if (pieceIds.length > 0)
-          queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id").eq("plan_id", plan.id).in("piece_id", pieceIds) as any)
+          queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id")
+            .eq("plan_id", plan.id).eq("day_of_week", todayDow).in("piece_id", pieceIds) as any)
         if (exerciseIds.length > 0)
-          queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id").eq("plan_id", plan.id).in("exercise_id", exerciseIds) as any)
+          queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id")
+            .eq("plan_id", plan.id).eq("day_of_week", todayDow).in("exercise_id", exerciseIds) as any)
 
         const matchedPlanItems = (await Promise.all(queries)).flatMap(r => r.data ?? [])
         for (const ci of ciRows) {

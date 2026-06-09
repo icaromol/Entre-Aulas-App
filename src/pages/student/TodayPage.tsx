@@ -362,11 +362,13 @@ export default function TodayPage() {
   // Total planejado — só itens do plano, sessões livres não inflam o alvo
   const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
 
-  // Minutos estudados: plan_items concluídos + sessões livres (bônus)
+  // Minutos estudados: segundos reais de session_items + itens concluídos manualmente + sessões livres
+  const studiedSecsTotal = items.reduce((s, i) => {
+    if (i.is_done && i.completed_manually) return s + (i.duration_minutes ?? 0) * 60;
+    return s + (studiedSecs[i.id] ?? 0);
+  }, 0);
   const studiedMinutes =
-    items
-      .filter((i) => i.is_done)
-      .reduce((s, i) => s + (i.duration_minutes ?? 0), 0) +
+    Math.floor(studiedSecsTotal / 60) +
     freeSessions.reduce((s, f) => s + f.minutes, 0);
 
   const denominator = totalMinutes > 0 ? totalMinutes : studiedMinutes;
@@ -508,7 +510,7 @@ export default function TodayPage() {
               >
                 {/* Barra de progresso de fundo */}
                 <div
-                  className="absolute inset-y-0 left-0 bg-[#BFDBFE] transition-all duration-500 rounded-2xl"
+                  className="absolute inset-y-0 left-0 bg-[#DBEAFE] transition-all duration-500 rounded-2xl"
                   style={{ width: `${itemPct * 100}%` }}
                 />
                 <div className="relative z-10 px-4 py-3 flex items-center gap-3">
@@ -567,9 +569,14 @@ export default function TodayPage() {
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5 truncate">
                       {maintenanceIcon ? "" : subtitle}
-                      {item.duration_minutes
-                        ? `${!maintenanceIcon && subtitle ? " · " : ""}${item.duration_minutes} min`
-                        : ""}
+                      {item.duration_minutes ? (
+                        <>
+                          {!maintenanceIcon && subtitle ? " · " : ""}
+                          {studiedSecs[item.id]
+                            ? `${Math.floor((studiedSecs[item.id] ?? 0) / 60)}/${item.duration_minutes} min`
+                            : `${item.duration_minutes} min`}
+                        </>
+                      ) : ""}
                     </p>
                   </div>
 
