@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import {
   MdCalendarToday, MdLibraryMusic, MdHistory, MdStars, MdEventNote,
-  MdMenu, MdClose, MdEdit, MdSchool, MdLogout, MdChevronRight, MdPeople,
+  MdMenu, MdClose, MdEdit, MdSchool, MdLogout, MdChevronRight, MdSwapHoriz,
 } from 'react-icons/md'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
@@ -124,7 +124,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               onClick={() => { setShowMenu(false); navigate('/modo') }}
               className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#D6E4F0] transition text-left"
             >
-              <MdPeople size={20} className="text-[#1E3A5F] shrink-0" />
+              <MdSwapHoriz size={20} className="text-[#1E3A5F] shrink-0" />
               <span className="text-sm font-semibold text-[#1E3A5F] flex-1">Trocar área</span>
               <MdChevronRight size={18} className="text-gray-300" />
             </button>
