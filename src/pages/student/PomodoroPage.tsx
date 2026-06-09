@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -97,13 +97,34 @@ function fmt(s: number) {
 }
 
 function fmtStudied(secs: number): string {
-  if (secs < 60) return `${secs}s de estudo`;
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
+  const t = Math.floor(secs);
+  if (t < 60) return `${t}s de estudo`;
+  const m = Math.floor(t / 60);
+  const s = t % 60;
   return s > 0 ? `${m} min ${s}s de estudo` : `${m} min de estudo`;
 }
 
 type PlanItemRef = { id: string; piece_id: string | null; exercise_id: string | null }
+
+interface PomodoroNavState {
+  planItemId?: string;
+  title?: string;
+  durationMinutes?: number;
+  studentId?: string;
+  autoStart?: boolean;
+}
+
+function parsePomodoroNavState(raw: unknown): PomodoroNavState | null {
+  if (!raw || typeof raw !== "object") return null;
+  const s = raw as Record<string, unknown>;
+  return {
+    planItemId:      typeof s.planItemId === "string" ? s.planItemId : undefined,
+    title:           typeof s.title === "string" ? s.title : undefined,
+    durationMinutes: typeof s.durationMinutes === "number" ? s.durationMinutes : undefined,
+    studentId:       typeof s.studentId === "string" ? s.studentId : undefined,
+    autoStart:       typeof s.autoStart === "boolean" ? s.autoStart : undefined,
+  };
+}
 
 async function linkSessionItems(
   sessionId: string,
@@ -177,13 +198,7 @@ export default function PomodoroPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const nav = location.state as {
-    planItemId?: string;
-    title?: string;
-    durationMinutes?: number;
-    studentId?: string;
-    autoStart?: boolean;
-  } | null;
+  const nav = parsePomodoroNavState(location.state);
 
   // ── Custom config ──
   const [customWork, setCustomWork] = useState(25);
@@ -210,14 +225,17 @@ export default function PomodoroPage() {
   const workSecsAccum = useRef<number>(0);
   // finalWorkSecs: frozen at save time, used by the finished screen
   const finalWorkSecs = useRef<number>(0);
-  // transitionFired: guards phase-transition effect from double-firing
-  const transitionFired = useRef(false);
   // workPhaseStartedAt: Date.now() when current work phase began (null if paused/break)
   const workPhaseStartedAt = useRef<number | null>(null);
-  // tick counter just to force re-renders
-  const [, forceRender] = useState(0);
+  // onPhaseEnd: stable ref to the transition handler, set after saveSession is defined
+  const onPhaseEndRef = useRef<(() => void) | null>(null);
+  // transitionFired: prevents the transition from firing more than once per phase end
+  const transitionFired = useRef(false);
   const pipWindowRef = useRef<Window | null>(null);
   const pipContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // timeLeft as real state — React controls batching; interval sets it via getTimeLeft()
+  const [timeLeft, setTimeLeft] = useState(0);
 
   function getTimeLeft(): number {
     if (phaseStartedAt.current === null) {
@@ -226,8 +244,6 @@ export default function PomodoroPage() {
     const elapsed = pausedElapsed.current + (Date.now() - phaseStartedAt.current) / 1000;
     return Math.max(0, phaseDuration.current - elapsed);
   }
-
-  const timeLeft = getTimeLeft();
 
   // ── Finish screen ──
   const [dayGroups, setDayGroups] = useState<DayGroup[]>([]);
@@ -239,8 +255,16 @@ export default function PomodoroPage() {
   const [saving, setSaving] = useState(false);
   const [loadingItems, setLoadingItems] = useState(false);
 
+  // ── Timer phase initializer — shared by startSession, auto-start and phase transitions ──
+  function initPhase(secs: number, isWorkPhase: boolean) {
+    phaseDuration.current = secs;
+    pausedElapsed.current = 0;
+    phaseStartedAt.current = Date.now();
+    workPhaseStartedAt.current = isWorkPhase ? Date.now() : null;
+  }
+
   // ── Document Picture-in-Picture ──
-  async function openPip() {
+  const openPip = useCallback(async () => {
     if (!("documentPictureInPicture" in window)) {
       toast.error("Seu navegador não suporta Picture-in-Picture de documentos.");
       return;
@@ -252,23 +276,7 @@ export default function PomodoroPage() {
       });
       pipWindowRef.current = pip;
 
-      // Copy styles so Tailwind classes work inside the PiP window
-      [...document.styleSheets].forEach((sheet) => {
-        try {
-          if (sheet.href) {
-            const link = pip.document.createElement("link");
-            link.rel = "stylesheet";
-            link.href = sheet.href;
-            pip.document.head.appendChild(link);
-          } else {
-            const style = pip.document.createElement("style");
-            style.textContent = [...sheet.cssRules].map((r) => r.cssText).join("\n");
-            pip.document.head.appendChild(style);
-          }
-        } catch { /* cross-origin sheets — skip */ }
-      });
-
-      // Mount point
+      // Mount point — PiP uses inline styles only, no external CSS needed
       const container = pip.document.createElement("div");
       container.style.cssText = "width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1E3A5F;";
       pip.document.body.style.margin = "0";
@@ -278,14 +286,15 @@ export default function PomodoroPage() {
       pip.addEventListener("pagehide", () => {
         pipWindowRef.current = null;
         pipContainerRef.current = null;
-        forceRender((n) => n + 1);
+        setTimeLeft(getTimeLeft());
       });
 
-      forceRender((n) => n + 1);
+      setTimeLeft(getTimeLeft());
     } catch {
       // User dismissed the prompt — ignore
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Auto-start ──
   useEffect(() => {
@@ -303,10 +312,7 @@ export default function PomodoroPage() {
     startedAt.current = new Date().toISOString();
     workSecsAccum.current = 0;
     const secs = preset.workMinutes * 60;
-    phaseDuration.current = secs;
-    pausedElapsed.current = 0;
-    phaseStartedAt.current = Date.now();
-    workPhaseStartedAt.current = Date.now();
+    initPhase(secs, true);
     transitionFired.current = false;
     setCurrentCycle(1);
     setCompletedCycles(0);
@@ -316,60 +322,22 @@ export default function PomodoroPage() {
     openFinishModal();
   }, []);
 
-  // ── Timer tick — just a re-render trigger; real time comes from Date.now() ──
+  // ── Timer tick + phase transition — single interval, all reads from refs ──
   useEffect(() => {
     if ((phase !== "work" && phase !== "break") || isPaused) return;
-    const id = setInterval(() => forceRender((n) => n + 1), 250);
+    const id = setInterval(() => {
+      const tl = getTimeLeft();
+      setTimeLeft(tl);
+      if (tl > 0) {
+        transitionFired.current = false;
+        return;
+      }
+      if (transitionFired.current) return;
+      transitionFired.current = true;
+      onPhaseEndRef.current?.();
+    }, 250);
     return () => clearInterval(id);
   }, [phase, isPaused]);
-
-  // ── Phase transitions — driven by computed timeLeft ──
-  useEffect(() => {
-    if (timeLeft > 0) { transitionFired.current = false; return; }
-    if (phase !== "work" && phase !== "break") return;
-    if (transitionFired.current) return;
-    transitionFired.current = true;
-    const c = activeCycle.current;
-    if (!c) return;
-
-    if (phase === "work") {
-      // Accumulate real work seconds for this phase
-      if (workPhaseStartedAt.current !== null) {
-        workSecsAccum.current += (Date.now() - workPhaseStartedAt.current) / 1000;
-        workPhaseStartedAt.current = null;
-      }
-      const newCompleted = completedCycles + 1;
-      setCompletedCycles(newCompleted);
-
-      if (currentCycle < c.totalCycles) {
-        sound.pomodoroSection();
-        const secs = c.breakMinutes * 60;
-        phaseDuration.current = secs;
-        pausedElapsed.current = 0;
-        phaseStartedAt.current = Date.now();
-        transitionFired.current = false;
-        setTotalSecs(secs);
-        setPhase("break");
-      } else {
-        sound.pomodoroSuccess();
-        saveSession();
-      }
-    } else {
-      // Break ended — next work cycle
-      const next = currentCycle + 1;
-      setCurrentCycle(next);
-      const secs = c.workMinutes * 60;
-      phaseDuration.current = secs;
-      pausedElapsed.current = 0;
-      phaseStartedAt.current = Date.now();
-      workPhaseStartedAt.current = Date.now();
-      transitionFired.current = false;
-      setTotalSecs(secs);
-      setIsPaused(false);
-      setPhase("work");
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft === 0, phase]);
 
   // ── Start ──
   function startSession(preset?: CyclePreset) {
@@ -384,10 +352,7 @@ export default function PomodoroPage() {
     startedAt.current = new Date().toISOString();
     workSecsAccum.current = 0;
     const secs = c.workMinutes * 60;
-    phaseDuration.current = secs;
-    pausedElapsed.current = 0;
-    phaseStartedAt.current = Date.now();
-    workPhaseStartedAt.current = Date.now();
+    initPhase(secs, true);
     transitionFired.current = false;
     setCurrentCycle(1);
     setCompletedCycles(0);
@@ -431,7 +396,8 @@ export default function PomodoroPage() {
       supabase
         .from("checklist_completions")
         .select("checklist_item_id")
-        .eq("student_id", sid),
+        .eq("student_id", sid)
+        .gte("completed_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
     ]);
 
     if (piecesRes.error || exercisesRes.error) {
@@ -579,47 +545,70 @@ export default function PomodoroPage() {
                 .not("piece_id", "is", null);
 
               const pieceIds = [...new Set((ciRows ?? []).map((r: any) => r.piece_id as string))];
-              for (const pid of pieceIds) {
+              await Promise.all(pieceIds.map(async (pid) => {
                 const { data: allItems } = await supabase
-                  .from("checklist_items")
-                  .select("id, is_optional")
-                  .eq("piece_id", pid);
+                  .from("checklist_items").select("id, is_optional").eq("piece_id", pid);
                 const mandatory = (allItems ?? []).filter((i: any) => !i.is_optional);
-                if (mandatory.length === 0) continue;
+                if (mandatory.length === 0) return;
 
                 const { data: doneRows } = await supabase
-                  .from("checklist_completions")
-                  .select("checklist_item_id")
-                  .eq("student_id", sid)
-                  .in("checklist_item_id", mandatory.map((i: any) => i.id));
-                const doneIds = new Set((doneRows ?? []).map((r: any) => r.checklist_item_id));
-                const pct = Math.round((doneIds.size / mandatory.length) * 100);
+                  .from("checklist_completions").select("checklist_item_id")
+                  .eq("student_id", sid).in("checklist_item_id", mandatory.map((i: any) => i.id));
+                const pct = Math.round(((doneRows ?? []).length / mandatory.length) * 100);
+                if (pct < 100) return;
 
-                if (pct < 100) continue;
-
-                await supabase.from("pieces").update({ status: "completed" }).eq("id", pid);
-
-                const { data: xpExisting } = await supabase
-                  .from("student_xp_events")
-                  .select("id")
-                  .eq("student_id", sid)
-                  .eq("reason", "piece_completed")
-                  .eq("source_id", pid)
-                  .maybeSingle();
-
+                const [, { data: xpExisting }] = await Promise.all([
+                  supabase.from("pieces").update({ status: "completed" }).eq("id", pid),
+                  supabase.from("student_xp_events").select("id")
+                    .eq("student_id", sid).eq("reason", "piece_completed")
+                    .eq("source_id", pid).maybeSingle(),
+                ]);
                 if (!xpExisting) {
                   toast.success("🎉 Peça concluída! +10 XP");
                   await grantXp(sid, "piece_completed", pid, null, 10);
                 }
-              }
+              }));
             })
         : Promise.resolve(),
 
       linkSessionItems(sessionId, sid, checklistIds, nav?.planItemId ?? null, totalWorkSecs),
-    ]);
+    ]).catch(() => {
+      toast.error("Alguns dados da sessão não foram salvos. Verifique sua conexão.");
+    });
   }
 
-  // ── Marcar item/peça como concluído no checklist ──
+  // ── Phase-end handler — updated each render so it closes over latest state ──
+  onPhaseEndRef.current = () => {
+    const c = activeCycle.current;
+    if (!c) return;
+
+    if (phase === "work") {
+      if (workPhaseStartedAt.current !== null) {
+        workSecsAccum.current += (Date.now() - workPhaseStartedAt.current) / 1000;
+        workPhaseStartedAt.current = null;
+      }
+      if (currentCycle < c.totalCycles) {
+        sound.pomodoroSection();
+        const secs = c.breakMinutes * 60;
+        initPhase(secs, false);
+        setCompletedCycles((n) => n + 1);
+        setTotalSecs(secs);
+        setPhase("break");
+      } else {
+        sound.pomodoroSuccess();
+        setCompletedCycles((n) => n + 1);
+        saveSession();
+      }
+    } else {
+      const secs = c.workMinutes * 60;
+      initPhase(secs, true);
+      setCurrentCycle((n) => n + 1);
+      setTotalSecs(secs);
+      setIsPaused(false);
+      setPhase("work");
+    }
+  };
+
   // ── Derived ──
   const progress = totalSecs > 0 ? timeLeft / totalSecs : 0;
   const dashOffset = CIRCUMFERENCE * (1 - progress);
@@ -1083,9 +1072,9 @@ export default function PomodoroPage() {
 
         {/* Document PiP portal */}
         {pipContainerRef.current && ReactDOM.createPortal(
-          <div style={{ textAlign: "center" }}>
+          <div style={{ textAlign: "center", padding: "16px" }}>
             <div style={{
-              fontSize: "11px", fontWeight: 600, marginBottom: "8px",
+              fontSize: "11px", fontWeight: 600, marginBottom: "12px",
               color: isWork ? "#D6E4F0" : "#4ADE80",
               letterSpacing: "0.05em",
             }}>
@@ -1097,9 +1086,11 @@ export default function PomodoroPage() {
             }}>
               {fmt(timeLeft)}
             </div>
-            <div style={{ fontSize: "11px", color: "#8BA9C4", marginTop: "8px" }}>
-              {isPaused ? "pausado" : isWork ? "em andamento" : "descansando"}
-            </div>
+            {isPaused && (
+              <div style={{ fontSize: "11px", color: "#8BA9C4", marginTop: "10px" }}>
+                pausado
+              </div>
+            )}
           </div>,
           pipContainerRef.current
         )}
