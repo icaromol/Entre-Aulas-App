@@ -126,6 +126,7 @@ export default function TodayPage() {
 
   const [items, setItems] = useState<PlanItem[]>([]);
   const [studiedSecs, setStudiedSecs] = useState<Record<string, number>>({});
+  const [freeSessions, setFreeSessions] = useState<{ id: string; minutes: number; label: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [studentId, setStudentId] = useState<string | null>(null);
@@ -262,6 +263,29 @@ export default function TodayPage() {
       }
     }
 
+    // Buscar sessões livres do dia (sem plan_item vinculado)
+    const dayDate = new Date(monday)
+    dayDate.setDate(dayDate.getDate() + (viewDay === 0 ? 6 : viewDay - 1))
+    const dayStart = new Date(dayDate); dayStart.setHours(0, 0, 0, 0)
+    const dayEnd   = new Date(dayDate); dayEnd.setHours(23, 59, 59, 999)
+
+    const { data: sessRows } = await supabase
+      .from('study_sessions')
+      .select('id, cycle_name, duration_seconds, session_items(plan_item_id)')
+      .eq('student_id', sid)
+      .gte('started_at', dayStart.toISOString())
+      .lte('started_at', dayEnd.toISOString())
+
+    const free: { id: string; minutes: number; label: string }[] = []
+    for (const sess of (sessRows ?? []) as any[]) {
+      const hasLinkedItem = (sess.session_items ?? []).some((si: any) => si.plan_item_id)
+      if (!hasLinkedItem && sess.duration_seconds > 0) {
+        const mins = Math.round(sess.duration_seconds / 60)
+        free.push({ id: sess.id, minutes: mins, label: sess.cycle_name ?? 'Sessão livre' })
+      }
+    }
+    setFreeSessions(free)
+
     setLoading(false);
   }
 
@@ -315,10 +339,11 @@ export default function TodayPage() {
     }
   }
 
-  const done = items.filter((i) => i.is_done).length;
-  const total = items.length;
+  const done = items.filter((i) => i.is_done).length + freeSessions.length;
+  const total = items.length + freeSessions.length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
+  const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
+    + freeSessions.reduce((s, f) => s + f.minutes, 0);
 
   if (loading) {
     return (
@@ -386,7 +411,7 @@ export default function TodayPage() {
       )}
 
       {/* Lista de itens */}
-      {items.length === 0 ? (
+      {items.length === 0 && freeSessions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
           <p className="text-4xl mb-3">🎵</p>
           {hasAnyPlan === false ? (
@@ -460,16 +485,31 @@ export default function TodayPage() {
                           studentId,
                         },
                       })}
-                      className="shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-xl bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
+                      className="shrink-0 flex flex-col items-center justify-center gap-1 px-4 py-2.5 rounded-xl bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
                     >
-                      <MdPlayArrow size={18} />
-                      <span className="text-[10px] font-semibold leading-none">Iniciar</span>
+                      <MdPlayArrow size={22} />
+                      <span className="text-xs font-bold leading-none">Iniciar</span>
                     </button>
                   )}
                 </div>
               </div>
             );
           })}
+
+          {/* Sessões livres do dia (read-only, já concluídas) */}
+          {freeSessions.map(sess => (
+            <div key={sess.id} className="rounded-2xl border border-gray-100 bg-white opacity-60">
+              <div className="px-4 py-3 flex items-center gap-3">
+                <div className="shrink-0">
+                  <ProgressRing pct={1} done={true} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate line-through text-gray-400">{sess.label}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Sessão livre · {sess.minutes} min</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
