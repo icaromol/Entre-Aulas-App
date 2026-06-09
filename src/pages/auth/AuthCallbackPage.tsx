@@ -10,6 +10,8 @@ interface PendingSignup {
   inviteToken?: string
   firstName?: string
   lastName?: string
+  instrument?: string
+  instruments?: string[]
 }
 
 export default function AuthCallbackPage() {
@@ -54,8 +56,13 @@ export default function AuthCallbackPage() {
             first_name:    firstName,
             last_name:     lastName,
             contact_email: user.email,
+            instrument:    pending.instrument || null,
             status:        'active',
           })
+        } else if (pending.role === 'teacher' && pending.instruments && pending.instruments.length > 0) {
+          await supabase.from('teachers')
+            .update({ instruments: pending.instruments.join(', ') })
+            .eq('profile_id', user.id)
         }
       }
 
