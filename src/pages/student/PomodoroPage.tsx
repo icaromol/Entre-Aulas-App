@@ -737,13 +737,44 @@ export default function PomodoroPage() {
                       });
                     }
 
+                    const groupAllDone = group.items.every((ci) => completedIds.has(ci.id));
+
+                    async function toggleCompleteGroup() {
+                      const sid = nav?.studentId ?? profile?.studentId;
+                      if (!sid) return;
+                      if (groupAllDone) {
+                        await Promise.all(group.items.map((ci) =>
+                          supabase.from("checklist_completions").delete()
+                            .eq("checklist_item_id", ci.id).eq("student_id", sid)
+                        ));
+                        setCompletedIds((prev) => {
+                          const n = new Set(prev);
+                          group.items.forEach((ci) => n.delete(ci.id));
+                          return n;
+                        });
+                      } else {
+                        const toAdd = group.items.filter((ci) => !completedIds.has(ci.id));
+                        await Promise.all(toAdd.map((ci) =>
+                          supabase.from("checklist_completions").insert({
+                            checklist_item_id: ci.id, student_id: sid, completed_at: new Date().toISOString(),
+                          })
+                        ));
+                        setCompletedIds((prev) => {
+                          const n = new Set(prev);
+                          toAdd.forEach((ci) => n.add(ci.id));
+                          return n;
+                        });
+                      }
+                    }
+
                     return (
-                      <div key={group.sourceId}>
+                      <div key={group.sourceId} className="pt-2 first:pt-0">
                         {/* Linha do grupo (peça/exercício) */}
                         <div className="flex items-center gap-3">
+                          {/* Seleção grupo — círculo */}
                           <button
                             onClick={toggleGroup}
-                            className={`w-5 h-5 rounded shrink-0 transition ${
+                            className={`w-5 h-5 rounded-full shrink-0 transition ${
                               groupChecked
                                 ? "bg-[#1E3A5F]"
                                 : groupIndeterminate
@@ -751,6 +782,17 @@ export default function PomodoroPage() {
                                   : "border-2 border-gray-300"
                             }`}
                           />
+                          {/* Conclusão grupo — check cinza/verde */}
+                          <button
+                            onClick={toggleCompleteGroup}
+                            className={`shrink-0 flex items-center justify-center transition ${
+                              groupAllDone ? "text-green-500" : "text-gray-300 hover:text-green-500"
+                            }`}
+                          >
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
                           <button
                             onClick={() => setExpandedGroups((prev) => {
                               const next = new Set(prev);
@@ -769,30 +811,27 @@ export default function PomodoroPage() {
 
                         {/* Itens do checklist (expandidos) */}
                         {expanded && (
-                          <div className="mt-1 ml-8 space-y-1.5 border-l-2 border-gray-100 pl-3">
+                          <div className="mt-2 ml-8 space-y-2 border-l-2 border-gray-100 pl-3">
                             {group.items.map((ci) => {
                               const checked = workedIds.has(ci.id);
                               const done = completedIds.has(ci.id);
                               return (
-                                <div key={ci.id} className="flex items-center gap-2 py-0.5">
-                                  {/* Seleção — círculo sólido */}
+                                <div key={ci.id} className="flex items-center gap-2">
+                                  {/* Seleção item — círculo */}
                                   <button
                                     onClick={() => toggleItem(ci.id)}
                                     className={`w-4 h-4 rounded-full shrink-0 transition ${
                                       checked ? "bg-[#1E3A5F]" : "border-2 border-gray-300"
                                     }`}
                                   />
-                                  {/* Conclusão — check cinza, verde no hover */}
+                                  {/* Conclusão item — check sem border */}
                                   <button
                                     onClick={() => toggleComplete(ci)}
-                                    className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition ${
-                                      done
-                                        ? "bg-green-500"
-                                        : "border-2 border-gray-200 hover:border-green-400 hover:text-green-500 text-gray-300"
+                                    className={`shrink-0 flex items-center justify-center transition ${
+                                      done ? "text-green-500" : "text-gray-300 hover:text-green-500"
                                     }`}
                                   >
-                                    <svg width="8" height="8" fill="none" viewBox="0 0 24 24"
-                                      stroke={done ? "white" : "currentColor"} strokeWidth={3}>
+                                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                       <path d="M5 13l4 4L19 7" />
                                     </svg>
                                   </button>
