@@ -125,18 +125,19 @@ export default function MyTeacherPage() {
       {/* Sem professor */}
       {connState === 'none' && (
         <div className="bg-white rounded-2xl border border-gray-100 p-8">
-          <div className="flex flex-col items-center text-center mb-8">
+          <div className="flex flex-col items-center text-center mb-6">
             <div className="w-16 h-16 rounded-full bg-[#D6E4F0] flex items-center justify-center mb-4">
               <MdSchool size={32} className="text-[#1E3A5F]" />
             </div>
             <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Nenhum professor vinculado</h2>
             <p className="text-sm text-gray-400 leading-relaxed">
-              Digite o e-mail do seu professor para enviar uma solicitação de conexão.
+              Você está usando o estudamus de forma independente.
+              Conecte-se a um professor para receber planejamentos e acompanhamento.
             </p>
           </div>
 
           <div className="space-y-3">
-            <label className="text-xs text-gray-400 font-medium">E-mail do professor</label>
+            <label className="text-xs text-gray-400 font-medium">E-mail do professor (opcional)</label>
             <input
               type="email"
               value={teacherEmail}

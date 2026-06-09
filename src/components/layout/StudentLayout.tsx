@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import {
   MdCalendarToday, MdLibraryMusic, MdHistory, MdStars, MdBarChart,
-  MdMenu, MdClose, MdEdit, MdSchool, MdLogout, MdChevronRight,
+  MdMenu, MdClose, MdEdit, MdSchool, MdLogout, MdChevronRight, MdPeople,
 } from 'react-icons/md'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
@@ -23,7 +23,7 @@ const navItems = [
 ]
 
 export function StudentLayout({ children }: StudentLayoutProps) {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, setMode, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -118,15 +118,29 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             <span className="text-sm font-medium text-gray-700">Editar perfil</span>
           </button>
 
-          {/* Meu professor */}
-          <button
-            onClick={() => { setShowMenu(false); navigate('/aluno/professor') }}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
-          >
-            <MdSchool size={20} className="text-[#4A90C4] shrink-0" />
-            <span className="text-sm font-medium text-gray-700 flex-1">Meu professor</span>
-            <MdChevronRight size={18} className="text-gray-300" />
-          </button>
+          {/* Área do professor — só para professores em modo estudo */}
+          {profile?.role === 'teacher' && (
+            <button
+              onClick={() => { setShowMenu(false); setMode('teacher'); navigate('/professor/alunos') }}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#D6E4F0] transition text-left"
+            >
+              <MdPeople size={20} className="text-[#1E3A5F] shrink-0" />
+              <span className="text-sm font-semibold text-[#1E3A5F] flex-1">Área do professor</span>
+              <MdChevronRight size={18} className="text-gray-300" />
+            </button>
+          )}
+
+          {/* Meu professor — só para estudantes */}
+          {profile?.role === 'student' && (
+            <button
+              onClick={() => { setShowMenu(false); navigate('/aluno/professor') }}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
+            >
+              <MdSchool size={20} className="text-[#4A90C4] shrink-0" />
+              <span className="text-sm font-medium text-gray-700 flex-1">Meu professor</span>
+              <MdChevronRight size={18} className="text-gray-300" />
+            </button>
+          )}
 
           {/* Histórico */}
           <button

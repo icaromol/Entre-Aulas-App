@@ -4,7 +4,7 @@ import Avatar from 'boring-avatars'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
-import { MdMenu, MdEdit, MdLogout, MdEmojiEvents, MdChevronRight } from 'react-icons/md'
+import { MdMenu, MdEdit, MdLogout, MdEmojiEvents, MdChevronRight, MdMusicNote } from 'react-icons/md'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
 
@@ -13,7 +13,7 @@ interface TeacherLayoutProps {
 }
 
 export function TeacherLayout({ children }: TeacherLayoutProps) {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, setMode, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -196,6 +196,14 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                       <span className="text-sm font-medium text-gray-700 flex-1">Minha Jornada</span>
                       <MdChevronRight size={18} className="text-gray-300" />
                     </button>
+                    {profile?.studentId && (
+                      <button onClick={() => { setShowMenu(false); setMode('student'); navigate('/aluno/hoje') }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
+                        <MdMusicNote size={18} className="text-[#4A90C4] shrink-0" />
+                        <span className="text-sm font-medium text-gray-700 flex-1">Meu estudo</span>
+                        <MdChevronRight size={18} className="text-gray-300" />
+                      </button>
+                    )}
                     <div className="mx-3 border-t border-gray-100" />
                     <button onClick={openEdit}
                       className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
