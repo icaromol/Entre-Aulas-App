@@ -76,6 +76,8 @@ type Phase = "idle" | "work" | "break" | "finished";
 interface ChecklistEntry {
   id: string;
   title: string;
+  piece_id: string | null;
+  exercise_id: string | null;
 }
 
 interface DayGroup {
@@ -204,6 +206,7 @@ export default function PomodoroPage() {
   const [dayGroups, setDayGroups] = useState<DayGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [workedIds, setWorkedIds] = useState<Set<string>>(new Set());
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [difficulty, setDifficulty] = useState<"easy" | "ok" | "hard" | "">("");
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
@@ -321,23 +324,32 @@ export default function PomodoroPage() {
       return;
     }
 
-    const [piecesRes, exercisesRes] = await Promise.all([
+    const [piecesRes, exercisesRes, completionsRes] = await Promise.all([
       supabase
         .from("pieces")
-        .select("id, title, checklist_items(id, title)")
+        .select("id, title, checklist_items(id, title, piece_id, exercise_id)")
         .eq("student_id", sid)
         .eq("status", "in_progress"),
       supabase
         .from("exercises")
-        .select("id, title, checklist_items(id, title)")
+        .select("id, title, checklist_items(id, title, piece_id, exercise_id)")
         .eq("student_id", sid)
         .eq("status", "active"),
+      supabase
+        .from("checklist_completions")
+        .select("checklist_item_id")
+        .eq("student_id", sid),
     ]);
 
     if (piecesRes.error || exercisesRes.error) {
       setLoadingItems(false);
       return;
     }
+
+    const alreadyDone = new Set(
+      (completionsRes.data ?? []).map((c: any) => c.checklist_item_id)
+    );
+    setCompletedIds(alreadyDone);
 
     const groups: DayGroup[] = [];
 
@@ -347,7 +359,7 @@ export default function PomodoroPage() {
         sourceId: piece.id,
         sourceTitle: piece.title,
         kind: "piece",
-        items: (piece.checklist_items as ChecklistEntry[]),
+        items: piece.checklist_items as ChecklistEntry[],
       });
     }
     for (const ex of (exercisesRes.data ?? []) as any[]) {
@@ -356,7 +368,7 @@ export default function PomodoroPage() {
         sourceId: ex.id,
         sourceTitle: ex.title,
         kind: "exercise",
-        items: (ex.checklist_items as ChecklistEntry[]),
+        items: ex.checklist_items as ChecklistEntry[],
       });
     }
 
@@ -418,6 +430,26 @@ export default function PomodoroPage() {
     await linkSessionItems(sessionData!.id, sid, checklistIds, nav?.planItemId ?? null, workSecs.current);
 
     navigate("/aluno/hoje");
+  }
+
+  // ── Marcar item/peça como concluído no checklist ──
+  async function toggleComplete(ci: ChecklistEntry) {
+    const sid = nav?.studentId ?? profile?.studentId;
+    if (!sid) return;
+    const isDone = completedIds.has(ci.id);
+    if (isDone) {
+      await supabase
+        .from("checklist_completions")
+        .delete()
+        .eq("checklist_item_id", ci.id)
+        .eq("student_id", sid);
+      setCompletedIds((prev) => { const n = new Set(prev); n.delete(ci.id); return n; });
+    } else {
+      await supabase
+        .from("checklist_completions")
+        .insert({ checklist_item_id: ci.id, student_id: sid, completed_at: new Date().toISOString() });
+      setCompletedIds((prev) => new Set(prev).add(ci.id));
+    }
   }
 
   // ── Derived ──
@@ -711,23 +743,14 @@ export default function PomodoroPage() {
                         <div className="flex items-center gap-3">
                           <button
                             onClick={toggleGroup}
-                            className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
+                            className={`w-5 h-5 rounded shrink-0 transition ${
                               groupChecked
-                                ? "bg-[#1E3A5F] border-[#1E3A5F]"
+                                ? "bg-[#1E3A5F]"
                                 : groupIndeterminate
-                                  ? "bg-[#4A90C4]/20 border-[#4A90C4]"
-                                  : "border-gray-300"
+                                  ? "bg-[#4A90C4]/40"
+                                  : "border-2 border-gray-300"
                             }`}
-                          >
-                            {groupChecked && (
-                              <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
-                                <path d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                            {groupIndeterminate && (
-                              <div className="w-2 h-0.5 bg-[#4A90C4] rounded-full" />
-                            )}
-                          </button>
+                          />
                           <button
                             onClick={() => setExpandedGroups((prev) => {
                               const next = new Set(prev);
@@ -749,23 +772,39 @@ export default function PomodoroPage() {
                           <div className="mt-1 ml-8 space-y-1.5 border-l-2 border-gray-100 pl-3">
                             {group.items.map((ci) => {
                               const checked = workedIds.has(ci.id);
+                              const done = completedIds.has(ci.id);
                               return (
-                                <button
-                                  key={ci.id}
-                                  onClick={() => toggleItem(ci.id)}
-                                  className="w-full flex items-center gap-3 text-left py-0.5"
-                                >
-                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition ${
-                                    checked ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-gray-300"
-                                  }`}>
-                                    {checked && (
-                                      <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                                <div key={ci.id} className="group flex items-center gap-2 py-0.5">
+                                  <button
+                                    onClick={() => toggleItem(ci.id)}
+                                    className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                                  >
+                                    <div className={`w-4 h-4 rounded shrink-0 transition ${
+                                      checked ? "bg-[#1E3A5F]" : "border-2 border-gray-300"
+                                    }`} />
+                                    <span className={`text-xs truncate transition ${done ? "line-through text-gray-300" : "text-gray-600"}`}>
+                                      {ci.title}
+                                    </span>
+                                  </button>
+                                  <button
+                                    onClick={() => toggleComplete(ci)}
+                                    className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition ${
+                                      done
+                                        ? "bg-green-500"
+                                        : "opacity-0 group-hover:opacity-100 text-gray-300 hover:text-green-500"
+                                    }`}
+                                  >
+                                    {done ? (
+                                      <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                                        <path d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                         <path d="M5 13l4 4L19 7" />
                                       </svg>
                                     )}
-                                  </div>
-                                  <span className="text-xs text-gray-600 truncate">{ci.title}</span>
-                                </button>
+                                  </button>
+                                </div>
                               );
                             })}
                           </div>
