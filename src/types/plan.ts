@@ -9,6 +9,7 @@ export interface PlanItem {
   position: number
   is_done: boolean
   done_at: string | null
+  completed_manually: boolean
   is_maintenance: boolean
   // joined
   piece?: { title: string; composer: string | null } | null

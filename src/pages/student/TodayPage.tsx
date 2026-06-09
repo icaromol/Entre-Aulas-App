@@ -215,7 +215,7 @@ export default function TodayPage() {
       .select(
         `
         id, plan_id, day_of_week, piece_id, exercise_id, program_id,
-        duration_minutes, position, is_done, done_at, is_maintenance,
+        duration_minutes, position, is_done, done_at, is_maintenance, completed_manually,
         piece:pieces(title, composer),
         exercise:exercises(title, category),
         programa:programas(title, type)
@@ -291,14 +291,20 @@ export default function TodayPage() {
     setLoading(false);
   }
 
-  async function toggleDone(item: PlanItem) {
+  async function toggleDone(item: PlanItem, manually = false) {
     const newDone = !item.is_done
     await supabase
       .from("plan_items")
-      .update({ is_done: newDone, done_at: newDone ? new Date().toISOString() : null })
+      .update({
+        is_done: newDone,
+        done_at: newDone ? new Date().toISOString() : null,
+        completed_manually: newDone ? manually : false,
+      })
       .eq("id", item.id)
 
-    const updatedItems = items.map(i => i.id === item.id ? { ...i, is_done: newDone } : i)
+    const updatedItems = items.map(i =>
+      i.id === item.id ? { ...i, is_done: newDone, completed_manually: newDone ? manually : false } : i
+    )
     setItems(updatedItems)
 
     if (!newDone || !studentId) return
@@ -483,9 +489,16 @@ export default function TodayPage() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold truncate ${item.is_done ? "line-through text-gray-400" : "text-gray-800"}`}>
-                      {maintenanceIcon ? `Manutenção · ${title}` : title}
-                    </p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className={`text-sm font-semibold truncate ${item.is_done ? "line-through text-gray-400" : "text-gray-800"}`}>
+                        {maintenanceIcon ? `Manutenção · ${title}` : title}
+                      </p>
+                      {item.completed_manually && (
+                        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600">
+                          Manual
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-400 mt-0.5 truncate">
                       {subtitle}
                       {item.duration_minutes ? ` · ${item.duration_minutes} min` : ''}
@@ -584,12 +597,12 @@ export default function TodayPage() {
       {pendingItem && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 pb-8 px-4">
           <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-xl">
-            <p className="text-sm font-bold text-gray-800 mb-1">Concluir sem pomodoro?</p>
+            <p className="text-sm font-bold text-gray-800 mb-1">Concluir manualmente?</p>
             <p className="text-xs font-medium text-gray-600 mb-1 truncate">
               {pendingItem.exercise?.title ?? pendingItem.piece?.title ?? 'Item'}
             </p>
             <p className="text-xs text-gray-400 mb-4">
-              Você não fez uma sessão de estudo. Deseja marcar como concluído manualmente?
+              Você não concluiu uma sessão pomodoro. Deseja marcar como concluído mesmo assim?
             </p>
             <button
               onClick={() => setSkipConfirm(v => !v)}
@@ -612,7 +625,7 @@ export default function TodayPage() {
               <button
                 onClick={() => {
                   if (skipConfirm) localStorage.setItem(SKIP_KEY, '1')
-                  toggleDone(pendingItem)
+                  toggleDone(pendingItem, true)
                   setPendingItem(null)
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition"
