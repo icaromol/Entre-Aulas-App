@@ -127,30 +127,32 @@ export default function StudentPieceDetailPage() {
     if (!studentId || !pieceId) return
     setLoadingHistory(true)
 
-    // Get checklist item IDs for this piece
+    // Source 1: sessions where checklist items of this piece were completed
     const { data: ciData } = await supabase
       .from('checklist_items')
       .select('id')
       .eq('piece_id', pieceId)
-
     const pieceItemIds = (ciData ?? []).map((r: { id: string }) => r.id)
-    if (pieceItemIds.length === 0) {
-      setSessions([])
-      setLoadingHistory(false)
-      return
-    }
 
-    // Find session IDs via checklist_completions.session_id for this piece's items
-    const { data: ccData } = await supabase
-      .from('checklist_completions')
-      .select('session_id')
-      .eq('student_id', studentId)
-      .in('checklist_item_id', pieceItemIds)
-      .not('session_id', 'is', null)
+    const [ccRes, siRes] = await Promise.all([
+      // checklist_completions with session_id (items marked done during session)
+      pieceItemIds.length > 0
+        ? supabase.from('checklist_completions')
+            .select('session_id')
+            .eq('student_id', studentId)
+            .in('checklist_item_id', pieceItemIds)
+            .not('session_id', 'is', null)
+        : Promise.resolve({ data: [] }),
+      // session_items.piece_id (workedIds selected but not necessarily completed)
+      supabase.from('session_items')
+        .select('session_id')
+        .eq('piece_id', pieceId),
+    ])
 
-    const sessionIds = [...new Set(
-      (ccData ?? []).map((r: { session_id: string }) => r.session_id).filter(Boolean)
-    )]
+    const sessionIds = [...new Set([
+      ...((ccRes.data ?? []).map((r: any) => r.session_id)),
+      ...((siRes.data ?? []).map((r: any) => r.session_id)),
+    ].filter(Boolean))]
 
     if (sessionIds.length === 0) {
       setSessions([])
