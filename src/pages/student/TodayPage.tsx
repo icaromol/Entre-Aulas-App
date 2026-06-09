@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'sonner'
-import { MdChevronLeft, MdChevronRight, MdPlayArrow } from "react-icons/md";
+import { MdChevronLeft, MdChevronRight, MdPlayArrow, MdDeleteOutline } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -331,6 +331,12 @@ export default function TodayPage() {
     }
   }
 
+  async function deleteSession(sessionId: string) {
+    await supabase.from('session_items').delete().eq('session_id', sessionId)
+    await supabase.from('study_sessions').delete().eq('id', sessionId)
+    setFreeSessions(prev => prev.filter(s => s.id !== sessionId))
+  }
+
   function handleItemClick(item: PlanItem) {
     if (item.is_done) {
       toggleDone(item)
@@ -339,11 +345,20 @@ export default function TodayPage() {
     }
   }
 
-  const done = items.filter((i) => i.is_done).length + freeSessions.length;
-  const total = items.length + freeSessions.length;
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
     + freeSessions.reduce((s, f) => s + f.minutes, 0);
+
+  // Minutos estudados: plan_items concluídos + sessões livres
+  const studiedMinutes = items
+    .filter(i => i.is_done)
+    .reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
+    + freeSessions.reduce((s, f) => s + f.minutes, 0);
+
+  const pct = totalMinutes > 0 ? Math.min(100, Math.round((studiedMinutes / totalMinutes) * 100)) : 0;
+
+  // Para missão do dia (base em itens)
+  const done = items.filter((i) => i.is_done).length + freeSessions.length;
+  const total = items.length + freeSessions.length;
 
   if (loading) {
     return (
@@ -395,7 +410,7 @@ export default function TodayPage() {
               Progresso de hoje
             </span>
             <span className="text-xs font-bold text-[#1E3A5F]">
-              {done}/{total} itens
+              {studiedMinutes}/{totalMinutes} min
             </span>
           </div>
           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -404,9 +419,6 @@ export default function TodayPage() {
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="text-[10px] text-gray-400 mt-1.5">
-            {totalMinutes} min planejados
-          </p>
         </div>
       )}
 
@@ -498,7 +510,7 @@ export default function TodayPage() {
 
           {/* Sessões livres do dia (read-only, já concluídas) */}
           {freeSessions.map(sess => (
-            <div key={sess.id} className="rounded-2xl border border-gray-100 bg-white opacity-60">
+            <div key={sess.id} className="group rounded-2xl border border-gray-100 bg-white opacity-70 hover:opacity-100 transition">
               <div className="px-4 py-3 flex items-center gap-3">
                 <div className="shrink-0">
                   <ProgressRing pct={1} done={true} />
@@ -507,6 +519,12 @@ export default function TodayPage() {
                   <p className="text-sm font-semibold truncate line-through text-gray-400">{sess.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">Sessão livre · {sess.minutes} min</p>
                 </div>
+                <button
+                  onClick={() => deleteSession(sess.id)}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 transition p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-400"
+                >
+                  <MdDeleteOutline size={18} />
+                </button>
               </div>
             </div>
           ))}
@@ -533,7 +551,7 @@ export default function TodayPage() {
         <div className="text-left">
           <p className="text-base font-bold text-white">Início rápido</p>
           <p className="text-xs text-white/60 mt-0.5">
-            Modo Clássico · inicia imediatamente
+            {totalMinutes > 0 ? `${totalMinutes} min planejados` : '25 min'}
           </p>
         </div>
       </button>
