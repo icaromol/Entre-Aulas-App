@@ -102,6 +102,8 @@ const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | '
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving]         = useState(false)
   const [error, setError]           = useState('')
+  const [conflictWeeks, setConflictWeeks] = useState<string[]>([])
+  const [showConflictModal, setShowConflictModal] = useState(false)
 
   const weekStart = formatWeekStart(getMonday(new Date()))
 
@@ -286,10 +288,26 @@ const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | '
   }
 
   async function handleSave() {
+    const weekStarts = [...new Set(editableDays.map(d => d.weekStart))]
+    const results = await Promise.all(
+      weekStarts.map(ws =>
+        supabase.from('weekly_plans').select('id').eq('student_id', studentId!).eq('week_start', ws).maybeSingle()
+      )
+    )
+    const existing = weekStarts.filter((_, i) => results[i].data)
+    if (existing.length > 0) {
+      setConflictWeeks(existing)
+      setShowConflictModal(true)
+      return
+    }
+    await doSave(false)
+  }
+
+  async function doSave(replace: boolean) {
+    setShowConflictModal(false)
     setSaving(true)
     setError('')
     try {
-      // Professor em modo estudante usa o próprio teacherId
       let teacherIdForPlan: string | null = null
       if (profile?.role === 'teacher' && profile.teacherId) {
         teacherIdForPlan = profile.teacherId
@@ -302,7 +320,7 @@ const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | '
           .from('weekly_plans').select('id').eq('student_id', studentId!).eq('week_start', ws).maybeSingle()
         if (existing) {
           planId = existing.id
-          await supabase.from('plan_items').delete().eq('plan_id', planId)
+          if (replace) await supabase.from('plan_items').delete().eq('plan_id', planId)
         } else {
           const { data: created, error: err } = await supabase
             .from('weekly_plans').insert({ student_id: studentId!, week_start: ws, teacher_id: teacherIdForPlan }).select('id').single()
@@ -667,6 +685,32 @@ const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | '
           {saving ? 'Salvando...' : 'Confirmar e Salvar'}
         </Button>
       </div>
+
+      {/* Conflict modal */}
+      {showConflictModal && (
+        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center px-5">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4">
+            <h3 className="text-base font-bold text-[#1E3A5F]">Plano existente</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Já existe um planejamento para {conflictWeeks.length === 1 ? 'esta semana' : `${conflictWeeks.length} semanas`}. O que deseja fazer?
+            </p>
+            <div className="space-y-2 pt-1">
+              <button onClick={() => doSave(true)}
+                className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">
+                Substituir
+              </button>
+              <button onClick={() => doSave(false)}
+                className="w-full py-3 rounded-xl border border-[#4A90C4] text-[#4A90C4] text-sm font-semibold hover:bg-[#D6E4F0] transition">
+                Adicionar ao existente
+              </button>
+              <button onClick={() => setShowConflictModal(false)}
+                className="w-full py-3 rounded-xl text-gray-400 text-sm hover:text-gray-600 transition">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit-task sheet */}
       {editingTask && editTask && (

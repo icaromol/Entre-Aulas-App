@@ -329,7 +329,7 @@ export default function PomodoroPage() {
         .from("pieces")
         .select("id, title, checklist_items(id, title, piece_id, exercise_id)")
         .eq("student_id", sid)
-        .eq("status", "in_progress"),
+        .in("status", ["in_progress", "paused", "future"]),
       supabase
         .from("exercises")
         .select("id, title, checklist_items(id, title, piece_id, exercise_id)")
