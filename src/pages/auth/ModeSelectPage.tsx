@@ -56,7 +56,7 @@ export default function ModeSelectPage() {
               <MdSchool size={28} className="text-[#1E3A5F] group-hover:text-white transition" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-bold text-[#1E3A5F]">Professor</p>
+              <p className="text-sm font-bold text-[#1E3A5F]">Meus alunos</p>
               <p className="text-xs text-gray-400 mt-0.5 leading-tight">Gerenciar alunos e repertório</p>
             </div>
           </button>
@@ -71,7 +71,7 @@ export default function ModeSelectPage() {
                 <MdMusicNote size={28} className="text-[#1E3A5F] group-hover:text-white transition" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-bold text-[#1E3A5F]">Meu estudo</p>
+                <p className="text-sm font-bold text-[#1E3A5F]">Meus estudos</p>
                 <p className="text-xs text-gray-400 mt-0.5 leading-tight">Praticar e organizar repertório</p>
               </div>
             </button>
@@ -86,9 +86,11 @@ export default function ModeSelectPage() {
               </div>
               <div className="text-center">
                 <p className="text-sm font-bold text-gray-400 group-hover:text-[#1E3A5F] transition">
-                  {activating ? 'Ativando...' : 'Meu estudo'}
+                  {activating ? 'Ativando...' : 'Meus estudos'}
                 </p>
-                <p className="text-xs text-[#4A90C4] mt-0.5 leading-tight font-medium">Ativar área pessoal</p>
+                <p className="text-xs text-[#4A90C4] mt-0.5 leading-tight font-medium">
+                  {activating ? '' : 'Quero estudar também'}
+                </p>
               </div>
             </button>
           )}
