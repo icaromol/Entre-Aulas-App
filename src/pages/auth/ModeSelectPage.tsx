@@ -57,7 +57,7 @@ export default function ModeSelectPage() {
             </div>
             <div className="text-center">
               <p className="text-sm font-bold text-[#1E3A5F]">Meus alunos</p>
-              <p className="text-xs text-gray-400 mt-0.5 leading-tight">Gerenciar alunos e repertório</p>
+              <p className="text-xs text-gray-400 mt-0.5 leading-tight">Gerenciar alunos e turmas</p>
             </div>
           </button>
 
