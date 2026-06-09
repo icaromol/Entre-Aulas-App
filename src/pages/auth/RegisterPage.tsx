@@ -10,7 +10,7 @@ type Role = 'teacher' | 'student'
 
 const ROLES: { value: Role; label: string; desc: string; Icon: typeof MdPerson }[] = [
   { value: 'teacher', label: 'Professor',          desc: 'Gerencio alunos e repertório',          Icon: MdSchool },
-  { value: 'student', label: 'Músico / Estudante', desc: 'Estudo e organizo meu próprio repertório', Icon: MdPerson },
+  { value: 'student', label: 'Estudante', desc: 'Estudo e organizo meu próprio repertório', Icon: MdPerson },
 ]
 
 export default function RegisterPage() {
