@@ -8,6 +8,7 @@ const NotFoundPage           = lazy(() => import('@/pages/NotFoundPage'))
 const LoginPage              = lazy(() => import('@/pages/auth/LoginPage'))
 const RegisterPage           = lazy(() => import('@/pages/auth/RegisterPage'))
 const AuthCallbackPage       = lazy(() => import('@/pages/auth/AuthCallbackPage'))
+const ModeSelectPage         = lazy(() => import('@/pages/auth/ModeSelectPage'))
 
 const StudentsPage           = lazy(() => import('@/pages/teacher/StudentsPage'))
 const NewStudentPage         = lazy(() => import('@/pages/teacher/NewStudentPage'))
@@ -63,6 +64,7 @@ export function Router() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<RegisterPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/modo" element={<AuthGuard><ModeSelectPage /></AuthGuard>} />
 
           {/* Professor */}
           <Route path="/professor" element={<AuthGuard allowedRole="teacher"><Navigate to="/professor/jornada" replace /></AuthGuard>} />
