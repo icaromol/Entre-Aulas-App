@@ -70,10 +70,17 @@ export default function AuthCallbackPage() {
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
       if (profile?.role === 'teacher') {
-        window.location.replace('/professor/alunos')
+        const savedMode = sessionStorage.getItem('app_mode')
+        if (savedMode === 'student') {
+          window.location.replace('/aluno/hoje')
+        } else if (savedMode === 'teacher') {
+          window.location.replace('/professor/jornada')
+        } else {
+          window.location.replace('/modo')
+        }
       } else if (profile?.role === 'student') {
         window.location.replace('/aluno/hoje')
       } else {
