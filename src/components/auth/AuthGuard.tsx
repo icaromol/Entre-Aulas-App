@@ -7,7 +7,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, allowedRole }: AuthGuardProps) {
-  const { user, profile, loading } = useAuth()
+  const { user, profile, loading, mode } = useAuth()
   const location = useLocation()
 
   if (loading) {
@@ -22,17 +22,24 @@ export function AuthGuard({ children, allowedRole }: AuthGuardProps) {
     return <Navigate to="/login" replace />
   }
 
-  if (allowedRole && profile?.role !== allowedRole) {
-    return <Navigate to={profile?.role === 'teacher' ? '/professor' : '/aluno'} replace />
+  // Professor com área pessoal ativa e sem modo escolhido → tela de seleção
+  if (
+    profile.role === 'teacher' &&
+    profile.studentId !== null &&
+    mode === null &&
+    location.pathname !== '/modo'
+  ) {
+    return <Navigate to="/modo" replace />
   }
 
-  // Aluno sem registro na tabela students (cadastro sem convite)
-  if (
-    profile.role === 'student' &&
-    profile.studentId === null &&
-    location.pathname !== '/aluno/pendente'
-  ) {
-    return <Navigate to="/aluno/pendente" replace />
+  // Professor tentando acessar área de aluno sem ter escolhido modo estudante
+  if (allowedRole === 'student' && profile.role === 'teacher') {
+    if (mode !== 'student') return <Navigate to="/modo" replace />
+    return <>{children}</>
+  }
+
+  if (allowedRole && profile.role !== allowedRole) {
+    return <Navigate to={profile.role === 'teacher' ? '/professor' : '/aluno'} replace />
   }
 
   return <>{children}</>

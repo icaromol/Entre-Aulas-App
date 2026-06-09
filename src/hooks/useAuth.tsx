@@ -13,10 +13,14 @@ export interface Profile {
   studentId: string | null
 }
 
+export type AppMode = 'teacher' | 'student'
+
 interface AuthState {
   user: User | null
   profile: Profile | null
   loading: boolean
+  mode: AppMode | null
+  setMode: (mode: AppMode) => void
   signOut: () => Promise<void>
 }
 
@@ -24,6 +28,8 @@ const AuthContext = createContext<AuthState>({
   user: null,
   profile: null,
   loading: true,
+  mode: null,
+  setMode: () => {},
   signOut: async () => {},
 })
 
@@ -31,7 +37,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mode, setModeState] = useState<AppMode | null>(() => {
+    const saved = sessionStorage.getItem('app_mode')
+    return saved === 'teacher' || saved === 'student' ? saved : null
+  })
   const fetchingRef = useRef<string | null>(null)
+
+  function setMode(m: AppMode) {
+    sessionStorage.setItem('app_mode', m)
+    setModeState(m)
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,13 +73,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let teacherId: string | null = null
     let studentId: string | null = null
 
-    if (data.role === 'teacher') {
-      const { data: t } = await supabase.from('teachers').select('id').eq('profile_id', u.id).single()
-      teacherId = t?.id ?? null
-    } else if (data.role === 'student') {
-      const { data: s } = await supabase.from('students').select('id').eq('profile_id', u.id).single()
-      studentId = s?.id ?? null
-    }
+    const [teacherRes, studentRes] = await Promise.all([
+      data.role === 'teacher'
+        ? supabase.from('teachers').select('id').eq('profile_id', u.id).single()
+        : Promise.resolve({ data: null }),
+      supabase.from('students').select('id').eq('profile_id', u.id).maybeSingle(),
+    ])
+
+    teacherId = (teacherRes.data as { id: string } | null)?.id ?? null
+    studentId = (studentRes.data as { id: string } | null)?.id ?? null
 
     const fullProfile: Profile = { ...data, teacherId, studentId }
     Clarity.identify(u.id, undefined, undefined, `${data.first_name} ${data.last_name}`)
@@ -76,11 +93,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
+    sessionStorage.removeItem('app_mode')
     await supabase.auth.signOut()
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, mode, setMode, signOut }}>
       {children}
     </AuthContext.Provider>
   )
