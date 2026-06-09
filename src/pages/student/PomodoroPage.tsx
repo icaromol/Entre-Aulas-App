@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
+import ReactDOM from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { MdPause, MdPlayArrow, MdStop, MdEmojiEvents } from "react-icons/md";
+import { MdPause, MdPlayArrow, MdStop, MdEmojiEvents, MdPictureInPicture } from "react-icons/md";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/Spinner";
@@ -91,9 +92,8 @@ interface DayGroup {
 const CIRCUMFERENCE = 2 * Math.PI * 54;
 
 function fmt(s: number) {
-  return `${Math.floor(s / 60)
-    .toString()
-    .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
+  const t = Math.floor(s);
+  return `${Math.floor(t / 60).toString().padStart(2, "0")}:${(t % 60).toString().padStart(2, "0")}`;
 }
 
 function fmtStudied(secs: number): string {
@@ -216,6 +216,8 @@ export default function PomodoroPage() {
   const workPhaseStartedAt = useRef<number | null>(null);
   // tick counter just to force re-renders
   const [, forceRender] = useState(0);
+  const pipWindowRef = useRef<Window | null>(null);
+  const pipContainerRef = useRef<HTMLDivElement | null>(null);
 
   function getTimeLeft(): number {
     if (phaseStartedAt.current === null) {
@@ -236,6 +238,54 @@ export default function PomodoroPage() {
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingItems, setLoadingItems] = useState(false);
+
+  // ── Document Picture-in-Picture ──
+  async function openPip() {
+    if (!("documentPictureInPicture" in window)) {
+      toast.error("Seu navegador não suporta Picture-in-Picture de documentos.");
+      return;
+    }
+    try {
+      const pip = await (window as any).documentPictureInPicture.requestWindow({
+        width: 220,
+        height: 220,
+      });
+      pipWindowRef.current = pip;
+
+      // Copy styles so Tailwind classes work inside the PiP window
+      [...document.styleSheets].forEach((sheet) => {
+        try {
+          if (sheet.href) {
+            const link = pip.document.createElement("link");
+            link.rel = "stylesheet";
+            link.href = sheet.href;
+            pip.document.head.appendChild(link);
+          } else {
+            const style = pip.document.createElement("style");
+            style.textContent = [...sheet.cssRules].map((r) => r.cssText).join("\n");
+            pip.document.head.appendChild(style);
+          }
+        } catch { /* cross-origin sheets — skip */ }
+      });
+
+      // Mount point
+      const container = pip.document.createElement("div");
+      container.style.cssText = "width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1E3A5F;";
+      pip.document.body.style.margin = "0";
+      pip.document.body.appendChild(container);
+      pipContainerRef.current = container;
+
+      pip.addEventListener("pagehide", () => {
+        pipWindowRef.current = null;
+        pipContainerRef.current = null;
+        forceRender((n) => n + 1);
+      });
+
+      forceRender((n) => n + 1);
+    } catch {
+      // User dismissed the prompt — ignore
+    }
+  }
 
   // ── Auto-start ──
   useEffect(() => {
@@ -722,7 +772,17 @@ export default function PomodoroPage() {
         )}
 
         {/* Cronômetro */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center relative">
+          {/* PiP button — only show if API is available and PiP not already open */}
+          {"documentPictureInPicture" in window && !pipWindowRef.current && (
+            <button
+              onClick={openPip}
+              title="Abrir mini-timer"
+              className="absolute top-0 right-0 text-[#1E3A5F] opacity-50 hover:opacity-100 transition"
+            >
+              <MdPictureInPicture size={20} />
+            </button>
+          )}
           <div
             className={`text-xs font-semibold mb-3 px-3 py-1 rounded-full ${
               isWork
@@ -1020,6 +1080,29 @@ export default function PomodoroPage() {
             />
           </div>
         </div>
+
+        {/* Document PiP portal */}
+        {pipContainerRef.current && ReactDOM.createPortal(
+          <div style={{ textAlign: "center" }}>
+            <div style={{
+              fontSize: "11px", fontWeight: 600, marginBottom: "8px",
+              color: isWork ? "#D6E4F0" : "#4ADE80",
+              letterSpacing: "0.05em",
+            }}>
+              {isWork ? `Ciclo ${currentCycle}/${c?.totalCycles}` : "PAUSA"}
+            </div>
+            <div style={{
+              fontSize: "52px", fontWeight: 700, color: "#FFFFFF",
+              fontVariantNumeric: "tabular-nums", lineHeight: 1,
+            }}>
+              {fmt(timeLeft)}
+            </div>
+            <div style={{ fontSize: "11px", color: "#8BA9C4", marginTop: "8px" }}>
+              {isPaused ? "pausado" : isWork ? "em andamento" : "descansando"}
+            </div>
+          </div>,
+          pipContainerRef.current
+        )}
       </StudentLayout>
     );
   }
