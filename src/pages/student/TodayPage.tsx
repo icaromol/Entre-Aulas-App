@@ -1,15 +1,25 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from 'sonner'
-import { MdChevronLeft, MdChevronRight, MdPlayArrow, MdDeleteOutline } from "react-icons/md";
+import { toast } from "sonner";
+import {
+  MdChevronLeft,
+  MdChevronRight,
+  MdPlayArrow,
+  MdDeleteOutline,
+} from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
-import { Spinner } from '@/components/ui/Spinner'
+import { Spinner } from "@/components/ui/Spinner";
 import { StudentLayout } from "@/components/layout/StudentLayout";
-import { grantXp, EXERCISE_ATTRIBUTE_MAP } from '@/lib/xpHelpers'
-import type { XpAttribute } from '@/lib/xpHelpers'
-import { fireBasic, fireSideCannons, fireStars, hasRankUp } from '@/lib/confettiEffects'
+import { grantXp, EXERCISE_ATTRIBUTE_MAP } from "@/lib/xpHelpers";
+import type { XpAttribute } from "@/lib/xpHelpers";
+import {
+  fireBasic,
+  fireSideCannons,
+  fireStars,
+  hasRankUp,
+} from "@/lib/confettiEffects";
 import type { PlanItem } from "@/types/plan";
 import {
   getMonday,
@@ -47,41 +57,64 @@ function itemDisplay(item: PlanItem): {
   return { title: "—", subtitle: "", maintenanceIcon: false };
 }
 
-const RING_R = 11   // raio do anel
-const RING_C = 2 * Math.PI * RING_R
+const RING_R = 11; // raio do anel
+const RING_C = 2 * Math.PI * RING_R;
 
 function ProgressRing({ pct, done }: { pct: number; done: boolean }) {
-  const filled = Math.min(1, pct)
-  const offset = RING_C * (1 - filled)
+  const filled = Math.min(1, pct);
+  const offset = RING_C * (1 - filled);
   return (
     <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
-      <svg width="28" height="28" viewBox="0 0 28 28" className="-rotate-90 absolute inset-0">
-        <circle cx="14" cy="14" r={RING_R} fill="none" stroke="#E5E7EB" strokeWidth="2.5" />
+      <svg
+        width="28"
+        height="28"
+        viewBox="0 0 28 28"
+        className="-rotate-90 absolute inset-0"
+      >
+        <circle
+          cx="14"
+          cy="14"
+          r={RING_R}
+          fill="none"
+          stroke="#E5E7EB"
+          strokeWidth="2.5"
+        />
         {pct > 0 && (
           <circle
-            cx="14" cy="14" r={RING_R}
+            cx="14"
+            cy="14"
+            r={RING_R}
             fill="none"
-            stroke={done ? '#1E3A5F' : '#4A90C4'}
+            stroke={done ? "#1E3A5F" : "#4A90C4"}
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeDasharray={`${RING_C} ${RING_C}`}
             strokeDashoffset={offset}
-            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+            style={{ transition: "stroke-dashoffset 0.5s ease" }}
           />
         )}
       </svg>
       {/* Centro: check se done, círculo vazio se não */}
-      <div className={`w-4 h-4 rounded-full flex items-center justify-center z-10 transition ${
-        done ? 'bg-[#1E3A5F]' : pct > 0 ? 'bg-[#4A90C4]/20' : ''
-      }`}>
+      <div
+        className={`w-4 h-4 rounded-full flex items-center justify-center z-10 transition ${
+          done ? "bg-[#1E3A5F]" : pct > 0 ? "bg-[#4A90C4]/20" : ""
+        }`}
+      >
         {done && (
-          <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3.5}>
-            <path d="M5 13l4 4L19 7"/>
+          <svg
+            width="8"
+            height="8"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="white"
+            strokeWidth={3.5}
+          >
+            <path d="M5 13l4 4L19 7" />
           </svg>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function itemCardClass(item: PlanItem): string {
@@ -91,34 +124,34 @@ function itemCardClass(item: PlanItem): string {
 }
 
 const ATTRIBUTE_LABEL: Partial<Record<XpAttribute, string>> = {
-  tecnica:       'Técnica',
-  leitura:       'Leitura',
-  ritmo:         'Ritmo',
-  musicalidade:  'Musicalidade',
-  performance:   'Performance',
-  percepcao:     'Percepção',
-  improvisacao:  'Improvisação',
-  teoria:        'Teoria',
-  historia:      'História',
-}
+  tecnica: "Técnica",
+  leitura: "Leitura",
+  ritmo: "Ritmo",
+  musicalidade: "Musicalidade",
+  performance: "Performance",
+  percepcao: "Percepção",
+  improvisacao: "Improvisação",
+  teoria: "Teoria",
+  historia: "História",
+};
 
 const ACHIEVEMENT_LABEL: Record<string, string> = {
-  first_session:        'Primeira sessão concluída',
-  first_piece:          'Primeira peça concluída',
-  streak_3:             '3 dias seguidos',
-  streak_7:             '7 dias seguidos',
-  streak_14:            '14 dias seguidos',
-  streak_30:            '30 dias seguidos',
-  rank_estudante_4:     'Novo rank: Estudante!',
-  rank_amador_4:        'Novo rank: Amador!',
-  rank_junior_4:        'Novo rank: Júnior!',
-  rank_profissional_4:  'Novo rank: Profissional!',
-  rank_expert:          'Novo rank: Expert!',
-  rank_mestre:          'Rank máximo: Mestre!',
-  first_recital:        'Primeiro recital',
-  pieces_3:             '3 peças concluídas',
-  pieces_5:             '5 peças concluídas',
-}
+  first_session: "Primeira sessão concluída",
+  first_piece: "Primeira peça concluída",
+  streak_3: "3 dias seguidos",
+  streak_7: "7 dias seguidos",
+  streak_14: "14 dias seguidos",
+  streak_30: "30 dias seguidos",
+  rank_estudante_4: "Novo rank: Estudante!",
+  rank_amador_4: "Novo rank: Amador!",
+  rank_junior_4: "Novo rank: Júnior!",
+  rank_profissional_4: "Novo rank: Profissional!",
+  rank_expert: "Novo rank: Expert!",
+  rank_mestre: "Rank máximo: Mestre!",
+  first_recital: "Primeiro recital",
+  pieces_3: "3 peças concluídas",
+  pieces_5: "5 peças concluídas",
+};
 
 export default function TodayPage() {
   const { profile } = useAuth();
@@ -126,7 +159,9 @@ export default function TodayPage() {
 
   const [items, setItems] = useState<PlanItem[]>([]);
   const [studiedSecs, setStudiedSecs] = useState<Record<string, number>>({});
-  const [freeSessions, setFreeSessions] = useState<{ id: string; minutes: number; label: string }[]>([]);
+  const [freeSessions, setFreeSessions] = useState<
+    { id: string; minutes: number; label: string }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [studentId, setStudentId] = useState<string | null>(null);
@@ -135,7 +170,7 @@ export default function TodayPage() {
   const [viewDay, setViewDay] = useState(getTodayDayOfWeek());
   const [pendingItem, setPendingItem] = useState<PlanItem | null>(null);
   const [skipConfirm, setSkipConfirm] = useState(false);
-  const SKIP_KEY = 'estudamus_skip_pomodoro_confirm';
+  const SKIP_KEY = "estudamus_skip_pomodoro_confirm";
 
   const weekStart = formatWeekStart(getMonday(new Date()));
 
@@ -153,9 +188,11 @@ export default function TodayPage() {
 
   // Re-fetcha ao voltar para a página (ex: retorno do pomodoro)
   useEffect(() => {
-    const onFocus = () => { if (profile && studentId) fetchItems(studentId) }
-    window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    const onFocus = () => {
+      if (profile && studentId) fetchItems(studentId);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, [profile, studentId, viewDay]);
 
   async function fetchDayPlan() {
@@ -169,8 +206,10 @@ export default function TodayPage() {
         .single();
 
       if (studentError || !student) {
-        console.error('[TodayPage] student fetch failed:', studentError)
-        setFetchError('Não foi possível carregar seu perfil. Tente recarregar a página.')
+        console.error("[TodayPage] student fetch failed:", studentError);
+        setFetchError(
+          "Não foi possível carregar seu perfil. Tente recarregar a página.",
+        );
         setLoading(false);
         return;
       }
@@ -190,9 +229,9 @@ export default function TodayPage() {
       .eq("week_start", weekStart)
       .single();
 
-    if (planError && planError.code !== 'PGRST116') {
-      console.error('[TodayPage] plan fetch failed:', planError)
-      setFetchError('Não foi possível carregar o planejamento.')
+    if (planError && planError.code !== "PGRST116") {
+      console.error("[TodayPage] plan fetch failed:", planError);
+      setFetchError("Não foi possível carregar o planejamento.");
       setLoading(false);
       return;
     }
@@ -200,10 +239,10 @@ export default function TodayPage() {
     if (!plan) {
       // Verifica se há algum plano em qualquer semana
       const { count } = await supabase
-        .from('weekly_plans')
-        .select('id', { count: 'exact', head: true })
-        .eq('student_id', sid)
-      setHasAnyPlan((count ?? 0) > 0)
+        .from("weekly_plans")
+        .select("id", { count: "exact", head: true })
+        .eq("student_id", sid);
+      setHasAnyPlan((count ?? 0) > 0);
       setItems([]);
       setLoading(false);
       return;
@@ -226,73 +265,90 @@ export default function TodayPage() {
       .order("position");
 
     if (itemsError) {
-      console.error('[TodayPage] items fetch failed:', itemsError)
-      setFetchError('Não foi possível carregar as tarefas do dia.')
+      console.error("[TodayPage] items fetch failed:", itemsError);
+      setFetchError("Não foi possível carregar as tarefas do dia.");
       setLoading(false);
       return;
     }
 
-    const resolvedItems = (planItems ?? []) as unknown as PlanItem[]
-    setItems(resolvedItems)
+    const resolvedItems = (planItems ?? []) as unknown as PlanItem[];
+    setItems(resolvedItems);
 
     // Buscar segundos estudados por plan_item via session_items → study_sessions
-    const planItemIds = resolvedItems.map(i => i.id)
+    const planItemIds = resolvedItems.map((i) => i.id);
     if (planItemIds.length > 0) {
       const { data: sessionRows } = await supabase
-        .from('session_items')
-        .select('plan_item_id, study_sessions(duration_seconds)')
-        .in('plan_item_id', planItemIds)
+        .from("session_items")
+        .select("plan_item_id, study_sessions(duration_seconds)")
+        .in("plan_item_id", planItemIds);
 
-      const secsMap: Record<string, number> = {}
+      const secsMap: Record<string, number> = {};
       for (const row of (sessionRows ?? []) as any[]) {
-        const secs = row.study_sessions?.duration_seconds ?? 0
-        secsMap[row.plan_item_id] = (secsMap[row.plan_item_id] ?? 0) + secs
+        const secs = row.study_sessions?.duration_seconds ?? 0;
+        secsMap[row.plan_item_id] = (secsMap[row.plan_item_id] ?? 0) + secs;
       }
-      setStudiedSecs(secsMap)
+      setStudiedSecs(secsMap);
 
       // Auto-concluir itens que atingiram a minutagem
-      const toComplete = resolvedItems.filter(item =>
-        !item.is_done && item.duration_minutes &&
-        (secsMap[item.id] ?? 0) >= item.duration_minutes * 60
-      )
+      const toComplete = resolvedItems.filter(
+        (item) =>
+          !item.is_done &&
+          item.duration_minutes &&
+          (secsMap[item.id] ?? 0) >= item.duration_minutes * 60,
+      );
       if (toComplete.length > 0) {
-        await Promise.all(toComplete.map(item =>
-          supabase.from('plan_items').update({ is_done: true, done_at: new Date().toISOString() }).eq('id', item.id)
-        ))
-        setItems(prev => prev.map(i =>
-          toComplete.find(c => c.id === i.id) ? { ...i, is_done: true } : i
-        ))
+        await Promise.all(
+          toComplete.map((item) =>
+            supabase
+              .from("plan_items")
+              .update({ is_done: true, done_at: new Date().toISOString() })
+              .eq("id", item.id),
+          ),
+        );
+        setItems((prev) =>
+          prev.map((i) =>
+            toComplete.find((c) => c.id === i.id) ? { ...i, is_done: true } : i,
+          ),
+        );
       }
     }
 
     // Buscar sessões livres do dia (sem plan_item vinculado)
-    const dayDate = new Date(monday)
-    dayDate.setDate(dayDate.getDate() + (viewDay === 0 ? 6 : viewDay - 1))
-    const dayStart = new Date(dayDate); dayStart.setHours(0, 0, 0, 0)
-    const dayEnd   = new Date(dayDate); dayEnd.setHours(23, 59, 59, 999)
+    const dayDate = new Date(monday);
+    dayDate.setDate(dayDate.getDate() + (viewDay === 0 ? 6 : viewDay - 1));
+    const dayStart = new Date(dayDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayDate);
+    dayEnd.setHours(23, 59, 59, 999);
 
     const { data: sessRows } = await supabase
-      .from('study_sessions')
-      .select('id, cycle_name, duration_seconds, session_items(plan_item_id)')
-      .eq('student_id', sid)
-      .gte('started_at', dayStart.toISOString())
-      .lte('started_at', dayEnd.toISOString())
+      .from("study_sessions")
+      .select("id, cycle_name, duration_seconds, session_items(plan_item_id)")
+      .eq("student_id", sid)
+      .gte("started_at", dayStart.toISOString())
+      .lte("started_at", dayEnd.toISOString());
 
-    const free: { id: string; minutes: number; label: string }[] = []
+    const free: { id: string; minutes: number; label: string }[] = [];
     for (const sess of (sessRows ?? []) as any[]) {
-      const hasLinkedItem = (sess.session_items ?? []).some((si: any) => si.plan_item_id)
+      const hasLinkedItem = (sess.session_items ?? []).some(
+        (si: any) => si.plan_item_id,
+      );
       if (!hasLinkedItem && sess.duration_seconds > 0) {
-        const mins = Math.round(sess.duration_seconds / 60)
-        free.push({ id: sess.id, minutes: mins, label: sess.cycle_name ?? 'Sessão livre' })
+        const mins = Math.round(sess.duration_seconds / 60);
+        free.push({
+          id: sess.id,
+          minutes: mins,
+          label: sess.cycle_name ?? "Sessão livre",
+        });
       }
     }
-    setFreeSessions(free)
+    setFreeSessions(free);
 
     setLoading(false);
   }
 
   async function toggleDone(item: PlanItem, manually = false) {
-    const newDone = !item.is_done
+    const newDone = !item.is_done;
     await supabase
       .from("plan_items")
       .update({
@@ -300,59 +356,76 @@ export default function TodayPage() {
         done_at: newDone ? new Date().toISOString() : null,
         completed_manually: newDone ? manually : false,
       })
-      .eq("id", item.id)
+      .eq("id", item.id);
 
-    const updatedItems = items.map(i =>
-      i.id === item.id ? { ...i, is_done: newDone, completed_manually: newDone ? manually : false } : i
-    )
-    setItems(updatedItems)
+    const updatedItems = items.map((i) =>
+      i.id === item.id
+        ? {
+            ...i,
+            is_done: newDone,
+            completed_manually: newDone ? manually : false,
+          }
+        : i,
+    );
+    setItems(updatedItems);
 
-    if (!newDone || !studentId) return
+    if (!newDone || !studentId) return;
 
     // Determina atributo pelo tipo do item
-    const category = (item as PlanItem & { exercise?: { category?: string } }).exercise?.category
+    const category = (item as PlanItem & { exercise?: { category?: string } })
+      .exercise?.category;
     const attribute: XpAttribute = category
-      ? (EXERCISE_ATTRIBUTE_MAP[category] ?? 'tecnica')
-      : 'musicalidade'
+      ? (EXERCISE_ATTRIBUTE_MAP[category] ?? "tecnica")
+      : "musicalidade";
 
-    const { newAchievements } = await grantXp(studentId, 'checklist_item', item.id, attribute)
+    const { newAchievements } = await grantXp(
+      studentId,
+      "checklist_item",
+      item.id,
+      attribute,
+    );
 
-    toast.success(`+15 XP · ${ATTRIBUTE_LABEL[attribute] ?? attribute}`)
+    toast.success(`+15 XP · ${ATTRIBUTE_LABEL[attribute] ?? attribute}`);
     for (const key of newAchievements) {
-      toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
+      toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
     }
 
-    if (hasRankUp(newAchievements)) fireStars()
-    else fireBasic()
+    if (hasRankUp(newAchievements)) fireStars();
+    else fireBasic();
 
     // Missão do dia: todos os itens de hoje concluídos
-    const totalNow = updatedItems.length
-    const doneNow  = updatedItems.filter(i => i.is_done).length
+    const totalNow = updatedItems.length;
+    const doneNow = updatedItems.filter((i) => i.is_done).length;
     if (totalNow > 0 && doneNow === totalNow) {
-      const { newAchievements: mAch } = await grantXp(studentId, 'daily_mission', null, null)
-      toast.success('+20 XP · Missão do dia completa! 🎉')
+      const { newAchievements: mAch } = await grantXp(
+        studentId,
+        "daily_mission",
+        null,
+        null,
+      );
+      toast.success("+20 XP · Missão do dia completa! 🎉");
       for (const key of mAch) {
-        toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
+        toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
       }
-      if (hasRankUp(mAch)) fireStars()
-      else fireSideCannons()
+      if (hasRankUp(mAch)) fireStars();
+      else fireSideCannons();
     }
   }
 
   async function deleteSession(sessionId: string) {
-    await supabase.from('session_items').delete().eq('session_id', sessionId)
-    await supabase.from('study_sessions').delete().eq('id', sessionId)
-    setFreeSessions(prev => prev.filter(s => s.id !== sessionId))
+    await supabase.from("session_items").delete().eq("session_id", sessionId);
+    await supabase.from("study_sessions").delete().eq("id", sessionId);
+    setFreeSessions((prev) => prev.filter((s) => s.id !== sessionId));
   }
 
   function handleItemClick(item: PlanItem) {
     if (item.is_done) {
-      toggleDone(item)
-    } else if (localStorage.getItem(SKIP_KEY) === '1') {
-      toggleDone(item)
+      toggleDone(item);
+    } else if (localStorage.getItem(SKIP_KEY) === "1") {
+      toggleDone(item);
     } else {
-      setSkipConfirm(false)
-      setPendingItem(item)
+      setSkipConfirm(false);
+      setPendingItem(item);
     }
   }
 
@@ -360,13 +433,17 @@ export default function TodayPage() {
   const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
 
   // Minutos estudados: plan_items concluídos + sessões livres (bônus)
-  const studiedMinutes = items
-    .filter(i => i.is_done)
-    .reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
-    + freeSessions.reduce((s, f) => s + f.minutes, 0);
+  const studiedMinutes =
+    items
+      .filter((i) => i.is_done)
+      .reduce((s, i) => s + (i.duration_minutes ?? 0), 0) +
+    freeSessions.reduce((s, f) => s + f.minutes, 0);
 
   const denominator = totalMinutes > 0 ? totalMinutes : studiedMinutes;
-  const pct = denominator > 0 ? Math.min(100, Math.round((studiedMinutes / denominator) * 100)) : 0;
+  const pct =
+    denominator > 0
+      ? Math.min(100, Math.round((studiedMinutes / denominator) * 100))
+      : 0;
 
   // Para missão do dia (base em itens)
   const done = items.filter((i) => i.is_done).length + freeSessions.length;
@@ -375,7 +452,9 @@ export default function TodayPage() {
   if (loading) {
     return (
       <StudentLayout>
-        <div className="flex justify-center py-12"><Spinner /></div>
+        <div className="flex justify-center py-12">
+          <Spinner />
+        </div>
       </StudentLayout>
     );
   }
@@ -422,7 +501,9 @@ export default function TodayPage() {
               Progresso de hoje
             </span>
             <span className="text-xs font-bold text-[#1E3A5F]">
-              {totalMinutes > 0 ? `${studiedMinutes}/${totalMinutes} min` : `${studiedMinutes} min`}
+              {totalMinutes > 0
+                ? `${studiedMinutes}/${totalMinutes} min`
+                : `${studiedMinutes} min`}
             </span>
           </div>
           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -440,15 +521,17 @@ export default function TodayPage() {
           <p className="text-4xl mb-3">🎵</p>
           {hasAnyPlan === false ? (
             <>
-              <p className="text-sm font-semibold text-gray-700">Jornada não iniciada</p>
-              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                {hasTeacher && profile?.role === 'student'
-                  ? 'Seu professor precisa criar um plano de estudos para você.'
-                  : 'Crie um plano antes de continuar.'}
+              <p className="text-sm font-semibold text-gray-700">
+                Jornada não iniciada
               </p>
-              {!(hasTeacher && profile?.role === 'student') && (
+              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                {hasTeacher && profile?.role === "student"
+                  ? "Seu professor precisa criar um plano de estudos para você."
+                  : "Crie um plano antes de continuar."}
+              </p>
+              {!(hasTeacher && profile?.role === "student") && (
                 <button
-                  onClick={() => navigate('/aluno/planejamento')}
+                  onClick={() => navigate("/aluno/planejamento")}
                   className="mt-4 px-5 py-2 rounded-xl bg-[#1E3A5F] text-white text-xs font-semibold hover:bg-[#1E3A5F]/90 transition"
                 >
                   Criar plano
@@ -457,9 +540,12 @@ export default function TodayPage() {
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-gray-700">Nenhum item para hoje</p>
+              <p className="text-sm font-semibold text-gray-700">
+                Nenhum item para hoje
+              </p>
               <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                Pode aproveitar! Que tal fazer um estudo extra com o botão abaixo?
+                Pode aproveitar! Que tal fazer um estudo extra com o botão
+                abaixo?
               </p>
             </>
           )}
@@ -478,11 +564,19 @@ export default function TodayPage() {
               >
                 <div className="px-4 py-3 flex items-center gap-3">
                   {/* Anel de progresso */}
-                  <button onClick={() => handleItemClick(item)} className="hover:opacity-80 transition shrink-0">
+                  <button
+                    onClick={() => handleItemClick(item)}
+                    className="hover:opacity-80 transition shrink-0"
+                  >
                     <ProgressRing
-                      pct={item.duration_minutes
-                        ? (studiedSecs[item.id] ?? 0) / (item.duration_minutes * 60)
-                        : item.is_done ? 1 : 0}
+                      pct={
+                        item.duration_minutes
+                          ? (studiedSecs[item.id] ?? 0) /
+                            (item.duration_minutes * 60)
+                          : item.is_done
+                            ? 1
+                            : 0
+                      }
                       done={item.is_done}
                     />
                   </button>
@@ -490,7 +584,9 @@ export default function TodayPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <p className={`text-sm font-semibold truncate ${item.is_done ? "line-through text-gray-400" : "text-gray-800"}`}>
+                      <p
+                        className={`text-sm font-semibold truncate ${item.is_done ? "line-through text-gray-400" : "text-gray-800"}`}
+                      >
                         {maintenanceIcon ? `Manutenção · ${title}` : title}
                       </p>
                       {item.completed_manually && (
@@ -501,25 +597,31 @@ export default function TodayPage() {
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5 truncate">
                       {subtitle}
-                      {item.duration_minutes ? ` · ${item.duration_minutes} min` : ''}
+                      {item.duration_minutes
+                        ? ` · ${item.duration_minutes} min`
+                        : ""}
                     </p>
                   </div>
 
                   {/* Botão iniciar */}
                   {!item.is_done && (
                     <button
-                      onClick={() => navigate("/aluno/pomodoro", {
-                        state: {
-                          planItemId: item.id,
-                          title: subtitle ? `${title} — ${subtitle}` : title,
-                          durationMinutes: item.duration_minutes,
-                          studentId,
-                        },
-                      })}
+                      onClick={() =>
+                        navigate("/aluno/pomodoro", {
+                          state: {
+                            planItemId: item.id,
+                            title: subtitle ? `${title} — ${subtitle}` : title,
+                            durationMinutes: item.duration_minutes,
+                            studentId,
+                          },
+                        })
+                      }
                       className="shrink-0 flex flex-col items-center justify-center gap-1 px-4 py-2.5 rounded-xl bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
                     >
                       <MdPlayArrow size={22} />
-                      <span className="text-xs font-bold leading-none">Iniciar</span>
+                      <span className="text-xs font-bold leading-none">
+                        Iniciar
+                      </span>
                     </button>
                   )}
                 </div>
@@ -528,15 +630,22 @@ export default function TodayPage() {
           })}
 
           {/* Sessões livres do dia (read-only, já concluídas) */}
-          {freeSessions.map(sess => (
-            <div key={sess.id} className="group rounded-2xl border border-gray-100 bg-white opacity-70 hover:opacity-100 transition">
+          {freeSessions.map((sess) => (
+            <div
+              key={sess.id}
+              className="group rounded-2xl border border-gray-100 bg-white opacity-70 hover:opacity-100 transition"
+            >
               <div className="px-4 py-3 flex items-center gap-3">
                 <div className="shrink-0">
                   <ProgressRing pct={1} done={true} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate line-through text-gray-400">{sess.label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Sessão livre · {sess.minutes} min</p>
+                  <p className="text-sm font-semibold truncate line-through text-gray-400">
+                    {sess.label}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Sessão livre · {sess.minutes} min
+                  </p>
                 </div>
                 <button
                   onClick={() => deleteSession(sess.id)}
@@ -596,38 +705,62 @@ export default function TodayPage() {
       {/* Modal de confirmação manual */}
       {pendingItem && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 pb-8 px-4">
-          <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-xl">
-            <p className="text-sm font-bold text-gray-800 mb-3">
-              Concluir <span className="text-[#1E3A5F]">{pendingItem.exercise?.title ?? pendingItem.piece?.title ?? 'item'}</span> manualmente?
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <p className="text-base font-bold text-gray-800 mb-2">
+              Concluir{" "}
+              <span className="text-[#1E3A5F]">
+                {pendingItem.exercise?.title ??
+                  pendingItem.piece?.title ??
+                  "item"}
+              </span>{" "}
+              manualmente
             </p>
-            <p className="text-xs text-gray-400 mb-4">
-              Você não concluiu uma sessão pomodoro. Deseja marcar como concluído mesmo assim?
+            <p className="text-sm text-gray-400 mb-6">
+              Você não concluiu uma sessão pomodoro. Deseja marcar como
+              concluído mesmo assim?
             </p>
             <button
-              onClick={() => setSkipConfirm(v => !v)}
-              className="flex items-center gap-2 mb-4 group"
+              onClick={() => setSkipConfirm((v) => !v)}
+              className="flex items-center gap-3 mb-6 group"
             >
-              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition ${
-                skipConfirm ? 'bg-[#1E3A5F] border-[#1E3A5F]' : 'border-gray-300 group-hover:border-[#4A90C4]'
-              }`}>
-                {skipConfirm && <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3.5}><path d="M5 13l4 4L19 7"/></svg>}
+              <div
+                className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
+                  skipConfirm
+                    ? "bg-[#1E3A5F] border-[#1E3A5F]"
+                    : "border-gray-300 group-hover:border-[#4A90C4]"
+                }`}
+              >
+                {skipConfirm && (
+                  <svg
+                    width="10"
+                    height="10"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="white"
+                    strokeWidth={3.5}
+                  >
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
               </div>
-              <span className="text-xs text-gray-400">Não perguntar novamente</span>
+              <span className="text-sm text-gray-400">
+                Não perguntar novamente
+              </span>
             </button>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={() => setPendingItem(null)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#4A90C4] transition"
+                className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#4A90C4] transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => {
-                  if (skipConfirm) localStorage.setItem(SKIP_KEY, '1')
-                  toggleDone(pendingItem, true)
-                  setPendingItem(null)
+                  if (skipConfirm) localStorage.setItem(SKIP_KEY, "1");
+                  toggleDone(pendingItem, true);
+                  setPendingItem(null);
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition"
+                className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
               >
                 Sim, concluir
               </button>
