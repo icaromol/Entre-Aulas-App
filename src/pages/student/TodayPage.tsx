@@ -6,6 +6,7 @@ import {
   MdChevronRight,
   MdPlayArrow,
   MdDeleteOutline,
+  MdPanToolAlt,
 } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
@@ -590,9 +591,13 @@ export default function TodayPage() {
                         {maintenanceIcon ? `Manutenção · ${title}` : title}
                       </p>
                       {item.completed_manually && (
-                        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600">
-                          Manual
-                        </span>
+                        <div className="group/manual relative shrink-0">
+                          <MdPanToolAlt size={15} className="text-[#1E3A5F] opacity-60 group-hover/manual:opacity-100 transition cursor-default" />
+                          <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 bg-[#1E3A5F] text-white text-xs rounded-xl px-3 py-2 opacity-0 group-hover/manual:opacity-100 transition z-10 shadow-lg">
+                            <p className="font-semibold mb-0.5">Conclusão manual</p>
+                            <p className="text-white/70 leading-snug">Concluído sem uma sessão pomodoro.</p>
+                          </div>
+                        </div>
                       )}
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5 truncate">
