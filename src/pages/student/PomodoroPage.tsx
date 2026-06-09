@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MdSettings } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
@@ -379,13 +378,7 @@ export default function PomodoroPage() {
               <path d="M15 18l-6-6 6-6"/>
             </svg>
           </button>
-          <div className="flex items-center gap-2 flex-1">
-            <span className="text-2xl">🍅</span>
-            <div>
-              <h1 className="text-xl font-bold text-[#1E3A5F]">Pomodoro</h1>
-              <p className="text-xs text-gray-400 mt-0.5">Configure seu próprio ritmo</p>
-            </div>
-          </div>
+          <h1 className="text-xl font-bold text-[#1E3A5F] flex-1">Pomodoro</h1>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
@@ -462,38 +455,26 @@ export default function PomodoroPage() {
         )}
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🍅</span>
-            <div>
-              <h1 className="text-base font-bold text-[#1E3A5F]">Pomodoro</h1>
-              <p className="text-xs text-gray-400">{nav?.title ?? 'Sessão de estudo'}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => { setIsPaused(true); setPhase('idle') }}
-            className="p-2 rounded-xl hover:bg-gray-100 transition text-gray-400 hover:text-[#1E3A5F]"
-            title="Configurar"
-          >
-            <MdSettings size={20} />
-          </button>
+        <div className="mb-2">
+          <h1 className="text-base font-bold text-[#1E3A5F]">Pomodoro</h1>
+          {nav?.title && <p className="text-xs text-gray-400 mt-0.5">{nav.title}</p>}
         </div>
 
         {/* Cronômetro */}
-        <div className="flex flex-col items-center py-6">
-          <div className={`text-xs font-semibold mb-6 px-3 py-1 rounded-full ${
+        <div className="flex flex-col items-center py-4">
+          <div className={`text-xs font-semibold mb-4 px-3 py-1 rounded-full ${
             isWork ? 'bg-[#D6E4F0] text-[#1E3A5F]' : 'bg-green-100 text-green-600'
           }`}>
             {isWork ? `Ciclo ${currentCycle} de ${c?.totalCycles}` : 'Pausa'}
           </div>
 
-          <div className="relative">
-            <svg width="160" height="160" viewBox="0 0 120 120" className="-rotate-90">
-              <circle cx="60" cy="60" r="54" fill="none" stroke="#F3F4F6" strokeWidth="8"/>
+          <div className="relative w-[80vw] max-w-xs aspect-square">
+            <svg viewBox="0 0 120 120" className="-rotate-90 w-full h-full">
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#F3F4F6" strokeWidth="6"/>
               <circle
                 cx="60" cy="60" r="54" fill="none"
                 stroke={isWork ? '#1E3A5F' : '#4ADE80'}
-                strokeWidth="8"
+                strokeWidth="6"
                 strokeLinecap="round"
                 strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
                 strokeDashoffset={dashOffset}
@@ -501,26 +482,28 @@ export default function PomodoroPage() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-bold text-[#1E3A5F] tabular-nums">{fmt(timeLeft)}</span>
-              <span className="text-xs text-gray-400 mt-1">{isWork ? 'estudando' : 'pausa'}</span>
+              <span className="text-5xl font-bold text-[#1E3A5F] tabular-nums">{fmt(timeLeft)}</span>
+              <span className="text-sm text-gray-400 mt-2">
+                {isWork
+                  ? completedCycles > 0
+                    ? `${completedCycles * (c?.workMinutes ?? 0)} min concluídos`
+                    : 'em andamento'
+                  : 'pausa'}
+              </span>
             </div>
           </div>
 
           {/* Dots de ciclos */}
           {c && c.totalCycles > 1 && (
-            <div className="flex gap-2 mt-6">
+            <div className="flex gap-2 mt-5">
               {Array.from({ length: c.totalCycles }).map((_, i) => (
                 <div key={i} className={`w-2.5 h-2.5 rounded-full transition ${
-                  i < completedCycles         ? 'bg-[#1E3A5F]'
+                  i < completedCycles              ? 'bg-[#1E3A5F]'
                   : i === currentCycle - 1 && isWork ? 'bg-[#4A90C4]'
                   : 'bg-gray-200'
                 }`}/>
               ))}
             </div>
-          )}
-
-          {nav?.title && (
-            <p className="mt-4 text-sm text-gray-500 text-center px-4">{nav.title}</p>
           )}
         </div>
 
