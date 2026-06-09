@@ -23,7 +23,7 @@ const navItems = [
 ]
 
 export function StudentLayout({ children }: StudentLayoutProps) {
-  const { user, profile, setMode, signOut } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -118,14 +118,14 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             <span className="text-sm font-medium text-gray-700">Editar perfil</span>
           </button>
 
-          {/* Área do professor — só para professores em modo estudo */}
+          {/* Trocar área — só para professores em modo estudo */}
           {profile?.role === 'teacher' && (
             <button
-              onClick={() => { setShowMenu(false); setMode('teacher'); navigate('/professor/alunos') }}
+              onClick={() => { setShowMenu(false); navigate('/modo') }}
               className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#D6E4F0] transition text-left"
             >
               <MdPeople size={20} className="text-[#1E3A5F] shrink-0" />
-              <span className="text-sm font-semibold text-[#1E3A5F] flex-1">Área do professor</span>
+              <span className="text-sm font-semibold text-[#1E3A5F] flex-1">Trocar área</span>
               <MdChevronRight size={18} className="text-gray-300" />
             </button>
           )}
