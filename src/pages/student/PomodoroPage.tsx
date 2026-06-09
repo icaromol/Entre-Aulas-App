@@ -774,36 +774,34 @@ export default function PomodoroPage() {
                               const checked = workedIds.has(ci.id);
                               const done = completedIds.has(ci.id);
                               return (
-                                <div key={ci.id} className="group flex items-center gap-2 py-0.5">
+                                <div key={ci.id} className="flex items-center gap-2 py-0.5">
+                                  {/* Seleção — círculo sólido */}
                                   <button
                                     onClick={() => toggleItem(ci.id)}
-                                    className="flex items-center gap-2 flex-1 min-w-0 text-left"
-                                  >
-                                    <div className={`w-4 h-4 rounded shrink-0 transition ${
+                                    className={`w-4 h-4 rounded-full shrink-0 transition ${
                                       checked ? "bg-[#1E3A5F]" : "border-2 border-gray-300"
-                                    }`} />
-                                    <span className={`text-xs truncate transition ${done ? "line-through text-gray-300" : "text-gray-600"}`}>
-                                      {ci.title}
-                                    </span>
-                                  </button>
+                                    }`}
+                                  />
+                                  {/* Conclusão — check cinza, verde no hover */}
                                   <button
                                     onClick={() => toggleComplete(ci)}
-                                    className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition ${
+                                    className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition ${
                                       done
                                         ? "bg-green-500"
-                                        : "opacity-0 group-hover:opacity-100 text-gray-300 hover:text-green-500"
+                                        : "border-2 border-gray-200 hover:border-green-400 hover:text-green-500 text-gray-300"
                                     }`}
                                   >
-                                    {done ? (
-                                      <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
-                                        <path d="M5 13l4 4L19 7" />
-                                      </svg>
-                                    ) : (
-                                      <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                        <path d="M5 13l4 4L19 7" />
-                                      </svg>
-                                    )}
+                                    <svg width="8" height="8" fill="none" viewBox="0 0 24 24"
+                                      stroke={done ? "white" : "currentColor"} strokeWidth={3}>
+                                      <path d="M5 13l4 4L19 7" />
+                                    </svg>
                                   </button>
+                                  <span
+                                    onClick={() => toggleItem(ci.id)}
+                                    className={`text-xs truncate transition cursor-pointer ${done ? "line-through text-gray-300" : "text-gray-600"}`}
+                                  >
+                                    {ci.title}
+                                  </span>
                                 </div>
                               );
                             })}
