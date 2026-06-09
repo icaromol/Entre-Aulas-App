@@ -597,9 +597,8 @@ export default function TodayPage() {
       {pendingItem && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 pb-8 px-4">
           <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-xl">
-            <p className="text-sm font-bold text-gray-800 mb-1">Concluir manualmente?</p>
-            <p className="text-xs font-medium text-gray-600 mb-1 truncate">
-              {pendingItem.exercise?.title ?? pendingItem.piece?.title ?? 'Item'}
+            <p className="text-sm font-bold text-gray-800 mb-3">
+              Concluir <span className="text-[#1E3A5F]">{pendingItem.exercise?.title ?? pendingItem.piece?.title ?? 'item'}</span> manualmente?
             </p>
             <p className="text-xs text-gray-400 mb-4">
               Você não concluiu uma sessão pomodoro. Deseja marcar como concluído mesmo assim?
