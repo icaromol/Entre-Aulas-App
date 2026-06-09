@@ -58,72 +58,6 @@ function itemDisplay(item: PlanItem): {
   return { title: "—", subtitle: "", maintenanceIcon: false };
 }
 
-const RING_R = 11; // raio do anel
-const RING_C = 2 * Math.PI * RING_R;
-
-function ProgressRing({ pct, done }: { pct: number; done: boolean }) {
-  const filled = Math.min(1, pct);
-  const offset = RING_C * (1 - filled);
-  return (
-    <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
-      <svg
-        width="28"
-        height="28"
-        viewBox="0 0 28 28"
-        className="-rotate-90 absolute inset-0"
-      >
-        <circle
-          cx="14"
-          cy="14"
-          r={RING_R}
-          fill="none"
-          stroke="#E5E7EB"
-          strokeWidth="2.5"
-        />
-        {pct > 0 && (
-          <circle
-            cx="14"
-            cy="14"
-            r={RING_R}
-            fill="none"
-            stroke={done ? "#1E3A5F" : "#4A90C4"}
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeDasharray={`${RING_C} ${RING_C}`}
-            strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 0.5s ease" }}
-          />
-        )}
-      </svg>
-      {/* Centro: check se done, círculo vazio se não */}
-      <div
-        className={`w-4 h-4 rounded-full flex items-center justify-center z-10 transition ${
-          done ? "bg-[#1E3A5F]" : pct > 0 ? "bg-[#4A90C4]/20" : ""
-        }`}
-      >
-        {done && (
-          <svg
-            width="8"
-            height="8"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="white"
-            strokeWidth={3.5}
-          >
-            <path d="M5 13l4 4L19 7" />
-          </svg>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function itemCardClass(item: PlanItem): string {
-  if (item.is_maintenance) return "bg-white border-gray-100";
-  if (item.exercise_id) return "bg-purple-50 border-purple-100";
-  return "bg-[#D6E4F0]/30 border-[#D6E4F0]";
-}
-
 const ATTRIBUTE_LABEL: Partial<Record<XpAttribute, string>> = {
   tecnica: "Técnica",
   leitura: "Leitura",
@@ -172,7 +106,10 @@ export default function TodayPage() {
   const [pendingItem, setPendingItem] = useState<PlanItem | null>(null);
   const [skipConfirm, setSkipConfirm] = useState(false);
   const SKIP_KEY = "estudamus_skip_pomodoro_confirm";
-  const [manualTooltip, setManualTooltip] = useState<{ x: number; y: number } | null>(null);
+  const [manualTooltip, setManualTooltip] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const weekStart = formatWeekStart(getMonday(new Date()));
 
@@ -276,17 +213,21 @@ export default function TodayPage() {
     const resolvedItems = (planItems ?? []) as unknown as PlanItem[];
     setItems(resolvedItems);
 
-    // Buscar segundos estudados por plan_item via session_items → study_sessions
+    // Buscar segundos estudados por plan_item — usa duration_seconds proporcional do session_item
+    // (fallback para duration_seconds da sessão mãe em registros antigos sem o campo)
     const planItemIds = resolvedItems.map((i) => i.id);
     if (planItemIds.length > 0) {
       const { data: sessionRows } = await supabase
         .from("session_items")
-        .select("plan_item_id, study_sessions(duration_seconds)")
+        .select(
+          "plan_item_id, duration_seconds, study_sessions(duration_seconds)",
+        )
         .in("plan_item_id", planItemIds);
 
       const secsMap: Record<string, number> = {};
       for (const row of (sessionRows ?? []) as any[]) {
-        const secs = row.study_sessions?.duration_seconds ?? 0;
+        const secs =
+          row.duration_seconds ?? row.study_sessions?.duration_seconds ?? 0;
         secsMap[row.plan_item_id] = (secsMap[row.plan_item_id] ?? 0) + secs;
       }
       setStudiedSecs(secsMap);
@@ -404,7 +345,9 @@ export default function TodayPage() {
 
     // Missão do dia: todos os itens de hoje concluídos sem conclusão manual
     const totalNow = updatedItems.length;
-    const doneNow = updatedItems.filter((i) => i.is_done && !i.completed_manually).length;
+    const doneNow = updatedItems.filter(
+      (i) => i.is_done && !i.completed_manually,
+    ).length;
     if (totalNow > 0 && doneNow === totalNow) {
       const { newAchievements: mAch } = await grantXp(
         studentId,
@@ -571,30 +514,51 @@ export default function TodayPage() {
           {items.map((item) => {
             const { title, subtitle, maintenanceIcon } = itemDisplay(item);
 
+            const itemPct = item.duration_minutes
+              ? Math.min(
+                  1,
+                  (studiedSecs[item.id] ?? 0) / (item.duration_minutes * 60),
+                )
+              : item.is_done
+                ? 1
+                : 0;
+
             return (
               <div
                 key={item.id}
-                className={`rounded-2xl border transition ${itemCardClass(item)} ${
-                  item.is_done ? "opacity-60" : ""
-                }`}
+                className={`relative rounded-2xl border border-gray-200 bg-[#F6F6F6] overflow-hidden transition ${item.is_done ? "opacity-70" : ""}`}
               >
-                <div className="px-4 py-3 flex items-center gap-3">
-                  {/* Anel de progresso */}
+                {/* Barra de progresso de fundo */}
+                <div
+                  className="absolute inset-y-0 left-0 bg-[#BFDBFE] transition-all duration-500 rounded-2xl"
+                  style={{ width: `${itemPct * 100}%` }}
+                />
+                <div className="relative z-10 px-4 py-3 flex items-center gap-3">
+                  {/* Checkbox */}
                   <button
                     onClick={() => handleItemClick(item)}
                     className="hover:opacity-80 transition shrink-0"
                   >
-                    <ProgressRing
-                      pct={
-                        item.duration_minutes
-                          ? (studiedSecs[item.id] ?? 0) /
-                            (item.duration_minutes * 60)
-                          : item.is_done
-                            ? 1
-                            : 0
-                      }
-                      done={item.is_done}
-                    />
+                    <div
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition ${
+                        item.is_done
+                          ? "bg-[#1E3A5F] border-[#1E3A5F]"
+                          : "border-gray-300 hover:border-[#4A90C4]"
+                      }`}
+                    >
+                      {item.is_done && (
+                        <svg
+                          width="10"
+                          height="10"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="white"
+                          strokeWidth={3.5}
+                        >
+                          <path d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
                   </button>
 
                   {/* Info */}
@@ -609,11 +573,18 @@ export default function TodayPage() {
                         <span
                           className="text-[#1E3A5F] font-bold text-sm leading-none cursor-default select-none shrink-0"
                           onMouseEnter={(e) => {
-                            const r = (e.target as HTMLElement).getBoundingClientRect();
-                            setManualTooltip({ x: r.left + r.width / 2, y: r.top });
+                            const r = (
+                              e.target as HTMLElement
+                            ).getBoundingClientRect();
+                            setManualTooltip({
+                              x: r.left + r.width / 2,
+                              y: r.top,
+                            });
                           }}
                           onMouseLeave={() => setManualTooltip(null)}
-                        >*</span>
+                        >
+                          *
+                        </span>
                       )}
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5 truncate">
@@ -627,16 +598,22 @@ export default function TodayPage() {
                   {/* Botão iniciar */}
                   {!item.is_done && (
                     <button
-                      onClick={() =>
+                      onClick={() => {
+                        const alreadySecs = studiedSecs[item.id] ?? 0;
+                        const totalSecs = (item.duration_minutes ?? 0) * 60;
+                        const remainSecs = Math.max(
+                          60,
+                          totalSecs - alreadySecs,
+                        );
                         navigate("/aluno/pomodoro", {
                           state: {
                             planItemId: item.id,
                             title: subtitle ? `${title} — ${subtitle}` : title,
-                            durationMinutes: item.duration_minutes,
+                            durationMinutes: Math.ceil(remainSecs / 60),
                             studentId,
                           },
-                        })
-                      }
+                        });
+                      }}
                       className="shrink-0 flex flex-col items-center justify-center gap-1 px-4 py-2.5 rounded-xl bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
                     >
                       <MdPlayArrow size={22} />
@@ -654,11 +631,23 @@ export default function TodayPage() {
           {freeSessions.map((sess) => (
             <div
               key={sess.id}
-              className="group rounded-2xl border border-gray-100 bg-white opacity-70 hover:opacity-100 transition"
+              className="group rounded-2xl border border-gray-100 opacity-70 hover:opacity-100 transition"
+              style={{ background: "#D6E4F0" }}
             >
               <div className="px-4 py-3 flex items-center gap-3">
                 <div className="shrink-0">
-                  <ProgressRing pct={1} done={true} />
+                  <div className="w-6 h-6 rounded-full bg-[#1E3A5F] border-2 border-[#1E3A5F] flex items-center justify-center">
+                    <svg
+                      width="10"
+                      height="10"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="white"
+                      strokeWidth={3.5}
+                    >
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate line-through text-gray-400">
@@ -718,14 +707,19 @@ export default function TodayPage() {
         <div
           className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
           style={{
-            backgroundColor: '#1E3A5F',
+            backgroundColor: "#1E3A5F",
             top: manualTooltip.y - 8,
             left: manualTooltip.x,
-            transform: 'translate(-50%, -100%)',
+            transform: "translate(-50%, -100%)",
           }}
         >
           <p className="font-semibold mb-0.5">Conclusão manual</p>
-          <p style={{ color: 'rgba(255,255,255,0.75)' }} className="leading-snug">Não conta XP, badges nem missões.</p>
+          <p
+            style={{ color: "rgba(255,255,255,0.75)" }}
+            className="leading-snug"
+          >
+            Não conta XP, badges nem missões.
+          </p>
         </div>
       )}
 

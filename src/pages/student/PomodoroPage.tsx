@@ -440,30 +440,85 @@ export default function PomodoroPage() {
       const planItemIds = new Set<string>();
       if (nav?.planItemId) planItemIds.add(nav.planItemId);
 
+      // ciRows elevado para ser usado no cálculo proporcional abaixo
+      let ciRows: { piece_id: string | null; exercise_id: string | null }[] = []
+
       if (checklistIds.length > 0) {
         const weekStart = formatWeekStart(getMonday(new Date()));
+        // Resolver checklist_item_id → piece_id / exercise_id
+        const { data: ciData } = await supabase
+          .from("checklist_items")
+          .select("piece_id, exercise_id")
+          .in("id", checklistIds);
+        ciRows = (ciData ?? []) as typeof ciRows
+
+        const pieceIds    = [...new Set(ciRows.map(r => r.piece_id).filter(Boolean))]
+        const exerciseIds = [...new Set(ciRows.map(r => r.exercise_id).filter(Boolean))]
+
         const { data: plan } = await supabase
           .from("weekly_plans")
           .select("id")
           .eq("student_id", sid)
           .eq("week_start", weekStart)
           .maybeSingle();
-        if (plan?.id) {
-          const { data: matched } = await supabase
-            .from("plan_items")
-            .select("id")
-            .eq("plan_id", plan.id)
-            .in("checklist_item_id", checklistIds);
-          for (const pi of matched ?? []) planItemIds.add(pi.id);
+
+        if (plan?.id && (pieceIds.length > 0 || exerciseIds.length > 0)) {
+          const queries = []
+          if (pieceIds.length > 0)
+            queries.push(supabase.from("plan_items").select("id").eq("plan_id", plan.id).in("piece_id", pieceIds))
+          if (exerciseIds.length > 0)
+            queries.push(supabase.from("plan_items").select("id").eq("plan_id", plan.id).in("exercise_id", exerciseIds))
+
+          const results = await Promise.all(queries)
+          for (const { data: matched } of results) {
+            for (const pi of matched ?? []) planItemIds.add(pi.id)
+          }
         }
       }
 
       if (planItemIds.size > 0) {
+        // Calcular segundos proporcionais por plan_item baseado em quantos
+        // checklist_items de cada peça/exercício foram selecionados
+        const itemWeight: Record<string, number> = {}
+
+        if (ciRows.length > 0) {
+          const { data: planItemDetails } = await supabase
+            .from("plan_items")
+            .select("id, piece_id, exercise_id")
+            .in("id", [...planItemIds])
+
+          for (const ci of ciRows) {
+            for (const pi of (planItemDetails ?? [])) {
+              if ((ci.piece_id && ci.piece_id === pi.piece_id) ||
+                  (ci.exercise_id && ci.exercise_id === pi.exercise_id)) {
+                itemWeight[pi.id] = (itemWeight[pi.id] ?? 0) + 1
+              }
+            }
+          }
+        }
+
+        // plan_item vindo de nav.planItemId (início via botão Iniciar) conta como 1
+        if (nav?.planItemId && !itemWeight[nav.planItemId]) {
+          itemWeight[nav.planItemId] = 1
+        }
+        // fallback: qualquer item sem peso recebe 1
+        for (const id of planItemIds) {
+          if (!itemWeight[id]) itemWeight[id] = 1
+        }
+
+        const totalWeight   = Object.values(itemWeight).reduce((s, v) => s + v, 0)
+        const totalWorkSecs = workSecs.current
+
         await supabase.from("session_items").insert(
-          [...planItemIds].map((planItemId) => ({
-            session_id: sessionData.id,
-            plan_item_id: planItemId,
-          })),
+          [...planItemIds].map((planItemId) => {
+            const weight = itemWeight[planItemId] ?? 1
+            const proportionalSecs = Math.round((weight / totalWeight) * totalWorkSecs)
+            return {
+              session_id:       sessionData.id,
+              plan_item_id:     planItemId,
+              duration_seconds: proportionalSecs,
+            }
+          }),
         );
       }
     }
@@ -593,7 +648,7 @@ export default function PomodoroPage() {
             >
               <p className="text-5xl mb-7">😢</p>
               <p className="text-xl font-bold text-gray-800 mb-3">
-                Encerrar sessão agora
+                Faltam só {Math.ceil(timeLeft / 60)} {Math.ceil(timeLeft / 60) === 1 ? 'minuto' : 'minutos'}!
               </p>
               <p className="text-base text-gray-500 mb-7">
                 Você ainda não completou o ciclo e por isso irá perder o XP
