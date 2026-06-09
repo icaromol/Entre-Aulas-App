@@ -47,6 +47,15 @@ export default function AuthCallbackPage() {
             .eq('invite_token', pending.inviteToken)
             .is('profile_id', null)
             .gt('invite_expires_at', new Date().toISOString())
+        } else if (pending.role === 'student') {
+          await supabase.from('students').insert({
+            profile_id:    user.id,
+            teacher_id:    null,
+            first_name:    firstName,
+            last_name:     lastName,
+            contact_email: user.email,
+            status:        'active',
+          })
         }
       }
 

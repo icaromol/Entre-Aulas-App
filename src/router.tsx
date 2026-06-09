@@ -41,6 +41,7 @@ const StudentEditExercisePage   = lazy(() => import('@/pages/student/EditExercis
 const StudentNewProgramaPage    = lazy(() => import('@/pages/student/NewProgramaPage'))
 const StudentProgramaDetailPage = lazy(() => import('@/pages/student/ProgramaDetailPage'))
 const StudentEditProgramaPage   = lazy(() => import('@/pages/student/EditProgramaPage'))
+const StudentPendingPage        = lazy(() => import('@/pages/student/StudentPendingPage'))
 
 function PageSpinner() {
   return (
@@ -82,6 +83,7 @@ export function Router() {
           <Route path="/professor/jornada" element={<AuthGuard allowedRole="teacher"><TeacherJourneyPage /></AuthGuard>} />
 
           {/* Aluno */}
+          <Route path="/aluno/pendente" element={<AuthGuard allowedRole="student"><StudentPendingPage /></AuthGuard>} />
           <Route path="/aluno" element={<AuthGuard allowedRole="student"><Navigate to="/aluno/hoje" replace /></AuthGuard>} />
           <Route path="/aluno/hoje" element={<AuthGuard allowedRole="student"><TodayPage /></AuthGuard>} />
           <Route path="/aluno/pomodoro" element={<AuthGuard allowedRole="student"><PomodoroPage /></AuthGuard>} />

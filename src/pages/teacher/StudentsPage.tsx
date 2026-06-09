@@ -24,6 +24,7 @@ interface Student {
   status: string
   contact_email: string | null
   invite_token: string | null
+  profile_id: string | null
 }
 
 export default function StudentsPage() {
@@ -78,11 +79,43 @@ export default function StudentsPage() {
     return `mailto:${inviteStudentEmail ?? ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
-  async function handleDeleteStudent(student: Student) {
+  async function handleDisconnectStudent(student: Student) {
     setMenuOpenId(null)
-    if (!confirm(`Excluir ${student.first_name} ${student.last_name}? Esta ação não pode ser desfeita.`)) return
-    await supabase.from('students').delete().eq('id', student.id)
+    if (student.profile_id) {
+      // Aluno já tem conta — apenas desconecta (preserva dados)
+      if (!confirm(`Desconectar ${student.first_name} ${student.last_name}? O histórico e repertório dele serão preservados.`)) return
+      const { error } = await supabase
+        .from('students')
+        .update({ teacher_id: null })
+        .eq('id', student.id)
+      if (error) { toast.error('Erro ao desconectar aluno.'); return }
+    } else {
+      // Aluno nunca aceitou o convite — pode excluir o registro
+      if (!confirm(`Excluir ${student.first_name} ${student.last_name}? O aluno ainda não criou conta, o registro será removido.`)) return
+      const { error } = await supabase.from('students').delete().eq('id', student.id)
+      if (error) { toast.error('Erro ao excluir aluno.'); return }
+    }
     setStudents(prev => prev.filter(s => s.id !== student.id))
+    toast.success(student.profile_id ? 'Aluno desconectado.' : 'Aluno removido.')
+  }
+
+  async function handleRenewInvite(student: Student) {
+    setMenuOpenId(null)
+    const newToken = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    const { error } = await supabase
+      .from('students')
+      .update({ invite_token: newToken, invite_expires_at: expiresAt })
+      .eq('id', student.id)
+    if (error) { toast.error('Erro ao renovar convite.'); return }
+    // Atualiza localmente e abre modal com novo link
+    setStudents(prev => prev.map(s => s.id === student.id ? { ...s, invite_token: newToken } : s))
+    const link = `${window.location.origin}/cadastro?invite=${student.id}&token=${newToken}`
+    setInviteLink(link)
+    setInviteStudentName(`${student.first_name} ${student.last_name}`)
+    setInviteStudentEmail(student.contact_email ?? undefined)
+    setCopied(false)
+    toast.success('Novo convite gerado!')
   }
 
   async function handleAccept(student: Student) {
@@ -141,13 +174,13 @@ export default function StudentsPage() {
     const [activeRes, pendingRes] = await Promise.all([
       supabase
         .from('students')
-        .select('id, first_name, last_name, instrument, level, status, contact_email, invite_token')
+        .select('id, first_name, last_name, instrument, level, status, contact_email, invite_token, profile_id')
         .eq('teacher_id', teacherId)
         .eq('status', 'active')
         .order('first_name'),
       supabase
         .from('students')
-        .select('id, first_name, last_name, instrument, level, status, contact_email, invite_token')
+        .select('id, first_name, last_name, instrument, level, status, contact_email, invite_token, profile_id')
         .eq('teacher_id', teacherId)
         .eq('status', 'pending')
         .order('created_at', { ascending: false }),
@@ -397,16 +430,22 @@ export default function StudentsPage() {
                           </button>
                           <button onClick={() => handleInvite(student)}
                             className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition">
-                            Criar convite
+                            Enviar convite
                           </button>
+                          {!student.profile_id && (
+                            <button onClick={() => handleRenewInvite(student)}
+                              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition">
+                              Renovar convite
+                            </button>
+                          )}
                           <button onClick={() => { setMenuOpenId(null); navigate(`/professor/alunos/${student.id}/editar`) }}
                             className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition">
                             Editar
                           </button>
                           <div className="border-t border-gray-100 my-1" />
-                          <button onClick={() => handleDeleteStudent(student)}
+                          <button onClick={() => handleDisconnectStudent(student)}
                             className="w-full px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-50 transition">
-                            Excluir aluno
+                            {student.profile_id ? 'Desconectar aluno' : 'Excluir aluno'}
                           </button>
                         </div>
                       )}

@@ -73,6 +73,17 @@ export default function RegisterPage() {
       return
     }
 
+    if (selectedRole === 'student') {
+      await supabase.from('students').insert({
+        profile_id:    user.id,
+        teacher_id:    null,
+        first_name:    firstName,
+        last_name:     lastName,
+        contact_email: user.email,
+        status:        'active',
+      })
+    }
+
     navigate(selectedRole === 'teacher' ? '/professor/alunos' : '/aluno/hoje', { replace: true })
   }
 
