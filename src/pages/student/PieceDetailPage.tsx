@@ -30,12 +30,9 @@ interface ChecklistItem {
   is_optional: boolean; completed: boolean
 }
 
-interface SessionChecklistItem {
-  checklist_item: {
-    id: string
-    title: string
-    piece: { id: string } | null
-  } | null
+interface SessionItem {
+  piece_id: string | null
+  plan_item: { checklist_item: { title: string } | null } | null
 }
 
 interface StudySession {
@@ -45,7 +42,7 @@ interface StudySession {
   cycle_name: string
   difficulty_felt: 'easy' | 'ok' | 'hard' | null
   notes: string | null
-  checklist_completions: SessionChecklistItem[]
+  session_items: SessionItem[]
 }
 
 const periodLabel: Record<string, string> = {
@@ -54,9 +51,9 @@ const periodLabel: Record<string, string> = {
 }
 
 const difficultyLabel: Record<string, { label: string; color: string }> = {
-  easy: { label: 'Fácil', color: 'bg-green-50 text-green-600' },
-  ok:   { label: 'Ok',   color: 'bg-blue-50 text-[#4A90C4]' },
-  hard: { label: 'Difícil', color: 'bg-red-50 text-red-500' },
+  easy: { label: 'Fácil',      color: 'bg-green-50 text-green-600' },
+  ok:   { label: 'Moderada',   color: 'bg-blue-50 text-[#4A90C4]' },
+  hard: { label: 'Desafiadora', color: 'bg-red-50 text-red-500' },
 }
 
 const statusOptions = [
@@ -131,43 +128,38 @@ export default function StudentPieceDetailPage() {
     if (!studentId || !pieceId) return
     setLoadingHistory(true)
 
-    // Get checklist item IDs that belong to this piece
-    const { data: ciData } = await supabase
-      .from('checklist_items')
-      .select('id')
+    // Find session IDs via session_items.piece_id (set during saveSession in PomodoroPage)
+    const { data: siData } = await supabase
+      .from('session_items')
+      .select('session_id')
       .eq('piece_id', pieceId)
 
-    const pieceChecklistIds = new Set((ciData ?? []).map((r: { id: string }) => r.id))
+    const sessionIds = [...new Set(
+      (siData ?? []).map((r: { session_id: string }) => r.session_id).filter(Boolean)
+    )]
 
-    if (pieceChecklistIds.size === 0) {
+    if (sessionIds.length === 0) {
       setSessions([])
       setLoadingHistory(false)
       return
     }
 
-    // Fetch all sessions with their checklist completions — filter client-side by piece
     const { data } = await supabase
       .from('study_sessions')
       .select(`
         id, started_at, duration_seconds, cycle_name, difficulty_felt, notes,
-        checklist_completions(
-          checklist_item:checklist_items(
-            id, title,
-            piece:pieces(id)
+        session_items(
+          piece_id,
+          plan_item:plan_items(
+            checklist_item:checklist_items(title)
           )
         )
       `)
       .eq('student_id', studentId)
+      .in('id', sessionIds)
       .order('started_at', { ascending: false })
 
-    // Keep only sessions that touched at least one item of this piece
-    const filtered = (data ?? []).filter((s: any) =>
-      s.checklist_completions?.some(
-        (cc: any) => pieceChecklistIds.has(cc.checklist_item?.id)
-      )
-    )
-
-    setSessions(filtered as unknown as StudySession[])
+    setSessions((data ?? []) as unknown as StudySession[])
     setLoadingHistory(false)
   }
 
@@ -207,8 +199,8 @@ export default function StudentPieceDetailPage() {
       if (!existing) {
         sound.xpEarn()
         fireStars()
-        toast.success('🎉 Peça concluída! +300 XP')
-        const { newAchievements } = await grantXp(studentId, 'piece_completed', pieceId!, null)
+        toast.success('🎉 Peça concluída! +10 XP')
+        const { newAchievements } = await grantXp(studentId, 'piece_completed', pieceId!, null, 10)
         for (const key of newAchievements) toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`)
       } else {
         toast.success('Peça concluída!')
@@ -424,10 +416,10 @@ export default function StudentPieceDetailPage() {
             </div>
           ) : (
             sessions.map(session => {
-              const workedItems = session.checklist_completions
-                .map(cc => cc.checklist_item)
-                .filter((ci): ci is NonNullable<typeof ci> => !!ci && ci.piece?.id === pieceId)
-                .map(ci => ci.title)
+              const workedItems = session.session_items
+                .filter(si => si.piece_id === pieceId)
+                .map(si => si.plan_item?.checklist_item?.title)
+                .filter((t): t is string => !!t)
               const diff = session.difficulty_felt ? difficultyLabel[session.difficulty_felt] : null
 
               return (
