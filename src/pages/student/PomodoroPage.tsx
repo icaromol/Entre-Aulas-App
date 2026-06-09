@@ -11,7 +11,6 @@ import { grantXp, ACHIEVEMENT_LABEL } from "@/lib/xpHelpers";
 import { formatWeekStart, getMonday } from "@/lib/weekUtils";
 import {
   fireBasic,
-  fireSideCannons,
   fireStars,
   hasRankUp,
 } from "@/lib/confettiEffects";
@@ -313,13 +312,7 @@ export default function PomodoroPage() {
       return;
     }
 
-    const weekStart = formatWeekStart(getMonday(new Date()))
-    const [completionsRes, piecesRes, exercisesRes] = await Promise.all([
-      supabase
-        .from("checklist_completions")
-        .select("checklist_item_id")
-        .eq("student_id", sid)
-        .gte("completed_at", weekStart + "T00:00:00"),
+    const [piecesRes, exercisesRes] = await Promise.all([
       supabase
         .from("pieces")
         .select("id, title, checklist_items(id, title)")
@@ -332,41 +325,21 @@ export default function PomodoroPage() {
         .eq("status", "active"),
     ]);
 
-    if (completionsRes.error || piecesRes.error || exercisesRes.error) {
-      console.error(
-        "[PomodoroPage] fetch failed:",
-        completionsRes.error ?? piecesRes.error ?? exercisesRes.error,
-      );
+    if (piecesRes.error || exercisesRes.error) {
       setLoadingItems(false);
       return;
     }
-
-    const completedIds = new Set(
-      (completionsRes.data ?? []).map((c: any) => c.checklist_item_id),
-    );
 
     const items: DayItem[] = [];
 
     for (const piece of (piecesRes.data ?? []) as any[]) {
       for (const ci of (piece.checklist_items ?? []) as any[]) {
-        if (!completedIds.has(ci.id))
-          items.push({
-            id: ci.id,
-            kind: "checklist",
-            title: ci.title,
-            subtitle: piece.title,
-          });
+        items.push({ id: ci.id, kind: "checklist", title: ci.title, subtitle: piece.title });
       }
     }
     for (const ex of (exercisesRes.data ?? []) as any[]) {
       for (const ci of (ex.checklist_items ?? []) as any[]) {
-        if (!completedIds.has(ci.id))
-          items.push({
-            id: ci.id,
-            kind: "checklist",
-            title: ci.title,
-            subtitle: ex.title,
-          });
+        items.push({ id: ci.id, kind: "checklist", title: ci.title, subtitle: ex.title });
       }
     }
 
@@ -423,48 +396,8 @@ export default function PomodoroPage() {
       else fireBasic();
     }
 
-    // ── Checklist completions ──
-    const checklistIds = [...workedIds];
-
-    if (checklistIds.length > 0) {
-      const { error: ccError } = await supabase.from("checklist_completions").insert(
-        checklistIds.map((id) => ({
-          checklist_item_id: id,
-          student_id:        sid,
-          session_id:        sessionData!.id,
-          completed_at:      endedAt,
-        })),
-      );
-      if (ccError) toast.error("Erro ao salvar checklist. Alguns itens podem não ter sido registrados.");
-
-      // Verificar se alguma peça chegou a 100%
-      const { data: ciRows } = await supabase
-        .from("checklist_items")
-        .select("piece_id")
-        .in("id", checklistIds)
-        .not("piece_id", "is", null);
-
-      const pieceIds = [...new Set((ciRows ?? []).map((r: { piece_id: string }) => r.piece_id))];
-
-      if (pieceIds.length > 0) {
-        const [piecesRes, alreadyGrantedRes] = await Promise.all([
-          supabase.from("pieces").select("id, completion_pct").in("id", pieceIds),
-          supabase.from("student_xp_events").select("source_id").eq("student_id", sid).eq("reason", "piece_completed").in("source_id", pieceIds),
-        ]);
-        const alreadyGranted = new Set((alreadyGrantedRes.data ?? []).map((r) => r.source_id));
-        for (const piece of piecesRes.data ?? []) {
-          if (piece.completion_pct === 100 && !alreadyGranted.has(piece.id)) {
-            const { newAchievements: pAch } = await grantXp(sid, "piece_completed", piece.id, "musicalidade");
-            toast.success("+300 XP · Peça concluída! 🎼");
-            for (const key of pAch) toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
-            if (hasRankUp(pAch)) fireStars();
-            fireSideCannons();
-          }
-        }
-      }
-    }
-
     // ── Session items (vincula ao plano da semana) ──
+    const checklistIds = [...workedIds];
     await linkSessionItems(sessionData!.id, sid, checklistIds, nav?.planItemId ?? null, workSecs.current);
 
     navigate("/aluno/hoje");
