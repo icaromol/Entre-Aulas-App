@@ -623,8 +623,8 @@ const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | '
                 <div className="flex-1 p-3 space-y-2">
                   {tasks.length === 0 && !isAvailable && <p className="text-xs text-gray-300 text-center py-4">Folga</p>}
                   {tasks.map((task, i) => (
-                    <button key={i} onClick={() => setEditingTask({ date: col.date, idx: i })}
-                      className={`w-full text-left rounded-xl p-3 transition group ${taskCardClass(task)}`}>
+                    <div key={i} onClick={() => setEditingTask({ date: col.date, idx: i })}
+                      className={`w-full text-left rounded-xl p-3 transition group cursor-pointer ${taskCardClass(task)}`}>
                       <div className="flex items-start gap-2">
                         {task.isMaintenance && <span className="text-sm shrink-0 mt-0.5">🔄</span>}
                         <p className="text-sm font-medium text-gray-700 flex-1 leading-snug line-clamp-2">{taskTitle(task)}</p>
@@ -635,7 +635,7 @@ const [studentLevel, setStudentLevel] = useState<'beginner' | 'intermediate' | '
                       </div>
                       <p className="text-xs text-gray-400 mt-1 truncate">{task.programTitle}</p>
                       <p className="text-xs font-semibold text-[#4A90C4] mt-1">{task.durationMinutes} min</p>
-                    </button>
+                    </div>
                   ))}
                 </div>
                 <div className="px-3 pb-3">
