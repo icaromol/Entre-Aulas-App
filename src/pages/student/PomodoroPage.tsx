@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { MdSettings } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
@@ -378,9 +379,12 @@ export default function PomodoroPage() {
               <path d="M15 18l-6-6 6-6"/>
             </svg>
           </button>
-          <div>
-            <h1 className="text-xl font-bold text-[#1E3A5F]">Sessão personalizada</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Configure seu próprio ritmo</p>
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-2xl">🍅</span>
+            <div>
+              <h1 className="text-xl font-bold text-[#1E3A5F]">Pomodoro</h1>
+              <p className="text-xs text-gray-400 mt-0.5">Configure seu próprio ritmo</p>
+            </div>
           </div>
         </div>
 
@@ -456,6 +460,24 @@ export default function PomodoroPage() {
             </div>
           </div>
         )}
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🍅</span>
+            <div>
+              <h1 className="text-base font-bold text-[#1E3A5F]">Pomodoro</h1>
+              <p className="text-xs text-gray-400">{nav?.title ?? 'Sessão de estudo'}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => { setIsPaused(true); setPhase('idle') }}
+            className="p-2 rounded-xl hover:bg-gray-100 transition text-gray-400 hover:text-[#1E3A5F]"
+            title="Configurar"
+          >
+            <MdSettings size={20} />
+          </button>
+        </div>
 
         {/* Cronômetro */}
         <div className="flex flex-col items-center py-6">

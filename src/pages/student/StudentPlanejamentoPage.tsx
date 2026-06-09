@@ -491,7 +491,7 @@ export default function StudentPlanejamentoPage() {
             <Button onClick={handleGenerate} disabled={!weightOk || generating}
               className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10 flex items-center gap-2">
               <MdAutoAwesome size={16} />
-              {generating ? 'Gerando...' : `Gerar preview — ${HORIZON_OPTIONS.find(h => h.value === horizon)?.label}`}
+              {generating ? 'Gerando...' : 'Gerar planejamento automático'}
             </Button>
           </div>
         )}
