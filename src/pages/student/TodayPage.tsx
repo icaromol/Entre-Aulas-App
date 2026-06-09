@@ -70,6 +70,21 @@ const ATTRIBUTE_LABEL: Partial<Record<XpAttribute, string>> = {
   historia: "História",
 };
 
+const GREETINGS = [
+  (name: string) => `Pronto pra estudar com foco hoje, ${name}? 😉`,
+  (name: string) => `Um belo dia para estudar focado, ${name}! 😎`,
+  (name: string) => `Bora evoluir hoje, ${name}? 🎵`,
+  (name: string) => `Cada prática conta, ${name}. Vamos lá! 🎯`,
+  (name: string) => `O palco agradece a dedicação de hoje, ${name}! 🎶`,
+  (name: string) => `Consistência é tudo, ${name}. Hora de praticar! 💪`,
+  (name: string) => `Que tal uma boa sessão de estudos hoje, ${name}? 🎼`,
+];
+
+function getDailyGreeting(name: string): string {
+  const idx = new Date().getDate() % GREETINGS.length;
+  return GREETINGS[idx](name);
+}
+
 
 export default function TodayPage() {
   const { profile } = useAuth();
@@ -409,7 +424,7 @@ export default function TodayPage() {
         </button>
         <div className="text-center">
           <h1 className="text-xl font-bold text-[#1E3A5F]">
-            Olá, {profile?.first_name} 👋
+            {getDailyGreeting(profile?.first_name ?? '')}
           </h1>
           <p className="text-sm text-gray-400 mt-0.5">
             {displayDate} · {getDayFullLabel(viewDay)}
