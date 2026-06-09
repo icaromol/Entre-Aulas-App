@@ -47,6 +47,43 @@ function itemDisplay(item: PlanItem): {
   return { title: "—", subtitle: "", maintenanceIcon: false };
 }
 
+const RING_R = 11   // raio do anel
+const RING_C = 2 * Math.PI * RING_R
+
+function ProgressRing({ pct, done }: { pct: number; done: boolean }) {
+  const filled = Math.min(1, pct)
+  const offset = RING_C * (1 - filled)
+  return (
+    <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
+      <svg width="28" height="28" viewBox="0 0 28 28" className="-rotate-90 absolute inset-0">
+        <circle cx="14" cy="14" r={RING_R} fill="none" stroke="#E5E7EB" strokeWidth="2.5" />
+        {pct > 0 && (
+          <circle
+            cx="14" cy="14" r={RING_R}
+            fill="none"
+            stroke={done ? '#1E3A5F' : '#4A90C4'}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeDasharray={`${RING_C} ${RING_C}`}
+            strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+          />
+        )}
+      </svg>
+      {/* Centro: check se done, círculo vazio se não */}
+      <div className={`w-4 h-4 rounded-full flex items-center justify-center z-10 transition ${
+        done ? 'bg-[#1E3A5F]' : pct > 0 ? 'bg-[#4A90C4]/20' : ''
+      }`}>
+        {done && (
+          <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3.5}>
+            <path d="M5 13l4 4L19 7"/>
+          </svg>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function itemCardClass(item: PlanItem): string {
   if (item.is_maintenance) return "bg-white border-gray-100";
   if (item.exercise_id) return "bg-purple-50 border-purple-100";
@@ -88,6 +125,7 @@ export default function TodayPage() {
   const navigate = useNavigate();
 
   const [items, setItems] = useState<PlanItem[]>([]);
+  const [studiedSecs, setStudiedSecs] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [studentId, setStudentId] = useState<string | null>(null);
@@ -109,6 +147,13 @@ export default function TodayPage() {
   useEffect(() => {
     if (profile) fetchDayPlan();
   }, [profile, viewDay]);
+
+  // Re-fetcha ao voltar para a página (ex: retorno do pomodoro)
+  useEffect(() => {
+    const onFocus = () => { if (profile && studentId) fetchItems(studentId) }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [profile, studentId, viewDay]);
 
   async function fetchDayPlan() {
     setLoading(true);
@@ -184,7 +229,39 @@ export default function TodayPage() {
       return;
     }
 
-    setItems((planItems ?? []) as unknown as PlanItem[]);
+    const resolvedItems = (planItems ?? []) as unknown as PlanItem[]
+    setItems(resolvedItems)
+
+    // Buscar segundos estudados por plan_item via session_items → study_sessions
+    const planItemIds = resolvedItems.map(i => i.id)
+    if (planItemIds.length > 0) {
+      const { data: sessionRows } = await supabase
+        .from('session_items')
+        .select('plan_item_id, study_sessions(duration_seconds)')
+        .in('plan_item_id', planItemIds)
+
+      const secsMap: Record<string, number> = {}
+      for (const row of (sessionRows ?? []) as any[]) {
+        const secs = row.study_sessions?.duration_seconds ?? 0
+        secsMap[row.plan_item_id] = (secsMap[row.plan_item_id] ?? 0) + secs
+      }
+      setStudiedSecs(secsMap)
+
+      // Auto-concluir itens que atingiram a minutagem
+      const toComplete = resolvedItems.filter(item =>
+        !item.is_done && item.duration_minutes &&
+        (secsMap[item.id] ?? 0) >= item.duration_minutes * 60
+      )
+      if (toComplete.length > 0) {
+        await Promise.all(toComplete.map(item =>
+          supabase.from('plan_items').update({ is_done: true, done_at: new Date().toISOString() }).eq('id', item.id)
+        ))
+        setItems(prev => prev.map(i =>
+          toComplete.find(c => c.id === i.id) ? { ...i, is_done: true } : i
+        ))
+      }
+    }
+
     setLoading(false);
   }
 
@@ -351,27 +428,14 @@ export default function TodayPage() {
                 }`}
               >
                 <div className="px-4 py-4 flex items-start gap-3">
-                  {/* Checkbox */}
-                  <button
-                    onClick={() => handleItemClick(item)}
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition ${
-                      item.is_done
-                        ? "bg-[#1E3A5F] border-[#1E3A5F]"
-                        : "border-gray-300 hover:border-[#4A90C4]"
-                    }`}
-                  >
-                    {item.is_done && (
-                      <svg
-                        width="10"
-                        height="10"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="white"
-                        strokeWidth={3}
-                      >
-                        <path d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
+                  {/* Anel de progresso + checkbox */}
+                  <button onClick={() => handleItemClick(item)} className="mt-0.5 hover:opacity-80 transition">
+                    <ProgressRing
+                      pct={item.duration_minutes
+                        ? (studiedSecs[item.id] ?? 0) / (item.duration_minutes * 60)
+                        : item.is_done ? 1 : 0}
+                      done={item.is_done}
+                    />
                   </button>
 
                   {/* Ícone manutenção */}
