@@ -2,7 +2,13 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { MdPause, MdPlayArrow, MdStop, MdEmojiEvents, MdPictureInPicture } from "react-icons/md";
+import {
+  MdPause,
+  MdPlayArrow,
+  MdStop,
+  MdEmojiEvents,
+  MdPictureInPicture,
+} from "react-icons/md";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/Spinner";
@@ -10,11 +16,7 @@ import { StudentLayout } from "@/components/layout/StudentLayout";
 import { Button } from "@/components/ui/button";
 import { grantXp, ACHIEVEMENT_LABEL } from "@/lib/xpHelpers";
 import { formatWeekStart, getMonday } from "@/lib/weekUtils";
-import {
-  fireBasic,
-  fireStars,
-  hasRankUp,
-} from "@/lib/confettiEffects";
+import { fireBasic, fireStars, hasRankUp } from "@/lib/confettiEffects";
 import { sound } from "@/lib/soundEffects";
 
 interface CyclePreset {
@@ -88,12 +90,315 @@ interface DayGroup {
   items: ChecklistEntry[];
 }
 
-
 const CIRCUMFERENCE = 2 * Math.PI * 54;
+
+// ─── Arc Slider ───────────────────────────────────────────────────────────────
+// Drag circular para configurar minutos de estudo / pausa
+
+interface ArcSliderProps {
+  value: number;
+  min: number;
+  max: number;
+  color: string;
+  label: string;
+  onChange: (v: number) => void;
+}
+
+function ArcSlider({
+  value,
+  min,
+  max,
+  color,
+  label,
+  onChange,
+}: ArcSliderProps) {
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const R = 38;
+  const PERIMETER = 2 * Math.PI * R; // ~238.76
+  const START_DEG = 140; // onde o arco começa (convenção Math.atan2)
+  const TOTAL_ARC = 260; // graus totais do arco
+
+  const pct = (value - min) / (max - min);
+  const filled = pct * TOTAL_ARC; // graus preenchidos
+  const filledLen = (filled / 360) * PERIMETER;
+  const trackLen = (TOTAL_ARC / 360) * PERIMETER;
+
+  // Offset do arco track: precisa começar em START_DEG
+  // SVG stroke começa no ângulo 0 (direita) e vai no sentido horário
+  // Para iniciar em START_DEG: rotacionamos o grupo
+  const trackGap = PERIMETER - trackLen;
+  const filledGap = PERIMETER - filledLen;
+
+  function handlePointerMove(e: React.PointerEvent<SVGSVGElement>) {
+    if (!(e.buttons & 1)) return;
+    const rect = svgRef.current!.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    const angle = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
+    const relative = (angle - START_DEG + 360) % 360;
+    const norm = Math.max(0, Math.min(1, relative / TOTAL_ARC));
+    onChange(Math.round(min + norm * (max - min)));
+  }
+
+  return (
+    <div className="flex flex-col items-center select-none w-[38%]">
+      <svg
+        ref={svgRef}
+        viewBox="0 0 100 103"
+        width="100%"
+        height="auto"
+        style={{ cursor: "grab", touchAction: "none" }}
+        onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
+        onPointerMove={handlePointerMove}
+      >
+        {/* Grupo rotacionado para que o arco comece em START_DEG */}
+        <g transform={`rotate(${START_DEG} 50 50)`}>
+          {/* Track */}
+          <circle
+            cx="50"
+            cy="50"
+            r={R}
+            fill="none"
+            stroke="#E5E7EB"
+            strokeWidth="10"
+            strokeDasharray={`${trackLen} ${trackGap}`}
+            strokeLinecap="round"
+          />
+          {/* Arco preenchido */}
+          <circle
+            cx="50"
+            cy="50"
+            r={R}
+            fill="none"
+            stroke={color}
+            strokeWidth="10"
+            strokeDasharray={`${filledLen} ${filledGap}`}
+            strokeLinecap="round"
+          />
+        </g>
+        {/* Valor centralizado */}
+        <text
+          x="50"
+          y="46"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="20"
+          fontWeight="bold"
+          fill={color}
+          fontFamily="inherit"
+        >
+          {value}
+        </text>
+        <text
+          x="50"
+          y="62"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="9"
+          fill="#9CA3AF"
+          fontFamily="inherit"
+        >
+          min
+        </text>
+        {/* Label colado na parte inferior do arco — junto às pontas */}
+        <text
+          x="50"
+          y="97"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="9"
+          fontWeight="600"
+          fill="#6B7280"
+          fontFamily="inherit"
+        >
+          {label}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+// ─── Cycle Slider ─────────────────────────────────────────────────────────────
+// Visual idêntico às tabs do Repertório (bg-gray-100, pill branco, shadow-sm)
+// com indicator animado por spring elástica
+
+interface CycleSliderProps {
+  value: number;
+  onChange: (v: number) => void;
+}
+
+function CycleSlider({ value, onChange }: CycleSliderProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [trackWidth, setTrackWidth] = useState(0);
+  const [indicatorX, setIndicatorX] = useState(0);
+
+  const posRef = useRef(0);
+  const velRef = useRef(0);
+  const rafRef = useRef(0);
+
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartPx = useRef(0);
+
+  const STIFFNESS = 420;
+  const DAMPING = 0.65;
+  const PADDING = 4; // p-1 = 4px cada lado
+
+  // largura do indicator = 1/4 do track interno
+  function indicatorW(tw: number) {
+    return (tw - PADDING * 2) / 4;
+  }
+
+  // posição left do indicator para ciclo n
+  function targetX(v: number, tw: number) {
+    return PADDING + (v - 1) * indicatorW(tw);
+  }
+
+  function snapTo(px: number, tw: number) {
+    const iw = indicatorW(tw);
+    let best = 1,
+      bestDist = Infinity;
+    for (let n = 1; n <= 4; n++) {
+      const cx = PADDING + (n - 1) * iw + iw / 2;
+      const dist = Math.abs(px - cx);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = n;
+      }
+    }
+    return best;
+  }
+
+  function springTo(target: number) {
+    cancelAnimationFrame(rafRef.current);
+    let lastTime = performance.now();
+    function step(now: number) {
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+      velRef.current += (target - posRef.current) * STIFFNESS * dt;
+      velRef.current *= Math.pow(DAMPING, dt * 60);
+      posRef.current += velRef.current * dt;
+      setIndicatorX(posRef.current);
+      if (
+        Math.abs(target - posRef.current) > 0.3 ||
+        Math.abs(velRef.current) > 0.3
+      ) {
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        posRef.current = target;
+        setIndicatorX(target);
+      }
+    }
+    rafRef.current = requestAnimationFrame(step);
+  }
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0].contentRect.width;
+      setTrackWidth(w);
+      const tx = targetX(value, w);
+      posRef.current = tx;
+      velRef.current = 0;
+      setIndicatorX(tx);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (trackWidth === 0 || isDragging.current) return;
+    springTo(targetX(value, trackWidth));
+  }, [value, trackWidth]);
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    isDragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartPx.current = posRef.current;
+    cancelAnimationFrame(rafRef.current);
+    velRef.current = 0;
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!isDragging.current || trackWidth === 0) return;
+    const iw = indicatorW(trackWidth);
+    const delta = e.clientX - dragStartX.current;
+    const newPx = Math.max(
+      PADDING,
+      Math.min(PADDING + 3 * iw, dragStartPx.current + delta),
+    );
+    posRef.current = newPx;
+    setIndicatorX(newPx);
+  }
+
+  function handlePointerUp() {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    const iw = indicatorW(trackWidth);
+    const centerX = posRef.current + iw / 2;
+    const snapped = snapTo(centerX, trackWidth);
+    onChange(snapped);
+    springTo(targetX(snapped, trackWidth));
+  }
+
+  function handleTrackClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (isDragging.current) return;
+    const rect = trackRef.current!.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const snapped = snapTo(x, trackWidth);
+    onChange(snapped);
+  }
+
+  const iw = trackWidth > 0 ? indicatorW(trackWidth) : 0;
+
+  return (
+    <div
+      ref={trackRef}
+      onClick={handleTrackClick}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      className="relative flex bg-gray-100 rounded-xl p-1 cursor-grab active:cursor-grabbing select-none"
+      style={{ touchAction: "none" }}
+    >
+      {/* Indicator branco animado — idêntico ao tab ativo do Repertório */}
+      {iw > 0 && (
+        <div
+          className="absolute top-1 bottom-1 rounded-lg bg-white z-0"
+          style={{
+            left: indicatorX,
+            width: iw,
+            willChange: "left",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
+          }}
+        />
+      )}
+      {/* Labels — z-10, sobre o indicator */}
+      {[1, 2, 3, 4].map((n) => (
+        <div
+          key={n}
+          className={`relative z-10 flex-1 py-2 text-center text-xs font-semibold transition-colors duration-150 pointer-events-none ${
+            value === n ? "text-[#1E3A5F]" : "text-gray-500"
+          }`}
+        >
+          {n}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function fmt(s: number) {
   const t = Math.floor(s);
-  return `${Math.floor(t / 60).toString().padStart(2, "0")}:${(t % 60).toString().padStart(2, "0")}`;
+  return `${Math.floor(t / 60)
+    .toString()
+    .padStart(2, "0")}:${(t % 60).toString().padStart(2, "0")}`;
 }
 
 function fmtStudied(secs: number): string {
@@ -104,7 +409,11 @@ function fmtStudied(secs: number): string {
   return s > 0 ? `${m} min ${s}s de estudo` : `${m} min de estudo`;
 }
 
-type PlanItemRef = { id: string; piece_id: string | null; exercise_id: string | null }
+type PlanItemRef = {
+  id: string;
+  piece_id: string | null;
+  exercise_id: string | null;
+};
 
 interface PomodoroNavState {
   planItemId?: string;
@@ -112,17 +421,24 @@ interface PomodoroNavState {
   durationMinutes?: number;
   studentId?: string;
   autoStart?: boolean;
+  pomodoroConfig?: { work: number; break: number; cycles: number };
 }
 
 function parsePomodoroNavState(raw: unknown): PomodoroNavState | null {
   if (!raw || typeof raw !== "object") return null;
   const s = raw as Record<string, unknown>;
+  const cfg =
+    s.pomodoroConfig && typeof s.pomodoroConfig === "object"
+      ? (s.pomodoroConfig as { work: number; break: number; cycles: number })
+      : undefined;
   return {
-    planItemId:      typeof s.planItemId === "string" ? s.planItemId : undefined,
-    title:           typeof s.title === "string" ? s.title : undefined,
-    durationMinutes: typeof s.durationMinutes === "number" ? s.durationMinutes : undefined,
-    studentId:       typeof s.studentId === "string" ? s.studentId : undefined,
-    autoStart:       typeof s.autoStart === "boolean" ? s.autoStart : undefined,
+    planItemId: typeof s.planItemId === "string" ? s.planItemId : undefined,
+    title: typeof s.title === "string" ? s.title : undefined,
+    durationMinutes:
+      typeof s.durationMinutes === "number" ? s.durationMinutes : undefined,
+    studentId: typeof s.studentId === "string" ? s.studentId : undefined,
+    autoStart: typeof s.autoStart === "boolean" ? s.autoStart : undefined,
+    pomodoroConfig: cfg,
   };
 }
 
@@ -133,65 +449,113 @@ async function linkSessionItems(
   directPlanItemId: string | null,
   totalWorkSecs: number,
 ): Promise<void> {
-  const itemData: Record<string, { weight: number; piece_id: string | null; exercise_id: string | null }> = {}
-  const weekStart  = formatWeekStart(getMonday(new Date()))
-  const todayDow   = new Date().getDay()
+  const itemData: Record<
+    string,
+    { weight: number; piece_id: string | null; exercise_id: string | null }
+  > = {};
+  const weekStart = formatWeekStart(getMonday(new Date()));
+  const todayDow = new Date().getDay();
 
   if (directPlanItemId) {
     const { data: piRow } = await supabase
-      .from("plan_items").select("id, piece_id, exercise_id")
-      .eq("id", directPlanItemId).single()
-    if (piRow) itemData[directPlanItemId] = { weight: 1, piece_id: piRow.piece_id, exercise_id: piRow.exercise_id }
+      .from("plan_items")
+      .select("id, piece_id, exercise_id")
+      .eq("id", directPlanItemId)
+      .single();
+    if (piRow)
+      itemData[directPlanItemId] = {
+        weight: 1,
+        piece_id: piRow.piece_id,
+        exercise_id: piRow.exercise_id,
+      };
   }
 
   if (checklistIds.length > 0) {
     const { data: ciData } = await supabase
-      .from("checklist_items").select("piece_id, exercise_id").in("id", checklistIds)
-    const ciRows = (ciData ?? []) as { piece_id: string | null; exercise_id: string | null }[]
-    const pieceIds    = [...new Set(ciRows.map(r => r.piece_id).filter((x): x is string => !!x))]
-    const exerciseIds = [...new Set(ciRows.map(r => r.exercise_id).filter((x): x is string => !!x))]
+      .from("checklist_items")
+      .select("piece_id, exercise_id")
+      .in("id", checklistIds);
+    const ciRows = (ciData ?? []) as {
+      piece_id: string | null;
+      exercise_id: string | null;
+    }[];
+    const pieceIds = [
+      ...new Set(ciRows.map((r) => r.piece_id).filter((x): x is string => !!x)),
+    ];
+    const exerciseIds = [
+      ...new Set(
+        ciRows.map((r) => r.exercise_id).filter((x): x is string => !!x),
+      ),
+    ];
 
     if (pieceIds.length > 0 || exerciseIds.length > 0) {
       const { data: plan } = await supabase
-        .from("weekly_plans").select("id")
-        .eq("student_id", studentId).eq("week_start", weekStart).maybeSingle()
+        .from("weekly_plans")
+        .select("id")
+        .eq("student_id", studentId)
+        .eq("week_start", weekStart)
+        .maybeSingle();
 
       if (plan?.id) {
-        const queries: Promise<{ data: PlanItemRef[] | null }>[] = []
+        const queries: Promise<{ data: PlanItemRef[] | null }>[] = [];
         if (pieceIds.length > 0)
-          queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id")
-            .eq("plan_id", plan.id).eq("day_of_week", todayDow).in("piece_id", pieceIds) as any)
+          queries.push(
+            supabase
+              .from("plan_items")
+              .select("id, piece_id, exercise_id")
+              .eq("plan_id", plan.id)
+              .eq("day_of_week", todayDow)
+              .in("piece_id", pieceIds) as any,
+          );
         if (exerciseIds.length > 0)
-          queries.push(supabase.from("plan_items").select("id, piece_id, exercise_id")
-            .eq("plan_id", plan.id).eq("day_of_week", todayDow).in("exercise_id", exerciseIds) as any)
+          queries.push(
+            supabase
+              .from("plan_items")
+              .select("id, piece_id, exercise_id")
+              .eq("plan_id", plan.id)
+              .eq("day_of_week", todayDow)
+              .in("exercise_id", exerciseIds) as any,
+          );
 
-        const matchedPlanItems = (await Promise.all(queries)).flatMap(r => r.data ?? [])
+        const matchedPlanItems = (await Promise.all(queries)).flatMap(
+          (r) => r.data ?? [],
+        );
         for (const ci of ciRows) {
           for (const pi of matchedPlanItems) {
-            const matches = (ci.piece_id && ci.piece_id === pi.piece_id) || (ci.exercise_id && ci.exercise_id === pi.exercise_id)
-            if (!matches) continue
-            if (!itemData[pi.id]) itemData[pi.id] = { weight: 0, piece_id: pi.piece_id, exercise_id: pi.exercise_id }
-            if (pi.id !== directPlanItemId) itemData[pi.id].weight += 1
+            const matches =
+              (ci.piece_id && ci.piece_id === pi.piece_id) ||
+              (ci.exercise_id && ci.exercise_id === pi.exercise_id);
+            if (!matches) continue;
+            if (!itemData[pi.id])
+              itemData[pi.id] = {
+                weight: 0,
+                piece_id: pi.piece_id,
+                exercise_id: pi.exercise_id,
+              };
+            if (pi.id !== directPlanItemId) itemData[pi.id].weight += 1;
           }
         }
       }
     }
   }
 
-  const entries = Object.entries(itemData)
-  if (entries.length === 0) return
+  const entries = Object.entries(itemData);
+  if (entries.length === 0) return;
 
-  const totalWeight = entries.reduce((s, [, v]) => s + v.weight, 0) || 1
+  const totalWeight = entries.reduce((s, [, v]) => s + v.weight, 0) || 1;
   const rows = entries.map(([planItemId, v]) => ({
-    session_id:       sessionId,
-    plan_item_id:     planItemId,
-    piece_id:         v.piece_id,
-    exercise_id:      v.exercise_id,
+    session_id: sessionId,
+    plan_item_id: planItemId,
+    piece_id: v.piece_id,
+    exercise_id: v.exercise_id,
     duration_seconds: Math.round((v.weight / totalWeight) * totalWorkSecs),
-  }))
+  }));
 
-  const { error } = await supabase.from("session_items").insert(rows)
-  if (error) toast.error("Erro ao vincular sessão ao plano. O progresso pode não aparecer hoje.")
+  const { error } = await supabase.from("session_items").insert(rows);
+  if (error)
+    toast.error(
+      "Erro ao vincular sessão ao plano. O progresso pode não aparecer hoje.",
+    );
 }
 
 export default function PomodoroPage() {
@@ -204,6 +568,48 @@ export default function PomodoroPage() {
   const [customWork, setCustomWork] = useState(25);
   const [customBreak, setCustomBreak] = useState(5);
   const [customCycles, setCustomCycles] = useState(4);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [dontAskAgain, setDontAskAgain] = useState(false);
+  const SKIP_SAVE_KEY = "estudamus_skip_save_pomodoro";
+
+  // Carrega config salva do aluno ao montar (busca por profile_id pois é o que temos no auth)
+  useEffect(() => {
+    if (!profile?.id) return;
+    supabase
+      .from("students")
+      .select("id, pomodoro_work, pomodoro_break, pomodoro_cycles")
+      .eq("profile_id", profile.id)
+      .single()
+      .then(({ data }) => {
+        if (!data) return;
+        if (data.pomodoro_work) setCustomWork(data.pomodoro_work);
+        if (data.pomodoro_break) setCustomBreak(data.pomodoro_break);
+        if (data.pomodoro_cycles) setCustomCycles(data.pomodoro_cycles);
+      });
+  }, [profile?.id]);
+
+  async function handleSaveConfig() {
+    if (!profile?.id) return;
+    setSavingConfig(true);
+    const { data: student } = await supabase
+      .from("students")
+      .select("id")
+      .eq("profile_id", profile.id)
+      .single();
+    if (student?.id) {
+      await supabase
+        .from("students")
+        .update({
+          pomodoro_work: customWork,
+          pomodoro_break: customBreak,
+          pomodoro_cycles: customCycles,
+        })
+        .eq("id", student.id);
+    }
+    setSavingConfig(false);
+    toast.success("Configuração salva como padrão!");
+  }
 
   // ── Timer ──
   const [phase, setPhase] = useState<Phase>("idle");
@@ -241,7 +647,8 @@ export default function PomodoroPage() {
     if (phaseStartedAt.current === null) {
       return Math.max(0, phaseDuration.current - pausedElapsed.current);
     }
-    const elapsed = pausedElapsed.current + (Date.now() - phaseStartedAt.current) / 1000;
+    const elapsed =
+      pausedElapsed.current + (Date.now() - phaseStartedAt.current) / 1000;
     return Math.max(0, phaseDuration.current - elapsed);
   }
 
@@ -266,7 +673,9 @@ export default function PomodoroPage() {
   // ── Document Picture-in-Picture ──
   const openPip = useCallback(async () => {
     if (!("documentPictureInPicture" in window)) {
-      toast.error("Seu navegador não suporta Picture-in-Picture de documentos.");
+      toast.error(
+        "Seu navegador não suporta Picture-in-Picture de documentos.",
+      );
       return;
     }
     try {
@@ -278,7 +687,8 @@ export default function PomodoroPage() {
 
       // Mount point — PiP uses inline styles only, no external CSS needed
       const container = pip.document.createElement("div");
-      container.style.cssText = "width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1E3A5F;";
+      container.style.cssText =
+        "width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1E3A5F;";
       pip.document.body.style.margin = "0";
       pip.document.body.appendChild(container);
       pipContainerRef.current = container;
@@ -293,21 +703,30 @@ export default function PomodoroPage() {
     } catch {
       // User dismissed the prompt — ignore
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Auto-start ──
   useEffect(() => {
     if (!nav?.autoStart && !nav?.planItemId) return;
+    const cfg = nav?.pomodoroConfig;
     const preset = nav?.planItemId
-      ? autoPreset(nav.durationMinutes ?? 25)
-      : ({
-          key: "classic",
-          name: "Clássico",
-          workMinutes: 20,
-          breakMinutes: 5,
-          totalCycles: 1,
-        } as CyclePreset);
+      ? autoPreset(nav.durationMinutes ?? cfg?.work ?? 25)
+      : cfg
+        ? ({
+            key: "saved",
+            name: "Padrão",
+            workMinutes: cfg.work,
+            breakMinutes: cfg.break,
+            totalCycles: cfg.cycles,
+          } as CyclePreset)
+        : ({
+            key: "classic",
+            name: "Clássico",
+            workMinutes: 25,
+            breakMinutes: 5,
+            totalCycles: 1,
+          } as CyclePreset);
     activeCycle.current = preset;
     startedAt.current = new Date().toISOString();
     workSecsAccum.current = 0;
@@ -397,7 +816,10 @@ export default function PomodoroPage() {
         .from("checklist_completions")
         .select("checklist_item_id")
         .eq("student_id", sid)
-        .gte("completed_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
+        .gte(
+          "completed_at",
+          new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
+        ),
     ]);
 
     if (piecesRes.error || exercisesRes.error) {
@@ -406,7 +828,7 @@ export default function PomodoroPage() {
     }
 
     const alreadyDone = new Set(
-      (completionsRes.data ?? []).map((c: any) => c.checklist_item_id)
+      (completionsRes.data ?? []).map((c: any) => c.checklist_item_id),
     );
     setCompletedIds(alreadyDone);
 
@@ -500,11 +922,13 @@ export default function PomodoroPage() {
 
     // ── Feedback imediato — não espera o banco ──
     const minutesXp = Math.floor(totalWorkSecs / 60);
-    const bonusXp   = completedCycles * 5;
-    const totalXp   = minutesXp + bonusXp;
+    const bonusXp = completedCycles * 5;
+    const totalXp = minutesXp + bonusXp;
     if (totalXp > 0) {
       sound.xpEarn();
-      toast.success(`+${totalXp} XP · ${bonusXp > 0 ? "Sessão concluída! (+5 bônus)" : "Sessão registrada"}`);
+      toast.success(
+        `+${totalXp} XP · ${bonusXp > 0 ? "Sessão concluída! (+5 bônus)" : "Sessão registrada"}`,
+      );
       fireBasic();
     }
 
@@ -517,24 +941,37 @@ export default function PomodoroPage() {
     // Tudo abaixo roda após o redirect, sem bloquear o usuário
     Promise.all([
       totalXp > 0
-        ? grantXp(sid, "pomodoro_session", sessionId, null, totalXp).then(({ newAchievements }) => {
-            for (const key of newAchievements) toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
-            if (hasRankUp(newAchievements)) fireStars();
-          })
+        ? grantXp(sid, "pomodoro_session", sessionId, null, totalXp).then(
+            ({ newAchievements }) => {
+              for (const key of newAchievements)
+                toast.success(`🏅 ${ACHIEVEMENT_LABEL[key] ?? key}`);
+              if (hasRankUp(newAchievements)) fireStars();
+            },
+          )
         : Promise.resolve(),
 
       completedIds.size > 0
-        ? supabase.from("checklist_completions")
+        ? supabase
+            .from("checklist_completions")
             .select("checklist_item_id")
             .eq("student_id", sid)
             .in("checklist_item_id", [...completedIds])
             .then(async ({ data: existing }) => {
-              const existingSet = new Set((existing ?? []).map((r: any) => r.checklist_item_id));
-              const toInsert = [...completedIds].filter((id) => !existingSet.has(id));
+              const existingSet = new Set(
+                (existing ?? []).map((r: any) => r.checklist_item_id),
+              );
+              const toInsert = [...completedIds].filter(
+                (id) => !existingSet.has(id),
+              );
               if (toInsert.length === 0) return;
 
               await supabase.from("checklist_completions").insert(
-                toInsert.map((id) => ({ checklist_item_id: id, student_id: sid, session_id: sessionId, completed_at: new Date().toISOString() }))
+                toInsert.map((id) => ({
+                  checklist_item_id: id,
+                  student_id: sid,
+                  session_id: sessionId,
+                  completed_at: new Date().toISOString(),
+                })),
               );
 
               // Check if any piece reached 100% and auto-complete it
@@ -544,36 +981,68 @@ export default function PomodoroPage() {
                 .in("id", toInsert)
                 .not("piece_id", "is", null);
 
-              const pieceIds = [...new Set((ciRows ?? []).map((r: any) => r.piece_id as string))];
-              await Promise.all(pieceIds.map(async (pid) => {
-                const { data: allItems } = await supabase
-                  .from("checklist_items").select("id, is_optional").eq("piece_id", pid);
-                const mandatory = (allItems ?? []).filter((i: any) => !i.is_optional);
-                if (mandatory.length === 0) return;
+              const pieceIds = [
+                ...new Set(
+                  (ciRows ?? []).map((r: any) => r.piece_id as string),
+                ),
+              ];
+              await Promise.all(
+                pieceIds.map(async (pid) => {
+                  const { data: allItems } = await supabase
+                    .from("checklist_items")
+                    .select("id, is_optional")
+                    .eq("piece_id", pid);
+                  const mandatory = (allItems ?? []).filter(
+                    (i: any) => !i.is_optional,
+                  );
+                  if (mandatory.length === 0) return;
 
-                const { data: doneRows } = await supabase
-                  .from("checklist_completions").select("checklist_item_id")
-                  .eq("student_id", sid).in("checklist_item_id", mandatory.map((i: any) => i.id));
-                const pct = Math.round(((doneRows ?? []).length / mandatory.length) * 100);
-                if (pct < 100) return;
+                  const { data: doneRows } = await supabase
+                    .from("checklist_completions")
+                    .select("checklist_item_id")
+                    .eq("student_id", sid)
+                    .in(
+                      "checklist_item_id",
+                      mandatory.map((i: any) => i.id),
+                    );
+                  const pct = Math.round(
+                    ((doneRows ?? []).length / mandatory.length) * 100,
+                  );
+                  if (pct < 100) return;
 
-                const [, { data: xpExisting }] = await Promise.all([
-                  supabase.from("pieces").update({ status: "completed" }).eq("id", pid),
-                  supabase.from("student_xp_events").select("id")
-                    .eq("student_id", sid).eq("reason", "piece_completed")
-                    .eq("source_id", pid).maybeSingle(),
-                ]);
-                if (!xpExisting) {
-                  toast.success("🎉 Peça concluída! +10 XP");
-                  await grantXp(sid, "piece_completed", pid, null, 10);
-                }
-              }));
+                  const [, { data: xpExisting }] = await Promise.all([
+                    supabase
+                      .from("pieces")
+                      .update({ status: "completed" })
+                      .eq("id", pid),
+                    supabase
+                      .from("student_xp_events")
+                      .select("id")
+                      .eq("student_id", sid)
+                      .eq("reason", "piece_completed")
+                      .eq("source_id", pid)
+                      .maybeSingle(),
+                  ]);
+                  if (!xpExisting) {
+                    toast.success("🎉 Peça concluída! +10 XP");
+                    await grantXp(sid, "piece_completed", pid, null, 10);
+                  }
+                }),
+              );
             })
         : Promise.resolve(),
 
-      linkSessionItems(sessionId, sid, checklistIds, nav?.planItemId ?? null, totalWorkSecs),
+      linkSessionItems(
+        sessionId,
+        sid,
+        checklistIds,
+        nav?.planItemId ?? null,
+        totalWorkSecs,
+      ),
     ]).catch(() => {
-      toast.error("Alguns dados da sessão não foram salvos. Verifique sua conexão.");
+      toast.error(
+        "Alguns dados da sessão não foram salvos. Verifique sua conexão.",
+      );
     });
   }
 
@@ -584,7 +1053,8 @@ export default function PomodoroPage() {
 
     if (phase === "work") {
       if (workPhaseStartedAt.current !== null) {
-        workSecsAccum.current += (Date.now() - workPhaseStartedAt.current) / 1000;
+        workSecsAccum.current +=
+          (Date.now() - workPhaseStartedAt.current) / 1000;
         workPhaseStartedAt.current = null;
       }
       if (currentCycle < c.totalCycles) {
@@ -627,90 +1097,100 @@ export default function PomodoroPage() {
   }
 
   if (phase === "idle") {
+    const skipSave = localStorage.getItem(SKIP_SAVE_KEY) === "true";
+
+    function handleStartClick() {
+      if (skipSave) {
+        startSession();
+      } else {
+        setShowSaveModal(true);
+      }
+    }
+
+    function handleModalSave(save: boolean) {
+      if (dontAskAgain) localStorage.setItem(SKIP_SAVE_KEY, "true");
+      setShowSaveModal(false);
+      if (save) handleSaveConfig();
+      startSession();
+    }
+
     return (
       <StudentLayout>
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-gray-400 hover:text-gray-600 transition"
-          >
-            <svg
-              width="20"
-              height="20"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-          <h1 className="text-xl font-bold text-[#1E3A5F] flex-1">Pomodoro</h1>
-        </div>
-
-        <div id="onboarding-pomodoro-cycles" className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-          {[
-            {
-              label: "Minutos de estudo",
-              value: customWork,
-              set: setCustomWork,
-              min: 1,
-              max: 120,
-            },
-            {
-              label: "Minutos de pausa",
-              value: customBreak,
-              set: setCustomBreak,
-              min: 1,
-              max: 60,
-            },
-            {
-              label: "Número de ciclos",
-              value: customCycles,
-              set: setCustomCycles,
-              min: 1,
-              max: 10,
-            },
-          ].map((f) => (
-            <div key={f.label} className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">{f.label}</span>
-              <div className="flex items-center gap-2">
+        {/* Modal de confirmação de salvar */}
+        {showSaveModal && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
+              <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Salvar configuração?</h2>
+              <p className="text-sm text-gray-400 mb-5">Quer salvar estes tempos como seu padrão para o início rápido?</p>
+              <div className="flex gap-2 mb-4">
                 <button
-                  onClick={() => f.set((v: number) => Math.max(f.min, v - 1))}
-                  className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:border-[#4A90C4] transition"
+                  onClick={() => handleModalSave(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition"
                 >
-                  −
+                  Não salvar
                 </button>
-                <span className="w-8 text-center text-sm font-semibold text-[#1E3A5F]">
-                  {f.value}
-                </span>
                 <button
-                  onClick={() => f.set((v: number) => Math.min(f.max, v + 1))}
-                  className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:border-[#4A90C4] transition"
+                  onClick={() => handleModalSave(true)}
+                  className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-sm font-medium text-white hover:bg-[#1E3A5F]/90 transition"
                 >
-                  +
+                  Salvar
                 </button>
               </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <div
+                  onClick={() => setDontAskAgain(v => !v)}
+                  className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    dontAskAgain ? "bg-[#1E3A5F] border-[#1E3A5F]" : "bg-white border-gray-300"
+                  }`}
+                >
+                  {dontAskAgain && (
+                    <svg width="9" height="7" viewBox="0 0 11 9" fill="none">
+                      <path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span className="text-xs text-gray-400">Não perguntar novamente</span>
+              </label>
             </div>
-          ))}
+          </div>
+        )}
+
+        {/* Arc sliders — estudo e pausa */}
+        <div
+          id="onboarding-pomodoro-cycles"
+          className="flex justify-center items-center gap-[14%] pt-4 mb-10 mx-auto w-full max-w-lg"
+        >
+          <ArcSlider value={customWork}  min={1} max={60} color="#1E3A5F" label="Estudo" onChange={setCustomWork} />
+          <ArcSlider value={customBreak} min={1} max={30} color="#374151" label="Pausa"  onChange={setCustomBreak} />
         </div>
 
-        <div className="flex gap-3 mt-4">
-          <Button
-            onClick={() => navigate(-1)}
-            variant="outline"
-            className="flex-1 h-12 rounded-2xl text-sm border-gray-200"
-          >
-            Voltar
-          </Button>
-          <Button
-            onClick={() => startSession()}
-            disabled={customWork < 1 || customBreak < 1 || customCycles < 1}
-            className="flex-1 h-12 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-2xl text-sm font-semibold"
-          >
-            Iniciar sessão
-          </Button>
+        {/* Cycle slider — container */}
+        <div className="mx-auto w-full max-w-lg bg-white rounded-2xl border border-gray-100 px-4 py-3 mb-2">
+          <p className="text-[10px] font-bold text-[#1E3A5F] uppercase tracking-widest mb-3 text-center">
+            Ciclos
+          </p>
+          <CycleSlider value={customCycles} onChange={(v) => setCustomCycles(Math.max(1, Math.min(4, v)))} />
         </div>
+
+        {/* Botão salvar configuração — secundário */}
+        <div className="mx-auto w-full max-w-lg mt-6">
+          <button
+            onClick={() => handleSaveConfig()}
+            disabled={savingConfig}
+            className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-500 hover:border-[#4A90C4] hover:text-[#1E3A5F] transition disabled:opacity-50"
+          >
+            {savingConfig ? "Salvando..." : "Salvar configuração"}
+          </button>
+        </div>
+
+        {/* Iniciar sessão */}
+        <Button
+          onClick={handleStartClick}
+          disabled={customWork < 1 || customBreak < 1 || customCycles < 1}
+          className="w-full mt-3 h-12 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-2xl text-sm font-semibold max-w-lg mx-auto block"
+        >
+          Iniciar sessão
+        </Button>
       </StudentLayout>
     );
   }
@@ -730,7 +1210,8 @@ export default function PomodoroPage() {
             >
               <p className="text-5xl mb-7">😢</p>
               <p className="text-xl font-bold text-gray-800 mb-3">
-                Faltam só {Math.ceil(timeLeft / 60)} {Math.ceil(timeLeft / 60) === 1 ? 'minuto' : 'minutos'}!
+                Faltam só {Math.ceil(timeLeft / 60)}{" "}
+                {Math.ceil(timeLeft / 60) === 1 ? "minuto" : "minutos"}!
               </p>
               <p className="text-base text-gray-500 mb-7">
                 Você ainda não completou o ciclo e por isso irá perder o XP
@@ -761,7 +1242,10 @@ export default function PomodoroPage() {
         )}
 
         {/* Cronômetro */}
-        <div id="onboarding-pomodoro-timer" className="flex flex-col items-center relative">
+        <div
+          id="onboarding-pomodoro-timer"
+          className="flex flex-col items-center relative"
+        >
           {/* PiP button — only show if API is available and PiP not already open */}
           {"documentPictureInPicture" in window && !pipWindowRef.current && (
             <button
@@ -851,12 +1335,14 @@ export default function PomodoroPage() {
                 if (pausing) {
                   // Freeze: save elapsed so far
                   if (phaseStartedAt.current !== null) {
-                    pausedElapsed.current += (Date.now() - phaseStartedAt.current) / 1000;
+                    pausedElapsed.current +=
+                      (Date.now() - phaseStartedAt.current) / 1000;
                     phaseStartedAt.current = null;
                   }
                   // Also accumulate work seconds if in work phase
                   if (phase === "work" && workPhaseStartedAt.current !== null) {
-                    workSecsAccum.current += (Date.now() - workPhaseStartedAt.current) / 1000;
+                    workSecsAccum.current +=
+                      (Date.now() - workPhaseStartedAt.current) / 1000;
                     workPhaseStartedAt.current = null;
                   }
                 } else {
@@ -898,32 +1384,61 @@ export default function PomodoroPage() {
             </div>
           ) : (
             dayGroups.length > 0 && (
-              <div id="onboarding-pomodoro-checklist" className="bg-white rounded-2xl border border-gray-100 p-4">
+              <div
+                id="onboarding-pomodoro-checklist"
+                className="bg-white rounded-2xl border border-gray-100 p-4"
+              >
                 <p className="text-sm font-semibold text-gray-600 mb-3">
                   Selecione os itens que você está trabalhando.
                 </p>
                 <div className="space-y-2">
                   {dayGroups.map((group) => {
                     const expanded = expandedGroups.has(group.sourceId);
-                    const groupChecked = group.items.every((ci) => workedIds.has(ci.id));
-                    const groupIndeterminate = !groupChecked && group.items.some((ci) => workedIds.has(ci.id));
+                    const groupChecked = group.items.every((ci) =>
+                      workedIds.has(ci.id),
+                    );
+                    const groupIndeterminate =
+                      !groupChecked &&
+                      group.items.some((ci) => workedIds.has(ci.id));
 
-
-
-                    const groupAllDone = group.items.every((ci) => completedIds.has(ci.id));
+                    const groupAllDone = group.items.every((ci) =>
+                      completedIds.has(ci.id),
+                    );
 
                     // Cicla: neutro → selecionado → concluído (todos) → neutro
                     // Banco só é tocado no saveSession ao finalizar
                     function cycleGroup() {
                       if (groupAllDone) {
-                        setCompletedIds((prev) => { const n = new Set(prev); group.items.forEach((ci) => n.delete(ci.id)); return n; });
-                        setWorkedIds((prev) => { const n = new Set(prev); group.items.forEach((ci) => n.delete(ci.id)); return n; });
+                        setCompletedIds((prev) => {
+                          const n = new Set(prev);
+                          group.items.forEach((ci) => n.delete(ci.id));
+                          return n;
+                        });
+                        setWorkedIds((prev) => {
+                          const n = new Set(prev);
+                          group.items.forEach((ci) => n.delete(ci.id));
+                          return n;
+                        });
                       } else if (groupChecked || groupIndeterminate) {
-                        const toAdd = group.items.filter((ci) => !completedIds.has(ci.id));
-                        setCompletedIds((prev) => { const n = new Set(prev); toAdd.forEach((ci) => n.add(ci.id)); return n; });
-                        setWorkedIds((prev) => { const n = new Set(prev); group.items.forEach((ci) => n.add(ci.id)); return n; });
+                        const toAdd = group.items.filter(
+                          (ci) => !completedIds.has(ci.id),
+                        );
+                        setCompletedIds((prev) => {
+                          const n = new Set(prev);
+                          toAdd.forEach((ci) => n.add(ci.id));
+                          return n;
+                        });
+                        setWorkedIds((prev) => {
+                          const n = new Set(prev);
+                          group.items.forEach((ci) => n.add(ci.id));
+                          return n;
+                        });
                       } else {
-                        setWorkedIds((prev) => { const n = new Set(prev); group.items.forEach((ci) => n.add(ci.id)); return n; });
+                        setWorkedIds((prev) => {
+                          const n = new Set(prev);
+                          group.items.forEach((ci) => n.add(ci.id));
+                          return n;
+                        });
                       }
                     }
 
@@ -945,22 +1460,42 @@ export default function PomodoroPage() {
                             }`}
                           >
                             {groupAllDone && (
-                              <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                              <svg
+                                width="9"
+                                height="9"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="white"
+                                strokeWidth={3}
+                              >
                                 <path d="M5 13l4 4L19 7" />
                               </svg>
                             )}
                           </button>
                           <button
-                            onClick={() => setExpandedGroups((prev) => {
-                              const next = new Set(prev);
-                              next.has(group.sourceId) ? next.delete(group.sourceId) : next.add(group.sourceId);
-                              return next;
-                            })}
+                            onClick={() =>
+                              setExpandedGroups((prev) => {
+                                const next = new Set(prev);
+                                next.has(group.sourceId)
+                                  ? next.delete(group.sourceId)
+                                  : next.add(group.sourceId);
+                                return next;
+                              })
+                            }
                             className="flex-1 flex items-center justify-between gap-2 text-left py-0.5"
                           >
-                            <span className="text-sm font-semibold text-gray-700 truncate">{group.sourceTitle}</span>
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}
-                              className={`shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`}>
+                            <span className="text-sm font-semibold text-gray-700 truncate">
+                              {group.sourceTitle}
+                            </span>
+                            <svg
+                              width="14"
+                              height="14"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="#9CA3AF"
+                              strokeWidth={2}
+                              className={`shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`}
+                            >
                               <path d="M9 18l6-6-6-6" />
                             </svg>
                           </button>
@@ -976,17 +1511,32 @@ export default function PomodoroPage() {
                               // Banco só é tocado no saveSession ao finalizar
                               function cycleItem() {
                                 if (done) {
-                                  setCompletedIds((prev) => { const n = new Set(prev); n.delete(ci.id); return n; });
-                                  setWorkedIds((prev) => { const n = new Set(prev); n.delete(ci.id); return n; });
+                                  setCompletedIds((prev) => {
+                                    const n = new Set(prev);
+                                    n.delete(ci.id);
+                                    return n;
+                                  });
+                                  setWorkedIds((prev) => {
+                                    const n = new Set(prev);
+                                    n.delete(ci.id);
+                                    return n;
+                                  });
                                 } else if (checked) {
-                                  setCompletedIds((prev) => new Set(prev).add(ci.id));
+                                  setCompletedIds((prev) =>
+                                    new Set(prev).add(ci.id),
+                                  );
                                 } else {
-                                  setWorkedIds((prev) => new Set(prev).add(ci.id));
+                                  setWorkedIds((prev) =>
+                                    new Set(prev).add(ci.id),
+                                  );
                                 }
                               }
 
                               return (
-                                <div key={ci.id} className="flex items-center gap-2">
+                                <div
+                                  key={ci.id}
+                                  className="flex items-center gap-2"
+                                >
                                   {/* Círculo 3 estados */}
                                   <button
                                     onClick={cycleItem}
@@ -999,7 +1549,14 @@ export default function PomodoroPage() {
                                     }`}
                                   >
                                     {done && (
-                                      <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                                      <svg
+                                        width="8"
+                                        height="8"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="white"
+                                        strokeWidth={3}
+                                      >
                                         <path d="M5 13l4 4L19 7" />
                                       </svg>
                                     )}
@@ -1071,29 +1628,45 @@ export default function PomodoroPage() {
         </div>
 
         {/* Document PiP portal */}
-        {pipContainerRef.current && ReactDOM.createPortal(
-          <div style={{ textAlign: "center", padding: "16px" }}>
-            <div style={{
-              fontSize: "11px", fontWeight: 600, marginBottom: "12px",
-              color: isWork ? "#D6E4F0" : "#4ADE80",
-              letterSpacing: "0.05em",
-            }}>
-              {isWork ? `Ciclo ${currentCycle}/${c?.totalCycles}` : "PAUSA"}
-            </div>
-            <div style={{
-              fontSize: "52px", fontWeight: 700, color: "#FFFFFF",
-              fontVariantNumeric: "tabular-nums", lineHeight: 1,
-            }}>
-              {fmt(timeLeft)}
-            </div>
-            {isPaused && (
-              <div style={{ fontSize: "11px", color: "#8BA9C4", marginTop: "10px" }}>
-                pausado
+        {pipContainerRef.current &&
+          ReactDOM.createPortal(
+            <div style={{ textAlign: "center", padding: "16px" }}>
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  marginBottom: "12px",
+                  color: isWork ? "#D6E4F0" : "#4ADE80",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                {isWork ? `Ciclo ${currentCycle}/${c?.totalCycles}` : "PAUSA"}
               </div>
-            )}
-          </div>,
-          pipContainerRef.current
-        )}
+              <div
+                style={{
+                  fontSize: "52px",
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  fontVariantNumeric: "tabular-nums",
+                  lineHeight: 1,
+                }}
+              >
+                {fmt(timeLeft)}
+              </div>
+              {isPaused && (
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#8BA9C4",
+                    marginTop: "10px",
+                  }}
+                >
+                  pausado
+                </div>
+              )}
+            </div>,
+            pipContainerRef.current,
+          )}
       </StudentLayout>
     );
   }

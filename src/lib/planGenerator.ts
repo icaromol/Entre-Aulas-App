@@ -153,20 +153,29 @@ function calcUrgencyBonus(deadline: string | null): number {
   return 0
 }
 
+// priorityOverride: 1–5 scale set by user (3 = neutral, 5 = max importance, 1 = min)
+// Acts as a multiplier on the base score: 1→0.4x, 2→0.7x, 3→1.0x, 4→1.3x, 5→1.6x
+function priorityMultiplier(override: number | null): number {
+  if (override === null) return 1.0
+  return 0.4 + (override - 1) * 0.3
+}
+
 function calcPieceScore(
   difficulty: number | null,
   completionPct: number,
   deadline: string | null,
   priorityOverride: number | null,
 ): number {
-  const diff = (priorityOverride !== null ? priorityOverride : (difficulty ?? 5)) / 10
+  const diff = (difficulty ?? 5) / 10
   const incompletion = 1 - completionPct / 100
-  return Math.min(1.5, 0.5 * diff + 0.5 * incompletion + calcUrgencyBonus(deadline))
+  const base = Math.min(1.5, 0.5 * diff + 0.5 * incompletion + calcUrgencyBonus(deadline))
+  return base * priorityMultiplier(priorityOverride)
 }
 
 function calcExerciseScore(difficulty: number | null, priorityOverride: number | null): number {
-  const diff = (priorityOverride !== null ? priorityOverride : (difficulty ?? 5)) / 10
-  return Math.min(1.0, 0.5 * diff + 0.5)
+  const diff = (difficulty ?? 5) / 10
+  const base = Math.min(1.0, 0.5 * diff + 0.5)
+  return base * priorityMultiplier(priorityOverride)
 }
 
 // Constrói fila com exatamente `budget` ocorrências, distribuídas proporcionalmente ao score.

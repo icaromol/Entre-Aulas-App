@@ -100,6 +100,7 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [studentId, setStudentId] = useState<string | null>(profile?.studentId ?? null);
+  const [pomodoroConfig, setPomodoroConfig] = useState<{ work: number; break: number; cycles: number } | null>(null);
   const [hasTeacher, setHasTeacher] = useState<boolean | null>(null);
   const [hasAnyPlan, setHasAnyPlan] = useState<boolean | null>(null);
   const [viewDay, setViewDay] = useState(getTodayDayOfWeek());
@@ -148,13 +149,20 @@ export default function TodayPage() {
 
     if (!studentId) {
       setStudentId(sid);
-      // Busca teacher_id para exibir mensagem correta no empty state
+      // Busca teacher_id e config de pomodoro
       const { data: student } = await supabase
         .from("students")
-        .select("teacher_id")
+        .select("teacher_id, pomodoro_work, pomodoro_break, pomodoro_cycles")
         .eq("id", sid)
         .single();
       setHasTeacher(!!student?.teacher_id);
+      if (student?.pomodoro_work && student?.pomodoro_break && student?.pomodoro_cycles) {
+        setPomodoroConfig({
+          work:   student.pomodoro_work,
+          break:  student.pomodoro_break,
+          cycles: student.pomodoro_cycles,
+        });
+      }
     }
 
     await fetchItems(sid);
@@ -686,9 +694,10 @@ export default function TodayPage() {
           navigate("/aluno/pomodoro", {
             state: {
               title: "Sessão de hoje",
-              durationMinutes: totalMinutes || 25,
+              durationMinutes: totalMinutes || pomodoroConfig?.work || 25,
               studentId,
               autoStart: true,
+              pomodoroConfig: pomodoroConfig ?? undefined,
             },
           })
         }
@@ -700,7 +709,11 @@ export default function TodayPage() {
         </div>
         <div className="text-left">
           <p className="text-base font-bold text-white">Início rápido</p>
-          <p className="text-xs text-white/60 mt-0.5">20 min · 5 min pausa</p>
+          <p className="text-xs text-white/60 mt-0.5">
+            {pomodoroConfig
+              ? `${pomodoroConfig.work} min · ${pomodoroConfig.break} min pausa`
+              : '25 min · 5 min pausa'}
+          </p>
         </div>
       </button>
 
@@ -710,7 +723,7 @@ export default function TodayPage() {
           onClick={() => navigate("/aluno/pomodoro", { state: { studentId } })}
           className="text-gray-400 hover:text-gray-600 text-xs"
         >
-          ou clique para uma sessão personalizada
+          ou configure sua sessão
         </Button>
       </div>
 
