@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/Spinner";
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { Button } from "@/components/ui/button";
+import { PillSlider } from "@/components/ui/PillSlider";
 import { grantXp, ACHIEVEMENT_LABEL } from "@/lib/xpHelpers";
 import { formatWeekStart, getMonday } from "@/lib/weekUtils";
 import { fireBasic, fireStars, hasRankUp } from "@/lib/confettiEffects";
@@ -221,178 +222,6 @@ function ArcSlider({
   );
 }
 
-// ─── Cycle Slider ─────────────────────────────────────────────────────────────
-// Visual idêntico às tabs do Repertório (bg-gray-100, pill branco, shadow-sm)
-// com indicator animado por spring elástica
-
-interface CycleSliderProps {
-  value: number;
-  onChange: (v: number) => void;
-}
-
-function CycleSlider({ value, onChange }: CycleSliderProps) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [trackWidth, setTrackWidth] = useState(0);
-  const [indicatorX, setIndicatorX] = useState(0);
-
-  const posRef = useRef(0);
-  const velRef = useRef(0);
-  const rafRef = useRef(0);
-
-  const isDragging = useRef(false);
-  const dragStartX = useRef(0);
-  const dragStartPx = useRef(0);
-
-  const STIFFNESS = 420;
-  const DAMPING = 0.65;
-  const PADDING = 4; // p-1 = 4px cada lado
-
-  // largura do indicator = 1/4 do track interno
-  function indicatorW(tw: number) {
-    return (tw - PADDING * 2) / 4;
-  }
-
-  // posição left do indicator para ciclo n
-  function targetX(v: number, tw: number) {
-    return PADDING + (v - 1) * indicatorW(tw);
-  }
-
-  function snapTo(px: number, tw: number) {
-    const iw = indicatorW(tw);
-    let best = 1,
-      bestDist = Infinity;
-    for (let n = 1; n <= 4; n++) {
-      const cx = PADDING + (n - 1) * iw + iw / 2;
-      const dist = Math.abs(px - cx);
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = n;
-      }
-    }
-    return best;
-  }
-
-  function springTo(target: number) {
-    cancelAnimationFrame(rafRef.current);
-    let lastTime = performance.now();
-    function step(now: number) {
-      const dt = Math.min((now - lastTime) / 1000, 0.05);
-      lastTime = now;
-      velRef.current += (target - posRef.current) * STIFFNESS * dt;
-      velRef.current *= Math.pow(DAMPING, dt * 60);
-      posRef.current += velRef.current * dt;
-      setIndicatorX(posRef.current);
-      if (
-        Math.abs(target - posRef.current) > 0.3 ||
-        Math.abs(velRef.current) > 0.3
-      ) {
-        rafRef.current = requestAnimationFrame(step);
-      } else {
-        posRef.current = target;
-        setIndicatorX(target);
-      }
-    }
-    rafRef.current = requestAnimationFrame(step);
-  }
-
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const w = entries[0].contentRect.width;
-      setTrackWidth(w);
-      const tx = targetX(value, w);
-      posRef.current = tx;
-      velRef.current = 0;
-      setIndicatorX(tx);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (trackWidth === 0 || isDragging.current) return;
-    springTo(targetX(value, trackWidth));
-  }, [value, trackWidth]);
-
-  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    isDragging.current = true;
-    dragStartX.current = e.clientX;
-    dragStartPx.current = posRef.current;
-    cancelAnimationFrame(rafRef.current);
-    velRef.current = 0;
-  }
-
-  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!isDragging.current || trackWidth === 0) return;
-    const iw = indicatorW(trackWidth);
-    const delta = e.clientX - dragStartX.current;
-    const newPx = Math.max(
-      PADDING,
-      Math.min(PADDING + 3 * iw, dragStartPx.current + delta),
-    );
-    posRef.current = newPx;
-    setIndicatorX(newPx);
-  }
-
-  function handlePointerUp() {
-    if (!isDragging.current) return;
-    isDragging.current = false;
-    const iw = indicatorW(trackWidth);
-    const centerX = posRef.current + iw / 2;
-    const snapped = snapTo(centerX, trackWidth);
-    onChange(snapped);
-    springTo(targetX(snapped, trackWidth));
-  }
-
-  function handleTrackClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (isDragging.current) return;
-    const rect = trackRef.current!.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const snapped = snapTo(x, trackWidth);
-    onChange(snapped);
-  }
-
-  const iw = trackWidth > 0 ? indicatorW(trackWidth) : 0;
-
-  return (
-    <div
-      ref={trackRef}
-      onClick={handleTrackClick}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      className="relative flex bg-gray-100 rounded-xl p-1 cursor-grab active:cursor-grabbing select-none"
-      style={{ touchAction: "none" }}
-    >
-      {/* Indicator branco animado — idêntico ao tab ativo do Repertório */}
-      {iw > 0 && (
-        <div
-          className="absolute top-1 bottom-1 rounded-lg bg-white z-0"
-          style={{
-            left: indicatorX,
-            width: iw,
-            willChange: "left",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
-          }}
-        />
-      )}
-      {/* Labels — z-10, sobre o indicator */}
-      {[1, 2, 3, 4].map((n) => (
-        <div
-          key={n}
-          className={`relative z-10 flex-1 py-2 text-center text-xs font-semibold transition-colors duration-150 pointer-events-none ${
-            value === n ? "text-[#1E3A5F]" : "text-gray-500"
-          }`}
-        >
-          {n}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function fmt(s: number) {
   const t = Math.floor(s);
@@ -1169,7 +998,7 @@ export default function PomodoroPage() {
           <p className="text-[10px] font-bold text-[#1E3A5F] uppercase tracking-widest mb-3 text-center">
             Ciclos
           </p>
-          <CycleSlider value={customCycles} onChange={(v) => setCustomCycles(Math.max(1, Math.min(4, v)))} />
+          <PillSlider value={customCycles} min={1} max={4} onChange={(v) => setCustomCycles(v)} />
         </div>
 
         {/* Botão salvar configuração — secundário */}

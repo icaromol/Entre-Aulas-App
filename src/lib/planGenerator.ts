@@ -38,6 +38,7 @@ export interface ResolvedProgram {
   type: string
   deadline: string | null
   weight: number             // 1–100; soma dos selecionados = 100
+  priority: number | null    // 1–5; importância do objetivo; null = neutro (3)
   pieces: ProgramPiece[]
   exercises: ProgramExercise[]
 }
@@ -235,7 +236,7 @@ export function generatePlan(input: GeneratorInput): GeneratedPlan {
   const exerciseMap = new Map<string, ScoredTask>()
 
   for (const prog of input.programs) {
-    const progWeight = prog.weight / 100
+    const progWeight = (prog.weight / 100) * priorityMultiplier(prog.priority ?? null)
 
     for (const p of prog.pieces) {
       if (p.status === 'completed') continue   // tratado em manutenção

@@ -269,7 +269,7 @@ export default function PlanejamentoPage() {
           }
         }
 
-        return { id: prog.id, title: prog.title, type: prog.type, deadline: prog.deadline, weight: weights[prog.id] ?? 0, pieces, exercises }
+        return { id: prog.id, title: prog.title, type: prog.type, deadline: prog.deadline, weight: weights[prog.id] ?? 0, priority: (prog as unknown as { priority: number | null }).priority ?? null, pieces, exercises }
       })
 
       // Peças concluídas para manutenção

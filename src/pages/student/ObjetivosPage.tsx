@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MdClose, MdFlag, MdMusicNote, MdNotes, MdSchool, MdStar, MdFiberManualRecord, MdAssignment, MdFolder } from 'react-icons/md'
+import { MdClose, MdFlag, MdMusicNote, MdNotes, MdSchool } from 'react-icons/md'
+import { PillSlider } from '@/components/ui/PillSlider'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -14,12 +15,11 @@ const OBJETIVO_CARDS: {
   value: ProgramaType
   label: string
   description: string
-  Icon: React.ComponentType<{ size?: number; className?: string }>
 }[] = [
-  { value: 'recital',  label: 'Apresentação', description: 'Recital, concerto, show ou performance', Icon: MdStar },
-  { value: 'gravacao', label: 'Gravação',      description: 'Estúdio ou gravação',                   Icon: MdFiberManualRecord },
-  { value: 'exame',    label: 'Exame',         description: 'Banca, prova ou avaliação técnica',     Icon: MdAssignment },
-  { value: 'outro',    label: 'Outro',         description: 'Objetivo personalizado',                Icon: MdFolder },
+  { value: 'recital',  label: 'Apresentação', description: 'Recital, concerto, show ou performance' },
+  { value: 'gravacao', label: 'Gravação',      description: 'Estúdio ou gravação'                   },
+  { value: 'exame',    label: 'Exame',         description: 'Banca, prova ou avaliação técnica'     },
+  { value: 'outro',    label: 'Outro',         description: 'Objetivo personalizado'                },
 ]
 
 const exerciseCategoryLabel: Record<string, string> = {
@@ -38,7 +38,7 @@ function daysUntil(date: string) {
 }
 
 interface Objetivo {
-  id: string; title: string; type: string; status: string; deadline: string | null
+  id: string; title: string; type: string; status: string; deadline: string | null; priority: number | null
 }
 
 export default function ObjetivosPage() {
@@ -50,6 +50,8 @@ export default function ObjetivosPage() {
   const [objetivos, setObjetivos] = useState<Objetivo[]>([])
   const [studentId, setStudentId]   = useState<string | null>(null)
   const [loading, setLoading]       = useState(true)
+  const [priorities, setPriorities] = useState<Record<string, number>>({})
+  const [savingPriorities, setSavingPriorities] = useState(false)
 
   // Modal de novo objetivo
   const [newType, setNewType]             = useState<ProgramaType | null>(null)
@@ -87,13 +89,26 @@ export default function ObjetivosPage() {
 
     const { data } = await supabase
       .from('programas')
-      .select('id, title, type, status, deadline')
+      .select('id, title, type, status, deadline, priority')
       .eq('student_id', student.id)
       .neq('type', 'regular')
       .neq('status', 'archived')
       .order('title')
-    setObjetivos(data ?? [])
+    const list = data ?? []
+    setObjetivos(list)
+    setPriorities(Object.fromEntries(list.map(o => [o.id, o.priority ?? 3])))
     setLoading(false)
+  }
+
+  async function savePriorities() {
+    setSavingPriorities(true)
+    await Promise.all(
+      objetivos.map(o =>
+        supabase.from('programas').update({ priority: priorities[o.id] ?? 3 }).eq('id', o.id)
+      )
+    )
+    setSavingPriorities(false)
+    toast.success('Prioridades salvas!')
   }
 
   function openModal(type: ProgramaType) {
@@ -174,17 +189,24 @@ export default function ObjetivosPage() {
           const days = obj.deadline ? daysUntil(obj.deadline) : null
           const ObjIcon = (PROGRAM_TYPES[obj.type] ?? PROGRAM_TYPES.outro).Icon
           return (
-            <button key={obj.id} onClick={() => navigate(`/aluno/repertorio/programas/${obj.id}`)}
-              className="w-full bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4]/40 transition text-left">
-              <div className="w-9 h-9 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+            <div key={obj.id}
+              className="w-full bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center gap-3 hover:border-[#4A90C4]/40 transition">
+              {/* Ícone — sempre visível */}
+              <div
+                className="w-9 h-9 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0 cursor-pointer"
+                onClick={() => navigate(`/aluno/repertorio/programas/${obj.id}`)}>
                 <ObjIcon size={18} color="white" />
               </div>
-              <div className="flex-1 min-w-0">
+
+              {/* Título + subtítulo — oculto em telas pequenas */}
+              <div className="hidden sm:flex flex-col min-w-0 cursor-pointer" onClick={() => navigate(`/aluno/repertorio/programas/${obj.id}`)}>
                 <p className="text-sm font-semibold text-gray-800 truncate">{obj.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{typeLabel[obj.type] ?? obj.type}</p>
+                <p className="text-xs text-gray-400">{typeLabel[obj.type] ?? obj.type}</p>
               </div>
+
+              {/* Badge de prazo — oculto em telas pequenas */}
               {days !== null && (
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                <span className={`hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
                   days < 0  ? 'bg-gray-100 text-gray-400' :
                   days < 14 ? 'bg-red-50 text-red-500' :
                   days < 30 ? 'bg-amber-50 text-amber-600' :
@@ -193,12 +215,29 @@ export default function ObjetivosPage() {
                   {days < 0 ? 'passou' : days === 0 ? 'hoje' : `${days}d`}
                 </span>
               )}
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-            </button>
+
+              {/* Slider — flex-1, ao lado direito */}
+              <div className="flex-1" onClick={e => e.stopPropagation()}>
+                <PillSlider
+                  value={priorities[obj.id] ?? 3}
+                  min={1}
+                  max={5}
+                  onChange={v => setPriorities(prev => ({ ...prev, [obj.id]: v }))}
+                />
+              </div>
+            </div>
           )
         })}
+
+        {/* Botão salvar prioridades */}
+        {objetivos.length > 0 && (
+          <button
+            onClick={savePriorities}
+            disabled={savingPriorities}
+            className="w-full flex items-center justify-center gap-2 bg-[#1E3A5F] hover:bg-[#163050] text-white text-sm font-semibold py-3 rounded-xl transition disabled:opacity-60">
+            {savingPriorities ? 'Salvando…' : 'Salvar objetivos'}
+          </button>
+        )}
 
         {/* Separador */}
         <div className="flex items-center gap-3 pt-6 pb-2">
@@ -212,7 +251,7 @@ export default function ObjetivosPage() {
         {/* Cards modernos com dots */}
         <div className="grid grid-cols-2 gap-4 pt-2 pb-6">
           {OBJETIVO_CARDS.map((card) => {
-            const Icon = card.Icon
+            const Icon = PROGRAM_TYPES[card.value].Icon
             return (
               <button
                 key={card.value}

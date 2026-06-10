@@ -55,7 +55,7 @@ export async function autoGeneratePlan(
     // 3. Programas ativos
     const { data: progsData } = await supabase
       .from('programas')
-      .select('id, title, type, deadline')
+      .select('id, title, type, deadline, priority')
       .eq('student_id', studentId)
       .neq('status', 'archived')
 
@@ -123,7 +123,7 @@ export async function autoGeneratePlan(
         }
       }
 
-      return { id: prog.id, title: prog.title, type: prog.type, deadline: prog.deadline, weight: weights[idx], pieces, exercises }
+      return { id: prog.id, title: prog.title, type: prog.type, deadline: prog.deadline, weight: weights[idx], priority: prog.priority ?? null, pieces, exercises }
     })
 
     const completedPieces: MaintenancePiece[] = (allPieces ?? [])

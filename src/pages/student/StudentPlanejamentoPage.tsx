@@ -170,7 +170,7 @@ export default function StudentPlanejamentoPage() {
             exercises.push({ exerciseId: e.id, exerciseTitle: e.title, difficulty: e.difficulty, category: e.category, priorityOverride: pe.priority_override })
           }
         }
-        return { id: prog.id, title: prog.title, type: prog.type, deadline: prog.deadline, weight: weights[prog.id] ?? 0, pieces, exercises }
+        return { id: prog.id, title: prog.title, type: prog.type, deadline: prog.deadline, weight: weights[prog.id] ?? 0, priority: (prog as unknown as { priority: number | null }).priority ?? null, pieces, exercises }
       })
 
       const completedPieces = (allPieces ?? [])

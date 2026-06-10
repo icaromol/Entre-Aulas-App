@@ -14,6 +14,7 @@ export interface Programa {
   venue: string | null
   status: ProgramaStatus
   notes: string | null
+  priority: number | null
   created_at: string
 }
 
