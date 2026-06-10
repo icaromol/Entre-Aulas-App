@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
+import { autoGeneratePlan } from '@/lib/autoplan'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 import { grantXp, ACHIEVEMENT_LABEL } from '@/lib/xpHelpers'
@@ -198,6 +199,7 @@ export default function StudentPieceDetailPage() {
     if (pct === 100 && !item.completed) {
       await supabase.from('pieces').update({ status: 'completed' }).eq('id', pieceId!)
       setPiece(prev => prev ? { ...prev, status: 'completed' } : prev)
+      if (studentId) autoGeneratePlan(studentId)
 
       const { data: xpExisting } = await supabase
         .from('student_xp_events').select('id')
@@ -216,6 +218,7 @@ export default function StudentPieceDetailPage() {
     } else if (pct < 100 && piece?.status === 'completed') {
       await supabase.from('pieces').update({ status: 'in_progress' }).eq('id', pieceId!)
       setPiece(prev => prev ? { ...prev, status: 'in_progress' } : prev)
+      if (studentId) autoGeneratePlan(studentId)
     }
   }
 
@@ -249,12 +252,14 @@ export default function StudentPieceDetailPage() {
     await supabase.from('pieces').update({ status: newStatus }).eq('id', pieceId!)
     setPiece(prev => prev ? { ...prev, status: newStatus } : prev)
     setSavingStatus(false); toast.success('Status atualizado')
+    if (studentId) autoGeneratePlan(studentId)
   }
 
   async function deletePiece() {
     if (!confirm('Excluir esta peça? Esta ação não pode ser desfeita.')) return
     await supabase.from('pieces').delete().eq('id', pieceId!)
     toast.success('Peça excluída')
+    if (studentId) autoGeneratePlan(studentId)
     navigate('/aluno/repertorio?tab=pieces')
   }
 

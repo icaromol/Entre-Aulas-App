@@ -648,7 +648,7 @@ export default function PomodoroPage() {
           <h1 className="text-xl font-bold text-[#1E3A5F] flex-1">Pomodoro</h1>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+        <div id="onboarding-pomodoro-cycles" className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
           {[
             {
               label: "Minutos de estudo",
@@ -761,7 +761,7 @@ export default function PomodoroPage() {
         )}
 
         {/* Cronômetro */}
-        <div className="flex flex-col items-center relative">
+        <div id="onboarding-pomodoro-timer" className="flex flex-col items-center relative">
           {/* PiP button — only show if API is available and PiP not already open */}
           {"documentPictureInPicture" in window && !pipWindowRef.current && (
             <button
@@ -898,7 +898,7 @@ export default function PomodoroPage() {
             </div>
           ) : (
             dayGroups.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 p-4">
+              <div id="onboarding-pomodoro-checklist" className="bg-white rounded-2xl border border-gray-100 p-4">
                 <p className="text-sm font-semibold text-gray-600 mb-3">
                   Selecione os itens que você está trabalhando.
                 </p>

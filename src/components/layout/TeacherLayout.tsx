@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { MdMenu, MdEdit, MdLogout, MdEmojiEvents, MdChevronRight, MdSwapHoriz } from 'react-icons/md'
+import { OnboardingController } from '@/components/onboarding/OnboardingController'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
 
@@ -72,6 +73,8 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+
+      <OnboardingController role="teacher" />
 
       {/* Modal logout */}
       {showLogout && (

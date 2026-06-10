@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
+import { autoGeneratePlan } from '@/lib/autoplan'
 
 interface Exercise {
   id: string; title: string; category: string; objective: string | null
@@ -98,6 +99,7 @@ export default function StudentExerciseDetailPage() {
     await supabase.from('exercises').update({ status: newStatus }).eq('id', exerciseId!)
     setExercise(prev => prev ? { ...prev, status: newStatus } : prev)
     setSavingStatus(false); toast.success('Status atualizado')
+    if (studentId) autoGeneratePlan(studentId)
   }
 
   async function deleteItem(itemId: string) {
@@ -109,6 +111,7 @@ export default function StudentExerciseDetailPage() {
     if (!confirm('Excluir este exercício? Esta ação não pode ser desfeita.')) return
     await supabase.from('exercises').delete().eq('id', exerciseId!)
     toast.success('Exercício excluído')
+    if (studentId) autoGeneratePlan(studentId)
     navigate('/aluno/repertorio?tab=exercises')
   }
 

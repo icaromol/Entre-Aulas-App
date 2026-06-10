@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 import { DEFAULT_CHECKLIST } from '@/lib/defaultChecklist'
+import { autoGeneratePlan } from '@/lib/autoplan'
 import { ChecklistEditor, type ChecklistEditorItem } from '@/components/checklist/ChecklistEditor'
 
 const PERIODS = [
@@ -95,6 +96,8 @@ export default function StudentNewPiecePage() {
           position: idx, is_default: false, is_optional: item.is_optional,
         }))
       )
+
+      if (studentId && !keepCreating) autoGeneratePlan(studentId)
 
       if (keepCreating) {
         resetForm()

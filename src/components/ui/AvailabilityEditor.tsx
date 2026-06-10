@@ -27,10 +27,12 @@ interface Props {
   studentId: string
   onSaved?: (hasAny: boolean) => void
   onLoaded?: (hasAny: boolean) => void
+  alwaysExpanded?: boolean
 }
 
-export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
+export function AvailabilityEditor({ studentId, onSaved, onLoaded, alwaysExpanded }: Props) {
   const [availability, setAvailability] = useState<DayAvail[]>(defaultAvail())
+  const [savedAvailability, setSavedAvailability] = useState<DayAvail[] | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -41,14 +43,17 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
       .select('*')
       .eq('student_id', studentId)
       .order('day_of_week')
-    const loaded = data && data.length > 0
-      ? DAYS.map((_, i) => {
+    // null no banco = nunca configurado
+    const isFirstTime = !data || data.length === 0
+    const loaded = isFirstTime
+      ? defaultAvail()
+      : DAYS.map((_, i) => {
           const found = data.find((d: { day_of_week: number }) => d.day_of_week === i)
           return { day: i, active: found?.is_active ?? false, minutes: found?.minutes_available ?? 30 }
         })
-      : defaultAvail()
     const hasAny = loaded.some(d => d.active)
     setAvailability(loaded)
+    setSavedAvailability(isFirstTime ? null : loaded)
     if (!hasAny) setExpanded(true)
     setLoaded(true)
     onLoaded?.(hasAny)
@@ -57,6 +62,11 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
   useEffect(() => { load() }, [load])
 
   const hasAny = availability.some(d => d.active)
+
+  const isDirty = savedAvailability === null || availability.some((day, i) => {
+    const saved = savedAvailability[i]
+    return day.active !== saved.active || (day.active && day.minutes !== saved.minutes)
+  })
 
   function toggleDay(day: number) {
     setAvailability(prev => prev.map(d => d.day === day ? { ...d, active: !d.active } : d))
@@ -89,6 +99,7 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
       return
     }
     toast.success('Disponibilidade salva!')
+    setSavedAvailability([...availability])
     setExpanded(false)
     onSaved?.(availability.some(d => d.active))
     setSaving(false)
@@ -96,27 +107,31 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
 
   if (!loaded) return null
 
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600">
-          <MdAccessTime size={15} /> Dias disponíveis
-        </h2>
-        {hasAny && !expanded && (
-          <button
-            type="button"
-            onClick={() => setExpanded(true)}
-            className="flex items-center gap-1 text-xs text-[#4A90C4] hover:text-[#1E3A5F] transition"
-          >
-            <MdEdit size={13} /> Editar
-          </button>
-        )}
-        {hasAny && !expanded && (
-          <MdCheckCircle size={18} className="text-green-500 ml-auto" />
-        )}
-      </div>
+  const showForm = alwaysExpanded || expanded
 
-      {expanded && (
+  return (
+    <div className={`space-y-3 ${alwaysExpanded ? '' : 'bg-white rounded-2xl border border-gray-100 p-5'}`}>
+      {!alwaysExpanded && (
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600">
+            <MdAccessTime size={15} /> Dias disponíveis
+          </h2>
+          {hasAny && !expanded && (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="flex items-center gap-1 text-xs text-[#4A90C4] hover:text-[#1E3A5F] transition"
+            >
+              <MdEdit size={13} /> Editar
+            </button>
+          )}
+          {hasAny && !expanded && (
+            <MdCheckCircle size={18} className="text-green-500 ml-auto" />
+          )}
+        </div>
+      )}
+
+      {showForm && (
         <div className="space-y-3">
           <div className="space-y-2">
             {availability.map(day => (
@@ -148,14 +163,16 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded }: Props) {
               </div>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full py-2 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-60"
-          >
-            {saving ? 'Salvando...' : 'Salvar dias'}
-          </button>
+          {isDirty && (
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full py-2 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-60"
+            >
+              {saving ? 'Salvando...' : 'Salvar dias'}
+            </button>
+          )}
         </div>
       )}
     </div>

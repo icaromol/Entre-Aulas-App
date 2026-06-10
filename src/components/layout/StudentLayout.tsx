@@ -7,7 +7,10 @@ import { supabase } from '@/lib/supabase'
 import {
   MdCalendarToday, MdLibraryMusic, MdHistory, MdStars, MdEventNote,
   MdMenu, MdClose, MdEdit, MdSchool, MdLogout, MdChevronRight, MdSwapHoriz,
+  MdAccessTime,
 } from 'react-icons/md'
+import { OnboardingController } from '@/components/onboarding/OnboardingController'
+import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
 
@@ -27,13 +30,14 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const [showMenu, setShowMenu]         = useState(false)
-  const [showLogout, setShowLogout]     = useState(false)
-  const [showEdit, setShowEdit]         = useState(false)
-  const [editFirst, setEditFirst]       = useState('')
-  const [editLast, setEditLast]         = useState('')
-  const [saving, setSaving]             = useState(false)
-  const [nameOverride, setNameOverride] = useState<{ first: string; last: string } | null>(null)
+  const [showMenu, setShowMenu]               = useState(false)
+  const [showLogout, setShowLogout]           = useState(false)
+  const [showEdit, setShowEdit]               = useState(false)
+  const [showAvailability, setShowAvailability] = useState(false)
+  const [editFirst, setEditFirst]             = useState('')
+  const [editLast, setEditLast]               = useState('')
+  const [saving, setSaving]                   = useState(false)
+  const [nameOverride, setNameOverride]       = useState<{ first: string; last: string } | null>(null)
 
 
   function openEdit() {
@@ -75,6 +79,8 @@ export function StudentLayout({ children }: StudentLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
+
+      <OnboardingController role="student" />
 
       {/* Overlay do menu */}
       {showMenu && (
@@ -141,6 +147,16 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               <MdChevronRight size={18} className="text-gray-300" />
             </button>
           )}
+
+          {/* Dias disponíveis */}
+          <button
+            onClick={() => { setShowMenu(false); setShowAvailability(true) }}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
+          >
+            <MdAccessTime size={20} className="text-[#4A90C4] shrink-0" />
+            <span className="text-sm font-medium text-gray-700 flex-1">Dias disponíveis</span>
+            <MdChevronRight size={18} className="text-gray-300" />
+          </button>
 
           {/* Histórico */}
           <button
@@ -223,6 +239,30 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               >
                 {saving ? 'Salvando...' : 'Salvar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal disponibilidade */}
+      {showAvailability && profile?.studentId && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
+          <div className="bg-white rounded-t-2xl w-full max-w-lg shadow-xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
+              <h2 className="text-base font-bold text-[#1E3A5F]">Dias disponíveis</h2>
+              <button
+                onClick={() => setShowAvailability(false)}
+                className="text-gray-400 hover:text-gray-600 transition"
+              >
+                <MdClose size={22} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <AvailabilityEditor
+                studentId={profile.studentId}
+                onSaved={() => setShowAvailability(false)}
+                alwaysExpanded
+              />
             </div>
           </div>
         </div>

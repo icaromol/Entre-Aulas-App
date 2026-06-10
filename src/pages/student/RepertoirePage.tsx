@@ -171,7 +171,7 @@ export default function RepertoirePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
+      <div id="onboarding-repertoire-tabs" className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
         {([
           { key: 'pieces' as TabKey,    label: `Peças (${pieces.length})` },
           { key: 'exercises' as TabKey, label: `Exercícios (${exercises.length})` },
@@ -208,7 +208,7 @@ export default function RepertoirePage() {
               }, {})
 
               return (
-                <div key={piece.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div key={piece.id} id={piece === pieces[0] ? 'onboarding-repertoire-piece' : undefined} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                   <div className="flex items-center gap-4 px-5 py-4">
                     <button onClick={() => navigate(`/aluno/repertorio/pecas/${piece.id}`)}
                       className="relative w-10 h-10 shrink-0">

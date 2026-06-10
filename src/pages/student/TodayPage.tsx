@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { autoGeneratePlan } from "@/lib/autoplan";
 import {
   MdChevronLeft,
   MdChevronRight,
@@ -175,7 +176,14 @@ export default function TodayPage() {
     }
 
     if (!plan) {
-      // Verifica se há algum plano em qualquer semana
+      // Tenta gerar automaticamente o plano da semana
+      const result = await autoGeneratePlan(sid)
+      if (result.ok) {
+        // Re-fetch agora que o plano existe
+        await fetchItems(sid)
+        return
+      }
+      // Sem disponibilidade ou sem programas — mostra empty state normal
       const { count } = await supabase
         .from("weekly_plans")
         .select("id", { count: "exact", head: true })
@@ -416,7 +424,7 @@ export default function TodayPage() {
   return (
     <StudentLayout>
       {/* Header com navegação de dias */}
-      <div className="flex items-center justify-between mb-8 mt-4">
+      <div id="onboarding-today-nav" className="flex items-center justify-between mb-8 mt-4">
         <button
           onClick={() => setViewDay((d) => (d + 6) % 7)}
           className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
@@ -507,8 +515,8 @@ export default function TodayPage() {
           )}
         </div>
       ) : (
-        <div className="space-y-3">
-          {items.map((item) => {
+        <div id="onboarding-today-tasks" className="space-y-3">
+          {items.map((item, itemIdx) => {
             const { title, subtitle, maintenanceIcon } = itemDisplay(item);
 
             const itemPct = item.duration_minutes
@@ -533,6 +541,7 @@ export default function TodayPage() {
                 <div className="relative z-10 px-4 py-3 flex items-center gap-3">
                   {/* Checkbox */}
                   <button
+                    id={itemIdx === 0 ? 'onboarding-today-checkbox' : undefined}
                     onClick={() => handleItemClick(item)}
                     className="hover:opacity-80 transition shrink-0"
                   >
@@ -683,6 +692,7 @@ export default function TodayPage() {
             },
           })
         }
+        id="onboarding-today-start-btn"
         className="mt-5 w-full bg-[#1E3A5F] rounded-2xl px-5 py-5 flex items-center justify-center gap-4 hover:bg-[#1E3A5F]/90 transition cursor-pointer"
       >
         <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">

@@ -386,7 +386,7 @@ export default function StudentsPage() {
               </Link>
             </div>
           ) : students.length > 0 ? (
-            <div>
+            <div id="onboarding-teacher-students">
               {pending.length > 0 && (
                 <p className="text-sm font-semibold text-gray-500 mb-3">Ativos</p>
               )}

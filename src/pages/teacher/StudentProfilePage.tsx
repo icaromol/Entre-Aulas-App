@@ -751,7 +751,7 @@ export default function StudentProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
+      <div id="onboarding-teacher-tabs" className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
         {(
           [
             { key: "plans", label: "Planejamentos", Icon: MdCalendarMonth },
@@ -810,6 +810,7 @@ export default function StudentProfilePage() {
 
               {/* Botão gerar */}
               <button
+                id="onboarding-teacher-plan-btn"
                 onClick={() =>
                   navigate(`/professor/alunos/${studentId}/planejamento`)
                 }
@@ -1221,7 +1222,7 @@ export default function StudentProfilePage() {
 
       {/* Tab: Programas */}
       {activeTab === "programs" && (
-        <div className="space-y-3">
+        <div id="onboarding-teacher-programs" className="space-y-3">
           {programas.length === 0 ? (
             <EmptyState
               title="Nenhum programa ainda"

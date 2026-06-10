@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { Spinner } from '@/components/ui/Spinner'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { NextStepProvider } from 'nextstepjs'
+import { OnboardingTourProvider } from '@/components/onboarding/OnboardingTourProvider'
 
 const NotFoundPage           = lazy(() => import('@/pages/NotFoundPage'))
 const LoginPage              = lazy(() => import('@/pages/auth/LoginPage'))
@@ -53,10 +55,9 @@ function PageSpinner() {
   )
 }
 
-export function Router() {
+function AppRoutes() {
   return (
-    <BrowserRouter>
-      <ErrorBoundary>
+    <OnboardingTourProvider>
       <Suspense fallback={<PageSpinner />}>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -109,7 +110,18 @@ export function Router() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
-      </ErrorBoundary>
+    </OnboardingTourProvider>
+  )
+}
+
+export function Router() {
+  return (
+    <BrowserRouter>
+      <NextStepProvider>
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
+      </NextStepProvider>
     </BrowserRouter>
   )
 }

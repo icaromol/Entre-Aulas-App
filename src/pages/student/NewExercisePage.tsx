@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 import { ChecklistEditor, type ChecklistEditorItem } from '@/components/checklist/ChecklistEditor'
+import { autoGeneratePlan } from '@/lib/autoplan'
 
 const CATEGORIES = [
   { value: 'technique',      label: 'Técnica' },
@@ -80,6 +81,8 @@ export default function StudentNewExercisePage() {
           position: idx, is_default: false, is_optional: item.is_optional,
         }))
       )
+
+      if (studentId && !keepCreating) autoGeneratePlan(studentId)
 
       if (keepCreating) {
         resetForm()
