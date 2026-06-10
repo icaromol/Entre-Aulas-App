@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdTaskAlt, MdInfoOutline, MdEdit, MdDeleteOutline } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
+import { autoGeneratePlan } from '@/lib/autoplan'
 import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -149,6 +150,7 @@ export default function PieceDetailPage() {
     setPiece(prev => prev ? { ...prev, status: newStatus } : prev)
     setSavingStatus(false)
     toast.success('Status atualizado')
+    autoGeneratePlan(studentId!)
   }
 
   async function deleteItem(itemId: string) {
@@ -159,6 +161,7 @@ export default function PieceDetailPage() {
   async function deletePiece() {
     if (!confirm('Excluir esta peça? Esta ação não pode ser desfeita.')) return
     await supabase.from('pieces').delete().eq('id', pieceId!)
+    autoGeneratePlan(studentId!)
     toast.success('Peça excluída')
     navigate(`/professor/alunos/${studentId}?tab=repertoire`)
   }

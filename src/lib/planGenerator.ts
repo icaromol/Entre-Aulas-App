@@ -151,12 +151,6 @@ function calcUrgency(deadline: string | null): number {
   return 0.05
 }
 
-// Importância da meta: 1–5 → multiplicador 0.4x–1.6x (3 = neutro)
-function priorityMultiplier(override: number | null): number {
-  if (override === null) return 1.0
-  return 0.4 + (override - 1) * 0.3
-}
-
 // Score de peça: 50% trabalho restante + 30% urgência de prazo
 // O peso da meta (20%) entra via progWeight externamente
 function calcPieceScore(completionPct: number, deadline: string | null): number {
@@ -226,7 +220,7 @@ export function generatePlan(input: GeneratorInput): GeneratedPlan {
   const exerciseMap = new Map<string, ScoredTask>()
 
   for (const prog of input.programs) {
-    const progWeight = (prog.weight / 100) * priorityMultiplier(prog.priority ?? null)
+    const progWeight = prog.weight / 100   // priority já incorporada no weight (via autoplan)
 
     for (const p of prog.pieces) {
       if (p.status === 'completed') continue   // tratado em manutenção
@@ -279,25 +273,62 @@ export function generatePlan(input: GeneratorInput): GeneratedPlan {
 
   // ── 3. Orçamentos de slots ──────────────────────────────────────────────────
 
-  const exerciseBudget = Math.min(
-    Math.ceil(totalSlots * EXERCISE_MAX_PCT),
-    exerciseMap.size * weeks * activeDays.length,
-  )
   const mainBudget = input.maintenance.enabled
     ? Math.min(Math.floor(totalSlots * input.maintenance.budgetPercent / 100), mainItems.length * weeks)
     : 0
-  const pieceBudget = Math.max(0, totalSlots - exerciseBudget - mainBudget)
+  const workSlots = Math.max(0, totalSlots - mainBudget)
 
-  // ── 4. Construir fila de tarefas ────────────────────────────────────────────
+  // Exercícios: cap de 20% do total de slots de trabalho
+  const exerciseBudget = Math.min(
+    Math.ceil(workSlots * EXERCISE_MAX_PCT),
+    exerciseMap.size * weeks * activeDays.length,
+  )
+  const pieceBudget = Math.max(0, workSlots - exerciseBudget)
 
-  const pieceItems    = [...pieceMap.values()].sort((a, b) => b.combinedScore - a.combinedScore)
-  const exerciseItems = [...exerciseMap.values()].sort((a, b) => b.combinedScore - a.combinedScore)
+  // ── 4. Construir fila de tarefas por programa (respeita peso) ───────────────
 
-  const pieceQueue    = buildQueue(pieceItems,    pieceBudget)
-  const exerciseQueue = buildQueue(exerciseItems, exerciseBudget)
-  const mainQueue     = buildQueue(mainItems,     mainBudget)
+  // Agrupa itens por programa
+  const piecesByProg    = new Map<string, ScoredTask[]>()
+  const exercisesByProg = new Map<string, ScoredTask[]>()
+  for (const item of pieceMap.values()) {
+    const key = item.programId ?? '__none__'
+    if (!piecesByProg.has(key)) piecesByProg.set(key, [])
+    piecesByProg.get(key)!.push(item)
+  }
+  for (const item of exerciseMap.values()) {
+    const key = item.programId ?? '__none__'
+    if (!exercisesByProg.has(key)) exercisesByProg.set(key, [])
+    exercisesByProg.get(key)!.push(item)
+  }
 
-  // Intercala exercícios uniformemente: peças → exercícios → manutenção
+  // Aloca slots de peças proporcionalmente ao peso de cada programa
+  const pieceQueue: ScoredTask[] = []
+  for (const prog of input.programs) {
+    const items = piecesByProg.get(prog.id) ?? []
+    if (items.length === 0) continue
+    const budget = Math.round(pieceBudget * (prog.weight / 100))
+    pieceQueue.push(...buildQueue(items, Math.max(items.length, budget)))
+  }
+  // Ajusta para pieceBudget exato ciclando do maior score
+  const allPiecesSorted = [...pieceMap.values()].sort((a, b) => b.combinedScore - a.combinedScore)
+  let pi = 0
+  while (pieceQueue.length < pieceBudget) { pieceQueue.push({ ...allPiecesSorted[pi++ % allPiecesSorted.length] }) }
+
+  // Aloca slots de exercícios proporcionalmente ao peso de cada programa
+  const exerciseQueue: ScoredTask[] = []
+  for (const prog of input.programs) {
+    const items = exercisesByProg.get(prog.id) ?? []
+    if (items.length === 0) continue
+    const budget = Math.round(exerciseBudget * (prog.weight / 100))
+    exerciseQueue.push(...buildQueue(items, Math.max(items.length, budget)))
+  }
+  const allExercisesSorted = [...exerciseMap.values()].sort((a, b) => b.combinedScore - a.combinedScore)
+  let ei = 0
+  while (exerciseQueue.length < exerciseBudget && allExercisesSorted.length > 0) { exerciseQueue.push({ ...allExercisesSorted[ei++ % allExercisesSorted.length] }) }
+
+  const mainQueue = buildQueue(mainItems, mainBudget)
+
+
   const fullQueue: ScoredTask[] = [...pieceQueue, ...exerciseQueue, ...mainQueue]
   fullQueue.sort((a, b) => b.combinedScore - a.combinedScore)
 

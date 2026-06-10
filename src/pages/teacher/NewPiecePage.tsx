@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdMusicNote, MdNotes, MdLibraryMusic, MdPiano, MdFavorite, MdGraphicEq, MdFlashOn, MdMic, MdFolder, MdBuild, MdStars, MdMenuBook, MdEmojiEvents } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
+import { autoGeneratePlan } from '@/lib/autoplan'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 import { DEFAULT_CHECKLIST } from '@/lib/defaultChecklist'
@@ -104,6 +105,7 @@ export default function NewPiecePage() {
         }))
       )
 
+      autoGeneratePlan(studentId!)
       if (keepCreating) {
         resetForm()
         window.scrollTo({ top: 0, behavior: 'smooth' })

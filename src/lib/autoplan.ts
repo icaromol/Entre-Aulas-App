@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { generatePlan } from '@/lib/planGenerator'
 import { getMonday, formatWeekStart } from '@/lib/weekUtils'
+import { toast } from 'sonner'
 import type {
   DayAvailability,
   ResolvedProgram,
@@ -13,17 +14,18 @@ export type AutoPlanResult =
   | { ok: true;  planId: string }
   | { ok: false; reason: 'no_availability' | 'no_programs' | 'error' }
 
-function distributeEqually(count: number): number[] {
-  if (count === 0) return []
-  const base = Math.floor(100 / count)
-  const rem  = 100 - base * count
-  return Array.from({ length: count }, (_, i) => (i < rem ? base + 1 : base))
-}
+export const PLAN_GENERATING_EVENT = 'estudamus:plan-generating'
+export const PLAN_DONE_EVENT       = 'estudamus:plan-done'
+
+// Timestamp da última geração — TodayPage compara com seu próprio lastFetchAt para saber se precisa re-fetchar
+export let lastPlanGeneratedAt = 0
 
 export async function autoGeneratePlan(
   studentId: string,
   options?: { weekStart?: string }
 ): Promise<AutoPlanResult> {
+  toast.loading('Gerando plano de estudos…', { id: 'autoplan' })
+  window.dispatchEvent(new CustomEvent(PLAN_GENERATING_EVENT, { detail: { studentId } }))
   try {
     const weekStart = options?.weekStart ?? formatWeekStart(getMonday(new Date()))
 
@@ -35,6 +37,7 @@ export async function autoGeneratePlan(
       .eq('is_active', true)
 
     if (!availData || availData.length === 0) {
+      toast.dismiss('autoplan')
       return { ok: false, reason: 'no_availability' }
     }
 
@@ -61,6 +64,7 @@ export async function autoGeneratePlan(
 
     const progs = progsData ?? []
     if (progs.length === 0) {
+      toast.dismiss('autoplan')
       return { ok: false, reason: 'no_programs' }
     }
 
@@ -100,9 +104,28 @@ export async function autoGeneratePlan(
     ;(allExercises ?? []).forEach(e => { exercisesMap[e.id] = e })
 
     // 6. Montar ResolvedProgram[]
-    const weights = distributeEqually(progs.length)
-    const resolvedPrograms: ResolvedProgram[] = progs.map((prog, idx) => {
-      const pieces: ProgramPiece[]    = []
+    // Deduplica programas regular: só deve existir um por aluno
+    const regularProgs  = progs.filter(p => p.type === 'regular')
+    const otherProgs    = progs.filter(p => p.type !== 'regular')
+    if (regularProgs.length > 1) {
+      const err = new Error(`[autoplan] múltiplos programas regular para student ${studentId} — IDs: ${regularProgs.map(p => p.id).join(', ')}`)
+      console.error(err)
+      if (typeof window !== 'undefined' && (window as any).Sentry) (window as any).Sentry.captureException(err)
+    }
+    // Usa o último regular (mais recente) para o caso de duplicatas
+    const lastRegular  = regularProgs.at(-1)
+    const dedupedProgs = lastRegular ? [lastRegular, ...otherProgs] : otherProgs
+
+    // Peso proporcional à prioridade: priority 1→0.4, 3→1.0, 5→1.6
+    function priorityMult(p: number | null) { return 0.4 + ((p ?? 3) - 1) * 0.3 }
+    const rawWeights = dedupedProgs.map(p => priorityMult(p.priority))
+    const totalRaw   = rawWeights.reduce((s, w) => s + w, 0)
+    const weights    = rawWeights.map(w => Math.round((w / totalRaw) * 100))
+    const diff = 100 - weights.reduce((s, w) => s + w, 0)
+    if (weights.length > 0) weights[0] += diff
+
+    const resolvedPrograms: ResolvedProgram[] = dedupedProgs.map((prog, idx) => {
+      const pieces: ProgramPiece[]       = []
       const exercises: ProgramExercise[] = []
 
       if (prog.type === 'regular') {
@@ -154,12 +177,12 @@ export async function autoGeneratePlan(
 
     if (existing) {
       planId = existing.id
-      // Remove apenas tarefas não feitas
-      await supabase
+      const { error: delErr } = await supabase
         .from('plan_items')
         .delete()
         .eq('plan_id', planId)
         .eq('is_done', false)
+      if (delErr) throw delErr
     } else {
       const { data: created, error: err } = await supabase
         .from('weekly_plans')
@@ -204,8 +227,14 @@ export async function autoGeneratePlan(
       if (err) throw err
     }
 
+    lastPlanGeneratedAt = Date.now()
+    toast.success('Plano de estudos atualizado!', { id: 'autoplan' })
+    window.dispatchEvent(new CustomEvent(PLAN_DONE_EVENT, { detail: { studentId, ok: true } }))
     return { ok: true, planId }
-  } catch {
+  } catch (err) {
+    console.error('[autoplan] erro ao gerar plano:', err)
+    toast.error('Erro ao gerar plano de estudos.', { id: 'autoplan' })
+    window.dispatchEvent(new CustomEvent(PLAN_DONE_EVENT, { detail: { studentId, ok: false } }))
     return { ok: false, reason: 'error' }
   }
 }

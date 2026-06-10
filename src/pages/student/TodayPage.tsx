@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { autoGeneratePlan } from "@/lib/autoplan";
+import { autoGeneratePlan, PLAN_GENERATING_EVENT, PLAN_DONE_EVENT, lastPlanGeneratedAt } from "@/lib/autoplan";
 import {
   MdChevronLeft,
   MdChevronRight,
@@ -92,6 +92,9 @@ export default function TodayPage() {
   const { profile } = useAuth();
   const navigate = useNavigate();
 
+  // Rastreia quando foi o último fetch para detectar planos gerados enquanto fora desta página
+  const lastFetchAt = useRef(0);
+
   const [items, setItems] = useState<PlanItem[]>([]);
   const [studiedSecs, setStudiedSecs] = useState<Record<string, number>>({});
   const [freeSessions, setFreeSessions] = useState<
@@ -111,6 +114,7 @@ export default function TodayPage() {
     x: number;
     y: number;
   } | null>(null);
+  const [planGenerating, setPlanGenerating] = useState(false);
 
   const monday    = useMemo(() => getMonday(new Date()), []);
   const weekStart = useMemo(() => formatWeekStart(monday), [monday]);
@@ -126,14 +130,35 @@ export default function TodayPage() {
     if (profile) fetchDayPlan();
   }, [profile, viewDay]);
 
-  // Re-fetcha ao voltar para a aba após sair (ex: retorno do pomodoro)
+  // Re-fetcha ao voltar para a aba ou navegar de volta — também cobre plano gerado em outra tela
   useEffect(() => {
     const onVisible = () => {
       if (!document.hidden && profile && studentId) fetchItems(studentId);
     };
     document.addEventListener("visibilitychange", onVisible);
+
+    // Re-fetcha imediatamente se um plano foi gerado enquanto esta página não estava ativa
+    if (studentId && lastPlanGeneratedAt > lastFetchAt.current) {
+      fetchItems(studentId)
+    }
+
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [profile, studentId, viewDay]);
+
+  // Escuta eventos de regeneração do plano disparados por qualquer tela
+  useEffect(() => {
+    const onGenerating = () => setPlanGenerating(true)
+    const onDone = () => {
+      setPlanGenerating(false)
+      if (studentId) setTimeout(() => fetchItems(studentId), 300)
+    }
+    window.addEventListener(PLAN_GENERATING_EVENT, onGenerating);
+    window.addEventListener(PLAN_DONE_EVENT, onDone);
+    return () => {
+      window.removeEventListener(PLAN_GENERATING_EVENT, onGenerating);
+      window.removeEventListener(PLAN_DONE_EVENT, onDone);
+    };
+  }, [studentId]);
 
   async function fetchDayPlan() {
     setLoading(true);
@@ -300,8 +325,8 @@ export default function TodayPage() {
       }
     }
     setFreeSessions(free);
-
     setLoading(false);
+    lastFetchAt.current = Date.now();
   }
 
   async function toggleDone(item: PlanItem, manually = false) {
@@ -431,6 +456,14 @@ export default function TodayPage() {
 
   return (
     <StudentLayout>
+      {/* Banner de geração de plano */}
+      {planGenerating && (
+        <div className="flex items-center gap-3 bg-[#1E3A5F] text-white text-sm font-medium px-4 py-3 rounded-2xl mb-4">
+          <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin shrink-0" />
+          Gerando plano de estudos…
+        </div>
+      )}
+
       {/* Header com navegação de dias */}
       <div id="onboarding-today-nav" className="flex items-center justify-between mb-8 mt-4">
         <button

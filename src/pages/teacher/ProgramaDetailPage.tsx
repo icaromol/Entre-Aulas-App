@@ -6,6 +6,7 @@ import { MdArrowBack, MdAdd, MdDeleteOutline, MdEdit, MdMusicNote, MdSchool, MdC
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
+import { autoGeneratePlan } from '@/lib/autoplan'
 import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import type { Programa, ProgramPiece, ProgramExercise } from '@/types/programs'
@@ -111,6 +112,7 @@ export default function ProgramaDetailPage() {
       setProgramPieces(prev => [...prev, data as unknown as ProgramPiece])
       setAvailablePieces(prev => prev.filter(p => p.id !== pieceId))
       toast.success('Peça adicionada ao programa')
+      autoGeneratePlan(studentId!)
     }
     setAddingPieceId(null)
   }
@@ -119,6 +121,7 @@ export default function ProgramaDetailPage() {
     await supabase.from('program_pieces').delete().eq('id', pp.id)
     setProgramPieces(prev => prev.filter(p => p.id !== pp.id))
     if (pp.piece) setAvailablePieces(prev => [...prev, pp.piece as AvailablePiece])
+    autoGeneratePlan(studentId!)
   }
 
   async function openExercisePicker() {
@@ -140,6 +143,7 @@ export default function ProgramaDetailPage() {
       setProgramExercises(prev => [...prev, data as unknown as ProgramExercise])
       setAvailableExercises(prev => prev.filter(e => e.id !== exerciseId))
       toast.success('Exercício adicionado ao programa')
+      autoGeneratePlan(studentId!)
     }
     setAddingExerciseId(null)
   }
@@ -148,6 +152,7 @@ export default function ProgramaDetailPage() {
     await supabase.from('program_exercises').delete().eq('id', pe.id)
     setProgramExercises(prev => prev.filter(p => p.id !== pe.id))
     if (pe.exercise) setAvailableExercises(prev => [...prev, pe.exercise as AvailableExercise])
+    autoGeneratePlan(studentId!)
   }
 
   async function archivePrograma() {
@@ -160,12 +165,14 @@ export default function ProgramaDetailPage() {
     await supabase.from('programas').update({ status: newStatus }).eq('id', programId!)
     setPrograma(prev => prev ? { ...prev, status: newStatus as 'completed' | 'archived' } : prev)
     toast.success(isEvent ? 'Programa concluído!' : 'Programa arquivado')
+    autoGeneratePlan(studentId!)
   }
 
   async function deletePrograma() {
     if (!confirm('Excluir permanentemente este programa? Esta ação não pode ser desfeita.')) return
     const { error } = await supabase.from('programas').delete().eq('id', programId!)
     if (error) { toast.error('Erro ao excluir programa.'); return }
+    autoGeneratePlan(studentId!)
     toast.success('Programa excluído')
     navigate(`/professor/alunos/${studentId}?tab=programs`)
   }

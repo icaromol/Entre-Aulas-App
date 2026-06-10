@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdLibraryMusic, MdNotes, MdMusicNote, MdSchool } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
+import { autoGeneratePlan } from '@/lib/autoplan'
 import { useAuth } from '@/hooks/useAuth'
 import { grantTeacherXp } from '@/lib/teacherXpHelpers'
 import { fireBasic, fireStars } from '@/lib/confettiEffects'
@@ -128,6 +129,7 @@ export default function NewProgramaPage() {
       sound.xpEarn()
       if (newAchievements.length > 0) fireStars()
       else fireBasic()
+      autoGeneratePlan(studentId!)
       toast.success('Programa criado!')
       navigate(`/professor/alunos/${studentId}/programas/${data.id}`)
     } catch (err: unknown) {

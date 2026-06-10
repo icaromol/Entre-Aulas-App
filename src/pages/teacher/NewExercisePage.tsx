@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdSchool, MdNotes } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
+import { autoGeneratePlan } from '@/lib/autoplan'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 import { ChecklistEditor, type ChecklistEditorItem } from '@/components/checklist/ChecklistEditor'
@@ -85,6 +86,7 @@ export default function NewExercisePage() {
         }))
       )
 
+      autoGeneratePlan(studentId!)
       if (keepCreating) {
         resetForm()
         window.scrollTo({ top: 0, behavior: 'smooth' })

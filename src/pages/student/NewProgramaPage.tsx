@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdNotes, MdMusicNote, MdSchool, MdClose } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { autoGeneratePlan } from '@/lib/autoplan'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { Button } from '@/components/ui/button'
 import type { ProgramaType } from '@/types/programs'
@@ -131,6 +132,7 @@ export default function StudentNewProgramaPage() {
           await supabase.from('program_exercises').insert([...selectedExerciseIds].map(exerciseId => ({ program_id: data.id, exercise_id: exerciseId })))
       }
 
+      autoGeneratePlan(studentId!)
       toast.success('Programa criado!')
       navigate(`/aluno/repertorio/programas/${data.id}`)
     } catch (err: unknown) {
