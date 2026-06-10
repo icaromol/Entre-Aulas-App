@@ -18,10 +18,8 @@ export interface DayAvailability {
 export interface ProgramPiece {
   pieceId: string
   pieceTitle: string
-  difficulty: number | null
   completionPct: number      // 0–100
   status: string             // 'in_progress' | 'future' | 'completed'
-  priorityOverride: number | null
 }
 
 export interface ProgramExercise {
@@ -29,7 +27,6 @@ export interface ProgramExercise {
   exerciseTitle: string
   difficulty: number | null
   category: string
-  priorityOverride: number | null
 }
 
 export interface ResolvedProgram {
@@ -46,7 +43,6 @@ export interface ResolvedProgram {
 export interface MaintenancePiece {
   pieceId: string
   pieceTitle: string
-  difficulty: number | null
 }
 
 export interface GeneratorInput {
@@ -142,41 +138,35 @@ function buildHorizonDays(
   return days.sort((a, b) => a.date.localeCompare(b.date))
 }
 
-function calcUrgencyBonus(deadline: string | null): number {
+// Urgência contínua: quanto mais próximo o prazo, maior o valor (0.0–1.0)
+function calcUrgency(deadline: string | null): number {
   if (!deadline) return 0
   const today = new Date(); today.setHours(0, 0, 0, 0)
-  const target = new Date(deadline + 'T00:00:00')
-  const days = Math.ceil((target.getTime() - today.getTime()) / 86_400_000)
-  if (days < 7)  return 0.40
-  if (days < 15) return 0.30
-  if (days < 31) return 0.20
-  if (days < 61) return 0.10
-  return 0
+  const days = Math.ceil((new Date(deadline + 'T00:00:00').getTime() - today.getTime()) / 86_400_000)
+  if (days <= 0)  return 1.00
+  if (days < 7)   return 0.80
+  if (days < 15)  return 0.60
+  if (days < 31)  return 0.40
+  if (days < 61)  return 0.20
+  return 0.05
 }
 
-// priorityOverride: 1–5 scale set by user (3 = neutral, 5 = max importance, 1 = min)
-// Acts as a multiplier on the base score: 1→0.4x, 2→0.7x, 3→1.0x, 4→1.3x, 5→1.6x
+// Importância da meta: 1–5 → multiplicador 0.4x–1.6x (3 = neutro)
 function priorityMultiplier(override: number | null): number {
   if (override === null) return 1.0
   return 0.4 + (override - 1) * 0.3
 }
 
-function calcPieceScore(
-  difficulty: number | null,
-  completionPct: number,
-  deadline: string | null,
-  priorityOverride: number | null,
-): number {
-  const diff = (difficulty ?? 5) / 10
-  const incompletion = 1 - completionPct / 100
-  const base = Math.min(1.5, 0.5 * diff + 0.5 * incompletion + calcUrgencyBonus(deadline))
-  return base * priorityMultiplier(priorityOverride)
+// Score de peça: 50% trabalho restante + 30% urgência de prazo
+// O peso da meta (20%) entra via progWeight externamente
+function calcPieceScore(completionPct: number, deadline: string | null): number {
+  const trabalhoRestante = (100 - completionPct) / 100
+  return 0.5 * trabalhoRestante + 0.3 * calcUrgency(deadline)
 }
 
-function calcExerciseScore(difficulty: number | null, priorityOverride: number | null): number {
-  const diff = (difficulty ?? 5) / 10
-  const base = Math.min(1.0, 0.5 * diff + 0.5)
-  return base * priorityMultiplier(priorityOverride)
+// Score de exercício: baseado em dificuldade
+function calcExerciseScore(difficulty: number | null): number {
+  return (difficulty ?? 5) / 10
 }
 
 // Constrói fila com exatamente `budget` ocorrências, distribuídas proporcionalmente ao score.
@@ -240,7 +230,7 @@ export function generatePlan(input: GeneratorInput): GeneratedPlan {
 
     for (const p of prog.pieces) {
       if (p.status === 'completed') continue   // tratado em manutenção
-      const score         = calcPieceScore(p.difficulty, p.completionPct, prog.deadline, p.priorityOverride)
+      const score         = calcPieceScore(p.completionPct, prog.deadline)
       const combinedScore = score * progWeight
       const existing      = pieceMap.get(p.pieceId)
       if (!existing || combinedScore > existing.combinedScore) {
@@ -255,7 +245,7 @@ export function generatePlan(input: GeneratorInput): GeneratedPlan {
     }
 
     for (const e of prog.exercises) {
-      const score         = calcExerciseScore(e.difficulty, e.priorityOverride)
+      const score         = calcExerciseScore(e.difficulty)
       const combinedScore = score * progWeight
       const existing      = exerciseMap.get(e.exerciseId)
       if (!existing || combinedScore > existing.combinedScore) {
@@ -275,7 +265,7 @@ export function generatePlan(input: GeneratorInput): GeneratedPlan {
   const mainItems: ScoredTask[] = []
   if (input.maintenance.enabled && input.maintenance.completedPieces.length > 0) {
     for (const p of input.maintenance.completedPieces) {
-      const score = calcPieceScore(p.difficulty, 100, null, null) * 0.35
+      const score = calcPieceScore(100, null) * 0.35
       mainItems.push({
         pieceId: p.pieceId, exerciseId: null,
         sourceType: 'maintenance', sourceTitle: p.pieceTitle,

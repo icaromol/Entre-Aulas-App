@@ -215,12 +215,12 @@ export default function PlanejamentoPage() {
       ;(allExercises ?? []).forEach(e => { exercisesMap[e.id] = e })
 
       // Links de programas não-regulares
-      let progPieces:    Array<{ program_id: string; piece_id: string;    priority_override: number | null }> = []
-      let progExercises: Array<{ program_id: string; exercise_id: string; priority_override: number | null }> = []
+      let progPieces:    Array<{ program_id: string; piece_id: string }> = []
+      let progExercises: Array<{ program_id: string; exercise_id: string }> = []
       if (nonRegularIds.length > 0) {
         const [{ data: pp }, { data: pe }] = await Promise.all([
-          supabase.from('program_pieces')   .select('program_id, piece_id, priority_override')   .in('program_id', nonRegularIds),
-          supabase.from('program_exercises').select('program_id, exercise_id, priority_override').in('program_id', nonRegularIds),
+          supabase.from('program_pieces')   .select('program_id, piece_id')   .in('program_id', nonRegularIds),
+          supabase.from('program_exercises').select('program_id, exercise_id').in('program_id', nonRegularIds),
         ])
         progPieces    = pp ?? []
         progExercises = pe ?? []
@@ -234,38 +234,22 @@ export default function PlanejamentoPage() {
         if (prog.type === 'regular') {
           // Programa regular: inclui tudo do aluno
           for (const p of allPieces ?? []) {
-            pieces.push({
-              pieceId: p.id, pieceTitle: p.title,
-              difficulty: p.difficulty, completionPct: p.completion_pct,
-              status: p.status, priorityOverride: null,
-            })
+            pieces.push({ pieceId: p.id, pieceTitle: p.title, completionPct: p.completion_pct, status: p.status })
           }
           for (const e of allExercises ?? []) {
-            exercises.push({
-              exerciseId: e.id, exerciseTitle: e.title,
-              difficulty: e.difficulty, category: e.category,
-              priorityOverride: null,
-            })
+            exercises.push({ exerciseId: e.id, exerciseTitle: e.title, difficulty: e.difficulty, category: e.category })
           }
         } else {
           // Outros tipos: só os itens linkados ao programa
           for (const pp of progPieces.filter(x => x.program_id === prog.id)) {
             const p = piecesMap[pp.piece_id]
             if (!p) continue
-            pieces.push({
-              pieceId: p.id, pieceTitle: p.title,
-              difficulty: p.difficulty, completionPct: p.completion_pct,
-              status: p.status, priorityOverride: pp.priority_override,
-            })
+            pieces.push({ pieceId: p.id, pieceTitle: p.title, completionPct: p.completion_pct, status: p.status })
           }
           for (const pe of progExercises.filter(x => x.program_id === prog.id)) {
             const e = exercisesMap[pe.exercise_id]
             if (!e) continue
-            exercises.push({
-              exerciseId: e.id, exerciseTitle: e.title,
-              difficulty: e.difficulty, category: e.category,
-              priorityOverride: pe.priority_override,
-            })
+            exercises.push({ exerciseId: e.id, exerciseTitle: e.title, difficulty: e.difficulty, category: e.category })
           }
         }
 
@@ -275,7 +259,7 @@ export default function PlanejamentoPage() {
       // Peças concluídas para manutenção
       const completedPieces = (allPieces ?? [])
         .filter(p => p.status === 'completed')
-        .map(p => ({ pieceId: p.id, pieceTitle: p.title, difficulty: p.difficulty }))
+        .map(p => ({ pieceId: p.id, pieceTitle: p.title }))
 
       const plan = generatePlan({
         studentLevel,

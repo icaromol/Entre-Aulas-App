@@ -1,10 +1,10 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   MdArrowBack, MdAdd, MdDeleteOutline, MdEdit, MdMusicNote, MdSchool,
-  MdCalendarMonth, MdLocationOn, MdArchive, MdClose, MdSave,
+  MdCalendarMonth, MdLocationOn, MdArchive, MdClose,
 } from 'react-icons/md'
 import Avatar from 'boring-avatars'
 import { supabase } from '@/lib/supabase'
@@ -16,11 +16,6 @@ import { PROGRAM_TYPES } from '@/lib/programTypes'
 import type { Programa, ProgramPiece, ProgramExercise } from '@/types/programs'
 
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
-
-const typeLabel: Record<string, string> = {
-  recital: 'Apresentação', concerto: 'Apresentação', show: 'Apresentação', participacao: 'Apresentação',
-  gravacao: 'Gravação', exame: 'Exame', outro: 'Outro',
-}
 
 const exerciseCategoryLabel: Record<string, string> = {
   technique: 'Técnica', ear_training: 'Percepção', harmony: 'Harmonia',
@@ -58,12 +53,6 @@ export default function StudentProgramaDetailPage() {
   const [availableExercises, setAvailableExercises] = useState<AvailableExercise[]>([])
   const [addingExerciseId, setAddingExerciseId] = useState<string | null>(null)
 
-  // weights: keyed by program_pieces/program_exercises id; value 1–5
-  const [pieceWeights, setPieceWeights] = useState<Record<string, number>>({})
-  const [exerciseWeights, setExerciseWeights] = useState<Record<string, number>>({})
-  const [savingWeights, setSavingWeights] = useState(false)
-  const weightsChanged = useRef(false)
-
   useEffect(() => {
     if (!profile) return
     supabase.from('students').select('id').eq('profile_id', profile.id).single()
@@ -78,22 +67,17 @@ export default function StudentProgramaDetailPage() {
     const [programaRes, piecesRes, exercisesRes] = await Promise.all([
       supabase.from('programas').select('*').eq('id', programId!).single(),
       supabase.from('program_pieces').select(`
-        id, program_id, piece_id, priority_override,
+        id, program_id, piece_id,
         piece:pieces(id, title, composer, completion_pct, difficulty)
       `).eq('program_id', programId!),
       supabase.from('program_exercises').select(`
-        id, program_id, exercise_id, priority_override,
+        id, program_id, exercise_id,
         exercise:exercises(id, title, category, difficulty)
       `).eq('program_id', programId!),
     ])
     setPrograma(programaRes.data)
-    const pieces = (piecesRes.data ?? []) as unknown as ProgramPiece[]
-    const exercises = (exercisesRes.data ?? []) as unknown as ProgramExercise[]
-    setProgramPieces(pieces)
-    setProgramExercises(exercises)
-    setPieceWeights(Object.fromEntries(pieces.map(pp => [pp.id, pp.priority_override ?? 3])))
-    setExerciseWeights(Object.fromEntries(exercises.map(pe => [pe.id, pe.priority_override ?? 3])))
-    weightsChanged.current = false
+    setProgramPieces((piecesRes.data ?? []) as unknown as ProgramPiece[])
+    setProgramExercises((exercisesRes.data ?? []) as unknown as ProgramExercise[])
     setLoading(false)
   }
 
@@ -109,13 +93,11 @@ export default function StudentProgramaDetailPage() {
   async function addPiece(pieceId: string) {
     setAddingPieceId(pieceId)
     const { data } = await supabase.from('program_pieces')
-      .insert({ program_id: programId!, piece_id: pieceId, priority_override: 3 })
-      .select('id, program_id, piece_id, priority_override, piece:pieces(id, title, composer, completion_pct, difficulty)')
+      .insert({ program_id: programId!, piece_id: pieceId })
+      .select('id, program_id, piece_id, piece:pieces(id, title, composer, completion_pct, difficulty)')
       .single()
     if (data) {
-      const pp = data as unknown as ProgramPiece
-      setProgramPieces(prev => [...prev, pp])
-      setPieceWeights(prev => ({ ...prev, [pp.id]: pp.priority_override ?? 3 }))
+      setProgramPieces(prev => [...prev, data as unknown as ProgramPiece])
       setAvailablePieces(prev => prev.filter(p => p.id !== pieceId))
       toast.success('Peça adicionada ao objetivo')
     }
@@ -125,7 +107,6 @@ export default function StudentProgramaDetailPage() {
   async function removePiece(pp: ProgramPiece) {
     await supabase.from('program_pieces').delete().eq('id', pp.id)
     setProgramPieces(prev => prev.filter(p => p.id !== pp.id))
-    setPieceWeights(prev => { const n = { ...prev }; delete n[pp.id]; return n })
     if (pp.piece) setAvailablePieces(prev => [...prev, pp.piece as AvailablePiece])
   }
 
@@ -141,13 +122,11 @@ export default function StudentProgramaDetailPage() {
   async function addExercise(exerciseId: string) {
     setAddingExerciseId(exerciseId)
     const { data } = await supabase.from('program_exercises')
-      .insert({ program_id: programId!, exercise_id: exerciseId, priority_override: 3 })
-      .select('id, program_id, exercise_id, priority_override, exercise:exercises(id, title, category, difficulty)')
+      .insert({ program_id: programId!, exercise_id: exerciseId })
+      .select('id, program_id, exercise_id, exercise:exercises(id, title, category, difficulty)')
       .single()
     if (data) {
-      const pe = data as unknown as ProgramExercise
-      setProgramExercises(prev => [...prev, pe])
-      setExerciseWeights(prev => ({ ...prev, [pe.id]: pe.priority_override ?? 3 }))
+      setProgramExercises(prev => [...prev, data as unknown as ProgramExercise])
       setAvailableExercises(prev => prev.filter(e => e.id !== exerciseId))
       toast.success('Exercício adicionado ao objetivo')
     }
@@ -157,22 +136,7 @@ export default function StudentProgramaDetailPage() {
   async function removeExercise(pe: ProgramExercise) {
     await supabase.from('program_exercises').delete().eq('id', pe.id)
     setProgramExercises(prev => prev.filter(p => p.id !== pe.id))
-    setExerciseWeights(prev => { const n = { ...prev }; delete n[pe.id]; return n })
     if (pe.exercise) setAvailableExercises(prev => [...prev, pe.exercise as AvailableExercise])
-  }
-
-  async function saveWeights() {
-    setSavingWeights(true)
-    const pieceUpdates = programPieces.map(pp =>
-      supabase.from('program_pieces').update({ priority_override: pieceWeights[pp.id] ?? 3 }).eq('id', pp.id)
-    )
-    const exerciseUpdates = programExercises.map(pe =>
-      supabase.from('program_exercises').update({ priority_override: exerciseWeights[pe.id] ?? 3 }).eq('id', pe.id)
-    )
-    await Promise.all([...pieceUpdates, ...exerciseUpdates])
-    weightsChanged.current = false
-    setSavingWeights(false)
-    toast.success('Pesos salvos!')
   }
 
   async function archivePrograma() {
@@ -273,13 +237,15 @@ export default function StudentProgramaDetailPage() {
           <MdArrowBack size={20} />
         </Link>
         <div className="w-10 h-10 rounded-xl bg-[#1E3A5F] flex items-center justify-center shrink-0">
-          <ProgramaIcon size={20} className="text-white" />
+          <ProgramaIcon size={20} color="white" />
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold text-[#1E3A5F] truncate">{programa.title}</h1>
-          {programa.status === 'archived' && (
-            <span className="text-xs text-gray-400">Arquivado</span>
-          )}
+          <p className="text-xs text-gray-400">
+            {programa.status === 'archived'
+              ? 'Arquivado'
+              : PROGRAM_TYPES[programa.type]?.label ?? programa.type}
+          </p>
         </div>
         <Link to={`/aluno/repertorio/programas/${programId}/editar`} className="text-gray-400 hover:text-[#4A90C4] transition shrink-0">
           <MdEdit size={20} />
@@ -313,15 +279,6 @@ export default function StudentProgramaDetailPage() {
         </div>
       )}
 
-      {/* Tipo — badge apenas se não for regular */}
-      {programa.type !== 'regular' && typeLabel[programa.type] && (
-        <div className="mb-4">
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#D6E4F0] text-[#1E3A5F]">
-            {typeLabel[programa.type]}
-          </span>
-        </div>
-      )}
-
       {programa.type !== 'regular' && (
         <>
           {/* Peças */}
@@ -338,46 +295,30 @@ export default function StudentProgramaDetailPage() {
             {programPieces.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-4">Nenhuma peça vinculada ainda.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {programPieces.map(pp => (
-                  <div key={pp.id} className="group">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-9 h-9 shrink-0">
-                        <svg viewBox="0 0 36 36" className="w-9 h-9 -rotate-90 absolute inset-0">
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3"/>
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#4A90C4" strokeWidth="3"
-                            strokeDasharray={`${((pp.piece?.completion_pct ?? 0) / 100) * 94.2} 94.2`}
-                            strokeLinecap="round" />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="rounded-full overflow-hidden">
-                            <Avatar size={22} name={pp.piece?.title ?? ''} variant="marble" colors={AVATAR_COLORS} />
-                          </div>
+                  <div key={pp.id} className="group flex items-center gap-3">
+                    <div className="relative w-9 h-9 shrink-0">
+                      <svg viewBox="0 0 36 36" className="w-9 h-9 -rotate-90 absolute inset-0">
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3"/>
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="#4A90C4" strokeWidth="3"
+                          strokeDasharray={`${((pp.piece?.completion_pct ?? 0) / 100) * 94.2} 94.2`}
+                          strokeLinecap="round" />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="rounded-full overflow-hidden">
+                          <Avatar size={22} name={pp.piece?.title ?? ''} variant="marble" colors={AVATAR_COLORS} />
                         </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{pp.piece?.title}</p>
-                        <p className="text-xs text-gray-400">{pp.piece?.composer ?? '—'} · {pp.piece?.completion_pct ?? 0}%</p>
-                      </div>
-                      <button onClick={() => removePiece(pp)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition">
-                        <MdDeleteOutline size={18} />
-                      </button>
                     </div>
-                    <div className="flex items-center gap-2 mt-2 pl-12">
-                      <span className="text-[10px] text-gray-400 w-14 shrink-0">Importância</span>
-                      <input type="range" min={1} max={5} step={1}
-                        value={pieceWeights[pp.id] ?? 3}
-                        onChange={e => {
-                          weightsChanged.current = true
-                          setPieceWeights(prev => ({ ...prev, [pp.id]: Number(e.target.value) }))
-                        }}
-                        className="flex-1 accent-[#1E3A5F] h-1.5 cursor-pointer"
-                      />
-                      <span className="text-xs font-semibold text-[#1E3A5F] w-4 text-center shrink-0">
-                        {pieceWeights[pp.id] ?? 3}
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{pp.piece?.title}</p>
+                      <p className="text-xs text-gray-400">{pp.piece?.composer ?? '—'} · {pp.piece?.completion_pct ?? 0}%</p>
                     </div>
+                    <button onClick={() => removePiece(pp)}
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition">
+                      <MdDeleteOutline size={18} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -398,50 +339,25 @@ export default function StudentProgramaDetailPage() {
             {programExercises.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-4">Nenhum exercício vinculado ainda.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {programExercises.map(pe => (
-                  <div key={pe.id} className="group">
-                    <div className="flex items-center gap-3">
-                      <div className="shrink-0 rounded-lg overflow-hidden">
-                        <Avatar size={32} name={pe.exercise?.title ?? ''} variant="pixel" colors={AVATAR_COLORS} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{pe.exercise?.title}</p>
-                        <p className="text-xs text-gray-400">{exerciseCategoryLabel[pe.exercise?.category ?? ''] ?? '—'}</p>
-                      </div>
-                      <button onClick={() => removeExercise(pe)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition">
-                        <MdDeleteOutline size={18} />
-                      </button>
+                  <div key={pe.id} className="group flex items-center gap-3">
+                    <div className="shrink-0 rounded-lg overflow-hidden">
+                      <Avatar size={32} name={pe.exercise?.title ?? ''} variant="pixel" colors={AVATAR_COLORS} />
                     </div>
-                    <div className="flex items-center gap-2 mt-2 pl-11">
-                      <span className="text-[10px] text-gray-400 w-14 shrink-0">Importância</span>
-                      <input type="range" min={1} max={5} step={1}
-                        value={exerciseWeights[pe.id] ?? 3}
-                        onChange={e => {
-                          weightsChanged.current = true
-                          setExerciseWeights(prev => ({ ...prev, [pe.id]: Number(e.target.value) }))
-                        }}
-                        className="flex-1 accent-[#1E3A5F] h-1.5 cursor-pointer"
-                      />
-                      <span className="text-xs font-semibold text-[#1E3A5F] w-4 text-center shrink-0">
-                        {exerciseWeights[pe.id] ?? 3}
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{pe.exercise?.title}</p>
+                      <p className="text-xs text-gray-400">{exerciseCategoryLabel[pe.exercise?.category ?? ''] ?? '—'}</p>
                     </div>
+                    <button onClick={() => removeExercise(pe)}
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition">
+                      <MdDeleteOutline size={18} />
+                    </button>
                   </div>
                 ))}
               </div>
             )}
           </div>
-
-          {/* Salvar pesos */}
-          {(programPieces.length > 0 || programExercises.length > 0) && (
-            <button onClick={saveWeights} disabled={savingWeights}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-50 mb-5">
-              <MdSave size={17} />
-              {savingWeights ? 'Salvando...' : 'Salvar pesos do objetivo'}
-            </button>
-          )}
         </>
       )}
 
@@ -452,7 +368,7 @@ export default function StudentProgramaDetailPage() {
         </div>
       )}
 
-      {/* Arquivar + Excluir na mesma linha */}
+      {/* Arquivar + Excluir */}
       <div className="flex gap-2 pb-2">
         {programa.status === 'active' && (
           <button onClick={archivePrograma}

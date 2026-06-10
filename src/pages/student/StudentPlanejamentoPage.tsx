@@ -143,12 +143,12 @@ export default function StudentPlanejamentoPage() {
       ;(allPieces    ?? []).forEach(p => { piecesMap[p.id]    = p })
       ;(allExercises ?? []).forEach(e => { exercisesMap[e.id] = e })
 
-      let progPieces:    Array<{ program_id: string; piece_id: string;    priority_override: number | null }> = []
-      let progExercises: Array<{ program_id: string; exercise_id: string; priority_override: number | null }> = []
+      let progPieces:    Array<{ program_id: string; piece_id: string }> = []
+      let progExercises: Array<{ program_id: string; exercise_id: string }> = []
       if (nonRegularIds.length > 0) {
         const [{ data: pp }, { data: pe }] = await Promise.all([
-          supabase.from('program_pieces').select('program_id, piece_id, priority_override').in('program_id', nonRegularIds),
-          supabase.from('program_exercises').select('program_id, exercise_id, priority_override').in('program_id', nonRegularIds),
+          supabase.from('program_pieces').select('program_id, piece_id').in('program_id', nonRegularIds),
+          supabase.from('program_exercises').select('program_id, exercise_id').in('program_id', nonRegularIds),
         ])
         progPieces    = pp ?? []
         progExercises = pe ?? []
@@ -158,16 +158,16 @@ export default function StudentPlanejamentoPage() {
         const pieces: ResolvedProgram['pieces'] = []
         const exercises: ResolvedProgram['exercises'] = []
         if (prog.type === 'regular') {
-          for (const p of allPieces ?? []) pieces.push({ pieceId: p.id, pieceTitle: p.title, difficulty: p.difficulty, completionPct: p.completion_pct, status: p.status, priorityOverride: null })
-          for (const e of allExercises ?? []) exercises.push({ exerciseId: e.id, exerciseTitle: e.title, difficulty: e.difficulty, category: e.category, priorityOverride: null })
+          for (const p of allPieces ?? []) pieces.push({ pieceId: p.id, pieceTitle: p.title, completionPct: p.completion_pct, status: p.status })
+          for (const e of allExercises ?? []) exercises.push({ exerciseId: e.id, exerciseTitle: e.title, difficulty: e.difficulty, category: e.category })
         } else {
           for (const pp of progPieces.filter(x => x.program_id === prog.id)) {
             const p = piecesMap[pp.piece_id]; if (!p) continue
-            pieces.push({ pieceId: p.id, pieceTitle: p.title, difficulty: p.difficulty, completionPct: p.completion_pct, status: p.status, priorityOverride: pp.priority_override })
+            pieces.push({ pieceId: p.id, pieceTitle: p.title, completionPct: p.completion_pct, status: p.status })
           }
           for (const pe of progExercises.filter(x => x.program_id === prog.id)) {
             const e = exercisesMap[pe.exercise_id]; if (!e) continue
-            exercises.push({ exerciseId: e.id, exerciseTitle: e.title, difficulty: e.difficulty, category: e.category, priorityOverride: pe.priority_override })
+            exercises.push({ exerciseId: e.id, exerciseTitle: e.title, difficulty: e.difficulty, category: e.category })
           }
         }
         return { id: prog.id, title: prog.title, type: prog.type, deadline: prog.deadline, weight: weights[prog.id] ?? 0, priority: (prog as unknown as { priority: number | null }).priority ?? null, pieces, exercises }
@@ -175,7 +175,7 @@ export default function StudentPlanejamentoPage() {
 
       const completedPieces = (allPieces ?? [])
         .filter(p => p.status === 'completed')
-        .map(p => ({ pieceId: p.id, pieceTitle: p.title, difficulty: p.difficulty }))
+        .map(p => ({ pieceId: p.id, pieceTitle: p.title }))
 
       const plan = generatePlan({
         studentLevel, weekStart, horizon: 'week', availability,
