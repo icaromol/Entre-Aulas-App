@@ -6,7 +6,7 @@ const POMODORO = {
   advanced:     { work: 25, break: 5, cycle: 30 },
 } as const
 
-const EXERCISE_MAX_PCT = 0.20   // cap de exercícios: 20% dos slots
+const EXERCISE_MAX_PCT = 0.33   // cap de exercícios: 1/3 dos slots (peso ½ em relação às peças)
 
 // ─── Input Types ──────────────────────────────────────────────────────────────
 
