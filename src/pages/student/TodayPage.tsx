@@ -9,7 +9,10 @@ import {
   MdDeleteOutline,
   MdCheckCircle,
   MdSelfImprovement,
+  MdEdit,
+  MdFlashOn,
 } from "react-icons/md";
+import { ChangeTimeModal } from "@/components/student/ChangeTimeModal";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -87,6 +90,54 @@ function getDailyGreeting(name: string): string {
   return GREETINGS[idx](name);
 }
 
+// Redistribui duration_minutes dos itens não concluídos para caber em newTotalMinutes.
+// Itens concluídos nunca são alterados.
+function redistributeDayItems(items: PlanItem[], newTotalMinutes: number): PlanItem[] {
+  const doneItems = items.filter(i => i.is_done)
+  const undoneItems = [...items.filter(i => !i.is_done)].sort((a, b) => a.position - b.position)
+
+  const doneMinutes = doneItems.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
+  const available = Math.max(0, newTotalMinutes - doneMinutes)
+
+  if (available < 5 || undoneItems.length === 0) return items
+
+  // Sessão Essencial: ≤ 20 min disponíveis — mantém itens de maior prioridade até esgatar budget
+  if (available <= 20) {
+    let remaining = available
+    const updated = undoneItems.map(item => {
+      if (remaining >= 5) {
+        const dur = Math.min(item.duration_minutes ?? 5, remaining)
+        remaining -= dur
+        return { ...item, duration_minutes: dur }
+      }
+      return { ...item, duration_minutes: 0 }
+    })
+    return [...doneItems, ...updated]
+  }
+
+  // Redistribuição proporcional
+  const currentTotal = undoneItems.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
+
+  if (currentTotal <= 0) {
+    const perItem = Math.max(5, Math.round(available / undoneItems.length))
+    return [...doneItems, ...undoneItems.map(i => ({ ...i, duration_minutes: perItem }))]
+  }
+
+  const ratio = available / currentTotal
+  const scaled = undoneItems.map(i => ({
+    ...i,
+    duration_minutes: Math.max(5, Math.round((i.duration_minutes ?? 0) * ratio)),
+  }))
+
+  // Ajusta diferença de arredondamento no item de maior prioridade
+  const scaledTotal = scaled.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
+  const diff = available - scaledTotal
+  if (diff !== 0) {
+    scaled[0] = { ...scaled[0], duration_minutes: Math.max(5, (scaled[0].duration_minutes ?? 0) + diff) }
+  }
+
+  return [...doneItems, ...scaled]
+}
 
 export default function TodayPage() {
   const { profile } = useAuth();
@@ -115,6 +166,8 @@ export default function TodayPage() {
     y: number;
   } | null>(null);
   const [planGenerating, setPlanGenerating] = useState(false);
+  const [showChangeTime, setShowChangeTime] = useState(false);
+  const [essentialMode, setEssentialMode] = useState(false);
 
   const monday    = useMemo(() => getMonday(new Date()), []);
   const weekStart = useMemo(() => formatWeekStart(monday), [monday]);
@@ -193,6 +246,28 @@ export default function TodayPage() {
     await fetchItems(sid);
   }
 
+  async function handleChangeTime(newMinutes: number) {
+    const redistributed = redistributeDayItems(items, newMinutes)
+    const isEssential = redistributed.some(i => !i.is_done && i.duration_minutes === 0)
+
+    setItems(redistributed)
+    setEssentialMode(isEssential)
+    setShowChangeTime(false)
+
+    const undone = redistributed.filter(i => !i.is_done)
+    await Promise.all(
+      undone.map(i =>
+        supabase.from("plan_items").update({ duration_minutes: i.duration_minutes }).eq("id", i.id)
+      )
+    )
+
+    if (isEssential) {
+      toast.success("Sessão Essencial ativada — foco no que mais importa")
+    } else {
+      toast.success(`Plano adaptado para ${newMinutes} min`)
+    }
+  }
+
   async function fetchItems(sid: string) {
     const { data: plan, error: planError } = await supabase
       .from("weekly_plans")
@@ -252,6 +327,7 @@ export default function TodayPage() {
 
     const resolvedItems = (planItems ?? []) as unknown as PlanItem[];
     setItems(resolvedItems);
+    setEssentialMode(resolvedItems.some(i => !i.is_done && i.duration_minutes === 0));
 
     // Buscar segundos estudados por plan_item
     const planItemIds = resolvedItems.map((i) => i.id);
@@ -416,8 +492,11 @@ export default function TodayPage() {
     }
   }
 
+  // Itens com duration_minutes=0 foram descartados pela Sessão Essencial — ocultá-los (salvo se já concluídos)
+  const visibleItems = items.filter(i => i.duration_minutes !== 0 || i.is_done)
+
   // Total planejado — só itens do plano, sessões livres não inflam o alvo
-  const totalMinutes = items.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
+  const totalMinutes = visibleItems.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
 
   // Minutos estudados: segundos reais de session_items + itens concluídos manualmente + sessões livres
   const studiedSecsTotal = items.reduce((s, i) => {
@@ -434,7 +513,7 @@ export default function TodayPage() {
       ? Math.min(100, Math.round((studiedMinutes / denominator) * 100))
       : 0;
 
-  const total = items.length + freeSessions.length;
+  const total = visibleItems.length + freeSessions.length;
 
   if (loading) {
     return (
@@ -504,11 +583,21 @@ export default function TodayPage() {
             <span className="text-xs font-semibold text-gray-600">
               Progresso de hoje
             </span>
-            <span className="text-xs font-bold text-[#1E3A5F]">
-              {totalMinutes > 0
-                ? `${studiedMinutes}/${totalMinutes} min`
-                : `${studiedMinutes} min`}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[#1E3A5F]">
+                {totalMinutes > 0
+                  ? `${studiedMinutes}/${totalMinutes} min`
+                  : `${studiedMinutes} min`}
+              </span>
+              {visibleItems.some(i => !i.is_done) && (
+                <button
+                  onClick={() => setShowChangeTime(true)}
+                  className="text-gray-400 hover:text-[#1E3A5F] transition"
+                >
+                  <MdEdit size={13} />
+                </button>
+              )}
+            </div>
           </div>
           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
@@ -520,7 +609,7 @@ export default function TodayPage() {
       )}
 
       {/* Lista de itens */}
-      {items.length === 0 && freeSessions.length === 0 ? (
+      {visibleItems.length === 0 && freeSessions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
           <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
             <MdSelfImprovement size={24} color="white" />
@@ -557,7 +646,13 @@ export default function TodayPage() {
         </div>
       ) : (
         <div id="onboarding-today-tasks" className="space-y-3">
-          {items.map((item, itemIdx) => {
+          {essentialMode && (
+            <div className="rounded-xl bg-orange-50 border border-orange-200 px-3 py-2.5 flex items-center gap-2">
+              <MdFlashOn size={16} className="text-orange-500" />
+              <span className="text-xs text-orange-700 font-medium">Sessão Essencial — foco no que mais importa</span>
+            </div>
+          )}
+          {visibleItems.map((item, itemIdx) => {
             const { title, subtitle, maintenanceIcon } = itemDisplay(item);
 
             const itemPct = item.duration_minutes
@@ -779,6 +874,15 @@ export default function TodayPage() {
             Não conta XP, badges nem missões.
           </p>
         </div>
+      )}
+
+      {/* Modal de alterar tempo */}
+      {showChangeTime && (
+        <ChangeTimeModal
+          onClose={() => setShowChangeTime(false)}
+          currentMinutes={totalMinutes}
+          onConfirm={handleChangeTime}
+        />
       )}
 
       {/* Modal de confirmação manual */}
