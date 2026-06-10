@@ -98,13 +98,20 @@ export default function ObjetivosPage() {
 
   async function savePriorities() {
     setSavingPriorities(true)
-    await Promise.all(
-      objetivos.map(o =>
-        supabase.from('programas').update({ priority: priorities[o.id] ?? 3 }).eq('id', o.id)
+    try {
+      const results = await Promise.all(
+        objetivos.map(o =>
+          supabase.from('programas').update({ priority: priorities[o.id] ?? 3 }).eq('id', o.id)
+        )
       )
-    )
-    setSavingPriorities(false)
-    toast.success('Prioridades salvas!')
+      const failed = results.find(r => r.error)
+      if (failed?.error) throw failed.error
+      toast.success('Prioridades salvas!')
+    } catch {
+      toast.error('Erro ao salvar prioridades.')
+    } finally {
+      setSavingPriorities(false)
+    }
   }
 
   function openModal(type: ProgramaType) {
