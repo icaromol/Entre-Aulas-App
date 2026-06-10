@@ -4,6 +4,7 @@ import { MdClose, MdFlag, MdMusicNote, MdNotes, MdSchool } from 'react-icons/md'
 import { PillSlider } from '@/components/ui/PillSlider'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { autoGeneratePlan } from '@/lib/autoplan'
 import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
@@ -107,6 +108,7 @@ export default function ObjetivosPage() {
       const failed = results.find(r => r.error)
       if (failed?.error) throw failed.error
       toast.success('Prioridades salvas!')
+      if (studentId) autoGeneratePlan(studentId)
     } catch {
       toast.error('Erro ao salvar prioridades.')
     } finally {

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { MdArrowBack, MdPerson, MdMusicNote, MdAccessTime, MdNotes } from 'react-icons/md'
 import { supabase } from '@/lib/supabase'
 import { isValidUUID } from '@/lib/utils'
+import { autoGeneratePlan } from '@/lib/autoplan'
 import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
@@ -134,6 +135,7 @@ export default function EditStudentPage() {
       )
 
       toast.success('Alterações salvas!')
+      autoGeneratePlan(studentId!)
       navigate(`/professor/alunos/${studentId}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar.')
