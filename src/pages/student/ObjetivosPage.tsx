@@ -27,10 +27,6 @@ const exerciseCategoryLabel: Record<string, string> = {
   history: 'História', improvisation: 'Improvisação', other: 'Outro',
 }
 
-const typeLabel: Record<string, string> = {
-  recital: 'Apresentação', concerto: 'Apresentação', show: 'Apresentação', participacao: 'Apresentação',
-  gravacao: 'Gravação', exame: 'Exame', outro: 'Outro',
-}
 
 function daysUntil(date: string) {
   const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -190,40 +186,47 @@ export default function ObjetivosPage() {
           const ObjIcon = (PROGRAM_TYPES[obj.type] ?? PROGRAM_TYPES.outro).Icon
           return (
             <div key={obj.id}
-              className="w-full bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center gap-3 hover:border-[#4A90C4]/40 transition">
-              {/* Ícone — sempre visível */}
-              <div
-                className="w-9 h-9 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0 cursor-pointer"
+              className="w-full bg-white rounded-2xl border border-gray-100 px-4 py-3 hover:border-[#4A90C4]/40 transition">
+
+              {/* Título — visível apenas em telas pequenas, acima do conteúdo */}
+              <p
+                className="sm:hidden text-xs font-semibold text-gray-700 text-center mb-2 truncate cursor-pointer"
                 onClick={() => navigate(`/aluno/repertorio/programas/${obj.id}`)}>
-                <ObjIcon size={18} color="white" />
-              </div>
+                {obj.title}
+              </p>
 
-              {/* Título + subtítulo — oculto em telas pequenas */}
-              <div className="hidden sm:flex flex-col min-w-0 cursor-pointer" onClick={() => navigate(`/aluno/repertorio/programas/${obj.id}`)}>
-                <p className="text-sm font-semibold text-gray-800 truncate">{obj.title}</p>
-                <p className="text-xs text-gray-400">{typeLabel[obj.type] ?? obj.type}</p>
-              </div>
+              {/* Linha principal: ícone + título (sm+) + badge + slider */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0 cursor-pointer"
+                  onClick={() => navigate(`/aluno/repertorio/programas/${obj.id}`)}>
+                  <ObjIcon size={18} color="white" />
+                </div>
 
-              {/* Badge de prazo — oculto em telas pequenas */}
-              {days !== null && (
-                <span className={`hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                  days < 0  ? 'bg-gray-100 text-gray-400' :
-                  days < 14 ? 'bg-red-50 text-red-500' :
-                  days < 30 ? 'bg-amber-50 text-amber-600' :
-                              'bg-green-50 text-green-600'
-                }`}>
-                  {days < 0 ? 'passou' : days === 0 ? 'hoje' : `${days}d`}
-                </span>
-              )}
+                {/* Título — visível a partir de sm */}
+                <div className="hidden sm:flex flex-col min-w-0 cursor-pointer" onClick={() => navigate(`/aluno/repertorio/programas/${obj.id}`)}>
+                  <p className="text-sm font-semibold text-gray-800 truncate">{obj.title}</p>
+                </div>
 
-              {/* Slider — flex-1, ao lado direito */}
-              <div className="flex-1" onClick={e => e.stopPropagation()}>
-                <PillSlider
-                  value={priorities[obj.id] ?? 3}
-                  min={1}
-                  max={5}
-                  onChange={v => setPriorities(prev => ({ ...prev, [obj.id]: v }))}
-                />
+                {days !== null && (
+                  <span className={`hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                    days < 0  ? 'bg-gray-100 text-gray-400' :
+                    days < 14 ? 'bg-red-50 text-red-500' :
+                    days < 30 ? 'bg-amber-50 text-amber-600' :
+                                'bg-green-50 text-green-600'
+                  }`}>
+                    {days < 0 ? 'passou' : days === 0 ? 'hoje' : `${days}d`}
+                  </span>
+                )}
+
+                <div className="flex-1" onClick={e => e.stopPropagation()}>
+                  <PillSlider
+                    value={priorities[obj.id] ?? 3}
+                    min={1}
+                    max={5}
+                    onChange={v => setPriorities(prev => ({ ...prev, [obj.id]: v }))}
+                  />
+                </div>
               </div>
             </div>
           )
@@ -240,7 +243,7 @@ export default function ObjetivosPage() {
         )}
 
         {/* Separador */}
-        <div className="flex items-center gap-3 pt-6 pb-2">
+        <div className="flex items-center gap-3 pt-10 pb-4">
           <div className="flex-1 h-px bg-gray-200" />
           <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest whitespace-nowrap">
             {objetivos.length === 0 ? 'Crie seu primeiro objetivo' : 'Novo objetivo'}
