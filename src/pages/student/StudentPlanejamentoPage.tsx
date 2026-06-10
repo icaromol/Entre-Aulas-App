@@ -3,8 +3,22 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   MdArrowBack, MdAutoAwesome,
-  MdCheckBox, MdCheckBoxOutlineBlank, MdAdd,
+  MdCheckBox, MdCheckBoxOutlineBlank,
+  MdStar, MdFiberManualRecord, MdAssignment, MdFolder,
 } from 'react-icons/md'
+import type { ProgramaType } from '@/types/programs'
+
+const OBJETIVO_CARDS: {
+  value: ProgramaType
+  label: string
+  description: string
+  Icon: React.ComponentType<{ size?: number; className?: string }>
+}[] = [
+  { value: 'recital',  label: 'Apresentação', description: 'Recital, concerto, show ou performance', Icon: MdStar },
+  { value: 'gravacao', label: 'Gravação',      description: 'Estúdio ou gravação',                   Icon: MdFiberManualRecord },
+  { value: 'exame',    label: 'Exame',         description: 'Banca, prova ou avaliação técnica',     Icon: MdAssignment },
+  { value: 'outro',    label: 'Outro',         description: 'Objetivo personalizado',                Icon: MdFolder },
+]
 import { ProportionalSliderGroup } from '@/components/ui/ProportionalSliderGroup'
 import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
 import { supabase } from '@/lib/supabase'
@@ -51,7 +65,7 @@ export default function StudentPlanejamentoPage() {
 
   async function fetchPrograms() {
     const [progsRes, donePiecesRes, studentRes, availRes] = await Promise.all([
-      supabase.from('programas').select('*').eq('student_id', studentId!).neq('status', 'archived').order('created_at'),
+      supabase.from('programas').select('*').eq('student_id', studentId!).neq('status', 'archived').neq('type', 'regular').order('created_at'),
       supabase.from('pieces').select('id').eq('student_id', studentId!).eq('status', 'completed'),
       supabase.from('students').select('level').eq('id', studentId!).single(),
       supabase.from('student_availability').select('id').eq('student_id', studentId!).eq('is_active', true).limit(1),
@@ -225,7 +239,7 @@ export default function StudentPlanejamentoPage() {
           <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600 transition">
             <MdArrowBack size={20} />
           </button>
-          <h1 className="text-xl font-bold text-[#1E3A5F]">Personalize seu plano de estudos</h1>
+          <h1 className="text-xl font-bold text-[#1E3A5F]">Planejamento Automático</h1>
         </div>
         <div className="space-y-5">
           <div className="bg-[#D6E4F0]/50 border border-[#4A90C4]/20 rounded-2xl px-5 py-4">
@@ -253,37 +267,58 @@ export default function StudentPlanejamentoPage() {
         <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </button>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Personalize seu plano de estudos</h1>
-      </div>
-
-      <div className="flex items-start gap-2.5 bg-[#D6E4F0]/60 rounded-2xl px-4 py-3 mb-5 text-sm text-[#1E3A5F]/80 leading-snug">
-        <MdAutoAwesome size={16} className="shrink-0 mt-0.5 text-[#4A90C4]" />
-        <span>Seu plano é gerado automaticamente toda semana. Use esta tela para personalizar pesos e manutenção.</span>
+        <h1 className="text-xl font-bold text-[#1E3A5F]">Planejamento Automático</h1>
       </div>
 
       {programs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-[#D6E4F0] flex items-center justify-center">
-            <MdAutoAwesome size={28} className="text-[#1E3A5F]" />
+        <div className="space-y-4">
+          <div className="text-center pt-6 pb-2">
+            <p className="text-sm font-bold text-[#1E3A5F]">Você ainda não tem objetivos</p>
+            <p className="text-xs text-gray-400 mt-1">Escolha um tipo para começar — o plano é gerado automaticamente.</p>
           </div>
-          <div>
-            <p className="text-base font-bold text-[#1E3A5F] mb-1">Nenhum programa ativo</p>
-            <p className="text-sm text-gray-400 max-w-xs leading-relaxed">
-              Você precisa de ao menos um programa para gerar o planejamento.
-            </p>
+          <div className="grid grid-cols-2 gap-4 pb-6">
+            {OBJETIVO_CARDS.map((card, cardIndex) => {
+              const Icon = card.Icon
+              return (
+                <button
+                  key={card.value}
+                  type="button"
+                  onClick={() => navigate(`/aluno/objetivos?new=${card.value}`)}
+                  className="flex flex-col gap-2 rounded-2xl p-5 bg-white border border-gray-100
+                    hover:shadow-md hover:scale-[1.02] hover:border-[#4A90C4]/30
+                    transition-all duration-300 active:scale-[0.98] text-left
+                    cursor-pointer select-none"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <div className="flex gap-1">
+                    {OBJETIVO_CARDS.map((_, i) => (
+                      <span key={i} className={`block h-1.5 rounded-full transition-all ${
+                        i === cardIndex ? 'w-4 bg-[#1E3A5F]' : 'w-1.5 bg-gray-200'
+                      }`} />
+                    ))}
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-[#1E3A5F] flex items-center justify-center mt-1">
+                    <Icon size={18} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#1E3A5F] leading-snug">{card.label}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">{card.description}</p>
+                  </div>
+                </button>
+              )
+            })}
           </div>
-          <Button
-            onClick={() => navigate('/aluno/repertorio/programas/novo')}
-            className="flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl px-6 h-11"
-          >
-            <MdAdd size={18} /> Criar primeiro programa
-          </Button>
         </div>
       ) : (
         <div className="space-y-5">
 
+          <div className="flex items-start gap-2.5 bg-[#D6E4F0]/60 rounded-2xl px-4 py-3 text-sm text-[#1E3A5F]/80 leading-snug">
+            <MdAutoAwesome size={16} className="shrink-0 mt-0.5 text-[#4A90C4]" />
+            <span>Toda semana, seu plano é gerado automaticamente. Ajuste os pesos de cada objetivo e ative a manutenção se quiser.</span>
+          </div>
+
           <div id="onboarding-planning-programs" className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-600">Programas</h2>
+            <h2 className="text-sm font-semibold text-gray-600">Objetivos</h2>
             <div className="space-y-2">
               {programs.map(prog => {
                 const sel = selectedIds.has(prog.id)

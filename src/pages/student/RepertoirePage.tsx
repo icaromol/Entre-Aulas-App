@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Avatar from 'boring-avatars'
-import { MdAdd, MdMusicNote, MdFitnessCenter, MdLibraryMusic } from 'react-icons/md'
+import { MdAdd, MdMusicNote, MdFitnessCenter } from 'react-icons/md'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
-import { PROGRAM_TYPES } from '@/lib/programTypes'
-
 const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
 
 interface ChecklistItem {
@@ -24,10 +22,6 @@ interface Exercise {
   id: string; title: string; category: string; status: string
 }
 
-interface Programa {
-  id: string; title: string; type: string; status: string; deadline: string | null
-}
-
 const pieceStatusLabel: Record<string, string> = {
   in_progress: 'Em andamento', completed: 'Concluída', paused: 'Pausada', future: 'Repertório futuro',
 }
@@ -41,17 +35,7 @@ const exerciseStatusLabel: Record<string, string> = {
   active: 'Ativo', inactive: 'Inativo', completed: 'Concluído',
 }
 
-const typeLabel: Record<string, string> = {
-  regular: 'Aulas Regulares', recital: 'Recital', concerto: 'Concerto', show: 'Show',
-  gravacao: 'Gravação', exame: 'Exame', participacao: 'Participação', outro: 'Outro',
-}
-
-function daysUntil(date: string) {
-  const today = new Date(); today.setHours(0, 0, 0, 0)
-  return Math.ceil((new Date(date + 'T00:00:00').getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-}
-
-type TabKey = 'pieces' | 'exercises' | 'programs'
+type TabKey = 'pieces' | 'exercises'
 
 export default function RepertoirePage() {
   const { profile } = useAuth()
@@ -60,12 +44,11 @@ export default function RepertoirePage() {
 
   const tabParam = searchParams.get('tab') as TabKey | null
   const [activeTab, setActiveTab] = useState<TabKey>(
-    tabParam === 'exercises' || tabParam === 'programs' ? tabParam : 'pieces'
+    tabParam === 'exercises' ? tabParam : 'pieces'
   )
 
   const [pieces, setPieces] = useState<Piece[]>([])
   const [exercises, setExercises] = useState<Exercise[]>([])
-  const [programas, setProgramas] = useState<Programa[]>([])
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -122,7 +105,7 @@ export default function RepertoirePage() {
     }
     setStudentId(student.id)
 
-    const [piecesRes, exercisesRes, completionsRes, programasRes] = await Promise.all([
+    const [piecesRes, exercisesRes, completionsRes] = await Promise.all([
       supabase.from('pieces')
         .select('id, title, composer, status, completion_pct, checklist_items(id, title, category, position, is_optional)')
         .eq('student_id', student.id).order('title'),
@@ -130,8 +113,6 @@ export default function RepertoirePage() {
         .select('id, title, category, status').eq('student_id', student.id).order('title'),
       supabase.from('checklist_completions')
         .select('checklist_item_id').eq('student_id', student.id),
-      supabase.from('programas')
-        .select('id, title, type, status, deadline').eq('student_id', student.id).order('title'),
     ])
 
     if (piecesRes.error || exercisesRes.error) {
@@ -151,7 +132,6 @@ export default function RepertoirePage() {
     )
     setExercises(exercisesRes.data ?? [])
     setCompletedIds(new Set((completionsRes.data ?? []).map((c: { checklist_item_id: string }) => c.checklist_item_id)))
-    setProgramas(programasRes.data ?? [])
     setLoading(false)
   }
 
@@ -175,7 +155,6 @@ export default function RepertoirePage() {
         {([
           { key: 'pieces' as TabKey,    label: `Peças (${pieces.length})` },
           { key: 'exercises' as TabKey, label: `Exercícios (${exercises.length})` },
-          { key: 'programs' as TabKey,  label: `Programas (${programas.length})` },
         ]).map(tab => (
           <button key={tab.key} onClick={() => switchTab(tab.key)}
             className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
@@ -333,58 +312,6 @@ export default function RepertoirePage() {
               ou clique para importar em lote
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Tab: Programas */}
-      {activeTab === 'programs' && (
-        <div className="space-y-3">
-          {programas.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
-                <MdLibraryMusic size={24} color="white" />
-              </div>
-              <p className="text-sm font-semibold text-gray-600">Nenhum programa cadastrado</p>
-              <p className="text-xs text-gray-400 mt-1">Crie seu primeiro programa!</p>
-            </div>
-          ) : (
-            programas.map(prog => {
-              const days = prog.deadline ? daysUntil(prog.deadline) : null
-              const ProgIcon = (PROGRAM_TYPES[prog.type] ?? PROGRAM_TYPES.outro).Icon
-              return (
-                <button key={prog.id} onClick={() => navigate(`/aluno/repertorio/programas/${prog.id}`)}
-                  className="w-full bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4]/40 transition text-left">
-                  <div className="w-9 h-9 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
-                    <ProgIcon size={18} color="white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{prog.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {typeLabel[prog.type] ?? prog.type}
-                      {prog.status === 'archived' && ' · Arquivado'}
-                    </p>
-                  </div>
-                  {days !== null && (
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                      days < 0  ? 'bg-gray-100 text-gray-400' :
-                      days < 14 ? 'bg-red-50 text-red-500' :
-                      days < 30 ? 'bg-amber-50 text-amber-600' :
-                                  'bg-green-50 text-green-600'
-                    }`}>
-                      {days < 0 ? 'passou' : days === 0 ? 'hoje' : `${days}d`}
-                    </span>
-                  )}
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                    <path d="M9 18l6-6-6-6"/>
-                  </svg>
-                </button>
-              )
-            })
-          )}
-          <button onClick={() => navigate('/aluno/repertorio/programas/novo')}
-            className="flex items-center justify-center gap-2 w-full py-24 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition">
-            <MdAdd size={22} />Novo programa
-          </button>
         </div>
       )}
 

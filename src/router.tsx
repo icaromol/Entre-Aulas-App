@@ -46,6 +46,7 @@ const StudentProgramaDetailPage = lazy(() => import('@/pages/student/ProgramaDet
 const StudentEditProgramaPage      = lazy(() => import('@/pages/student/EditProgramaPage'))
 const StudentPendingPage           = lazy(() => import('@/pages/student/StudentPendingPage'))
 const StudentPlanejamentoPage      = lazy(() => import('@/pages/student/StudentPlanejamentoPage'))
+const ObjetivosPage                = lazy(() => import('@/pages/student/ObjetivosPage'))
 
 function PageSpinner() {
   return (
@@ -102,6 +103,7 @@ function AppRoutes() {
           <Route path="/aluno/repertorio/programas/novo" element={<AuthGuard allowedRole="student"><StudentNewProgramaPage /></AuthGuard>} />
           <Route path="/aluno/repertorio/programas/:programId" element={<AuthGuard allowedRole="student"><StudentProgramaDetailPage /></AuthGuard>} />
           <Route path="/aluno/repertorio/programas/:programId/editar" element={<AuthGuard allowedRole="student"><StudentEditProgramaPage /></AuthGuard>} />
+          <Route path="/aluno/objetivos"     element={<AuthGuard allowedRole="student"><ObjetivosPage /></AuthGuard>} />
           <Route path="/aluno/historico"    element={<AuthGuard allowedRole="student"><HistoryPage /></AuthGuard>} />
           <Route path="/aluno/jornada"      element={<AuthGuard allowedRole="student"><JourneyPage /></AuthGuard>} />
           <Route path="/aluno/estatisticas" element={<AuthGuard allowedRole="student"><StatsPage /></AuthGuard>} />

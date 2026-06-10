@@ -11,7 +11,9 @@ import { Button } from '@/components/ui/button'
 import type { ProgramaType } from '@/types/programs'
 import { PROGRAM_TYPES } from '@/lib/programTypes'
 
-const TYPES = Object.entries(PROGRAM_TYPES).map(([value, cfg]) => ({ value: value as ProgramaType, ...cfg }))
+const TYPES = Object.entries(PROGRAM_TYPES)
+  .filter(([value]) => value !== 'regular')
+  .map(([value, cfg]) => ({ value: value as ProgramaType, ...cfg }))
 
 export default function StudentEditProgramaPage() {
   const { programId } = useParams()
@@ -71,7 +73,7 @@ export default function StudentEditProgramaPage() {
         <Link to={`/aluno/repertorio/programas/${programId}`} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Editar programa</h1>
+        <h1 className="text-xl font-bold text-[#1E3A5F]">Editar objetivo</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">

@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import {
-  MdCalendarToday, MdLibraryMusic, MdHistory, MdStars, MdEventNote,
+  MdCalendarToday, MdLibraryMusic, MdHistory, MdStars, MdFlag,
   MdMenu, MdClose, MdEdit, MdSchool, MdLogout, MdChevronRight, MdSwapHoriz,
   MdAccessTime,
 } from 'react-icons/md'
@@ -21,7 +21,7 @@ interface StudentLayoutProps {
 const navItems = [
   { label: 'Hoje',        path: '/aluno/hoje',          Icon: MdCalendarToday },
   { label: 'Repertório',  path: '/aluno/repertorio',    Icon: MdLibraryMusic  },
-  { label: 'Plano',       path: '/aluno/planejamento',  Icon: MdEventNote     },
+  { label: 'Objetivos',   path: '/aluno/objetivos',     Icon: MdFlag          },
   { label: 'Jornada',     path: '/aluno/jornada',       Icon: MdStars         },
 ]
 

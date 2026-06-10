@@ -112,7 +112,7 @@ export default function StudentProgramaDetailPage() {
     if (data) {
       setProgramPieces(prev => [...prev, data as unknown as ProgramPiece])
       setAvailablePieces(prev => prev.filter(p => p.id !== pieceId))
-      toast.success('Peça adicionada ao programa')
+      toast.success('Peça adicionada ao objetivo')
     }
     setAddingPieceId(null)
   }
@@ -141,7 +141,7 @@ export default function StudentProgramaDetailPage() {
     if (data) {
       setProgramExercises(prev => [...prev, data as unknown as ProgramExercise])
       setAvailableExercises(prev => prev.filter(e => e.id !== exerciseId))
-      toast.success('Exercício adicionado ao programa')
+      toast.success('Exercício adicionado ao objetivo')
     }
     setAddingExerciseId(null)
   }
@@ -153,18 +153,18 @@ export default function StudentProgramaDetailPage() {
   }
 
   async function archivePrograma() {
-    if (!confirm('Arquivar este programa? Ele deixará de aparecer na lista ativa.')) return
+    if (!confirm('Arquivar este objetivo? Ele deixará de aparecer na lista ativa.')) return
     await supabase.from('programas').update({ status: 'archived' }).eq('id', programId!)
     setPrograma(prev => prev ? { ...prev, status: 'archived' } : prev)
-    toast.success('Programa arquivado')
+    toast.success('Objetivo arquivado')
   }
 
   async function deletePrograma() {
-    if (!confirm('Excluir permanentemente este programa? Esta ação não pode ser desfeita.')) return
+    if (!confirm('Excluir permanentemente este objetivo? Esta ação não pode ser desfeita.')) return
     const { error } = await supabase.from('programas').delete().eq('id', programId!)
-    if (error) { toast.error('Erro ao excluir programa.'); return }
-    toast.success('Programa excluído')
-    navigate('/aluno/repertorio?tab=programs')
+    if (error) { toast.error('Erro ao excluir objetivo.'); return }
+    toast.success('Objetivo excluído')
+    navigate('/aluno/objetivos')
   }
 
   if (!isValidUUID(programId)) return <Navigate to="/" replace />
@@ -287,13 +287,7 @@ export default function StudentProgramaDetailPage() {
         </div>
       )}
 
-      {programa.type === 'regular' ? (
-        <div className="bg-[#D6E4F0]/40 rounded-2xl border border-[#D6E4F0] p-5 mb-5 text-center">
-          <MdMusicNote size={24} className="mx-auto text-[#4A90C4] mb-2" />
-          <p className="text-sm font-semibold text-[#1E3A5F]">Repertório completo</p>
-          <p className="text-xs text-gray-500 mt-1">Todo o repertório ativo entra automaticamente no planejamento.</p>
-        </div>
-      ) : (
+      {programa.type !== 'regular' && (
         <>
           <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
             <div className="flex items-center justify-between mb-4">
