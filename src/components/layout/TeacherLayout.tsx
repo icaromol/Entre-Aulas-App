@@ -1,92 +1,114 @@
-import { useState, useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import Avatar from 'boring-avatars'
-import { toast } from 'sonner'
-import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@/lib/supabase'
-import { MdMenu, MdEdit, MdLogout, MdEmojiEvents, MdChevronRight, MdSwapHoriz } from 'react-icons/md'
-import { OnboardingController } from '@/components/onboarding/OnboardingController'
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import Avatar from "boring-avatars";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
+import {
+  MdMenu,
+  MdEdit,
+  MdLogout,
+  MdEmojiEvents,
+  MdChevronRight,
+  MdSwapHoriz,
+} from "react-icons/md";
+import { OnboardingController } from "@/components/onboarding/OnboardingController";
 
-const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
+const AVATAR_COLORS = ["#1E3A5F", "#4A90C4", "#D6E4F0", "#F5F7FA", "#FFFFFF"];
 
 interface TeacherLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function TeacherLayout({ children }: TeacherLayoutProps) {
-  const { user, profile, signOut } = useAuth()
-  const location = useLocation()
-  const navigate = useNavigate()
+  const { user, profile, signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const [showMenu, setShowMenu]           = useState(false)
-  const [showLogout, setShowLogout]       = useState(false)
-  const [showEdit, setShowEdit]           = useState(false)
-  const [editFirst, setEditFirst]         = useState('')
-  const [editLast, setEditLast]           = useState('')
-  const [saving, setSaving]               = useState(false)
-  const [nameOverride, setNameOverride]   = useState<{ first: string; last: string } | null>(null)
-  const [pendingCount, setPendingCount]   = useState(0)
+  const [showMenu, setShowMenu] = useState(false);
+  const [showLogout, setShowLogout] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editFirst, setEditFirst] = useState("");
+  const [editLast, setEditLast] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [nameOverride, setNameOverride] = useState<{
+    first: string;
+    last: string;
+  } | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
-    if (!profile?.teacherId) return
+    if (!profile?.teacherId) return;
     supabase
-      .from('students')
-      .select('id', { count: 'exact', head: true })
-      .eq('teacher_id', profile.teacherId)
-      .eq('status', 'pending')
-      .then(({ count }) => setPendingCount(count ?? 0))
-  }, [profile?.teacherId, location.pathname])
+      .from("students")
+      .select("id", { count: "exact", head: true })
+      .eq("teacher_id", profile.teacherId)
+      .eq("status", "pending")
+      .then(({ count }) => setPendingCount(count ?? 0));
+  }, [profile?.teacherId, location.pathname]);
 
   function openEdit() {
-    setEditFirst(nameOverride?.first ?? profile?.first_name ?? '')
-    setEditLast(nameOverride?.last  ?? profile?.last_name  ?? '')
-    setShowMenu(false)
-    setShowEdit(true)
+    setEditFirst(nameOverride?.first ?? profile?.first_name ?? "");
+    setEditLast(nameOverride?.last ?? profile?.last_name ?? "");
+    setShowMenu(false);
+    setShowEdit(true);
   }
 
   async function handleSaveProfile() {
-    if (!user || !profile) return
-    setSaving(true)
-    const { error } = await supabase.rpc('complete_user_profile', {
-      p_role:       profile.role,
+    if (!user || !profile) return;
+    setSaving(true);
+    const { error } = await supabase.rpc("complete_user_profile", {
+      p_role: profile.role,
       p_first_name: editFirst.trim(),
-      p_last_name:  editLast.trim(),
+      p_last_name: editLast.trim(),
       p_avatar_url: profile.avatar_url,
-    })
-    setSaving(false)
-    if (error) { toast.error('Erro ao salvar perfil.'); return }
-    setNameOverride({ first: editFirst.trim(), last: editLast.trim() })
-    setShowEdit(false)
-    toast.success('Perfil atualizado!')
+    });
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao salvar perfil.");
+      return;
+    }
+    setNameOverride({ first: editFirst.trim(), last: editLast.trim() });
+    setShowEdit(false);
+    toast.success("Perfil atualizado!");
   }
 
   async function handleSignOut() {
-    setShowLogout(false)
-    await signOut()
-    navigate('/login')
+    setShowLogout(false);
+    await signOut();
+    navigate("/login");
   }
 
-  const displayFirst = nameOverride?.first ?? profile?.first_name ?? ''
-  const displayLast  = nameOverride?.last  ?? profile?.last_name  ?? ''
-  const fullName     = `${displayFirst} ${displayLast}`.trim()
-  const avatarUrl    = profile?.avatar_url ?? user?.user_metadata?.avatar_url
+  const displayFirst = nameOverride?.first ?? profile?.first_name ?? "";
+  const displayLast = nameOverride?.last ?? profile?.last_name ?? "";
+  const fullName = `${displayFirst} ${displayLast}`.trim();
+  const avatarUrl = profile?.avatar_url ?? user?.user_metadata?.avatar_url;
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       <OnboardingController role="teacher" />
 
       {/* Modal logout */}
       {showLogout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Quer sair?</h2>
-            <p className="text-sm text-gray-400 mb-5">Você será desconectado da sua conta.</p>
+            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">
+              Quer sair?
+            </h2>
+            <p className="text-sm text-gray-400 mb-5">
+              Você será desconectado da sua conta.
+            </p>
             <div className="flex flex-col gap-2">
-              <button onClick={handleSignOut} className="w-full py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition">
+              <button
+                onClick={handleSignOut}
+                className="w-full py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition"
+              >
                 Sair e fazer logout
               </button>
-              <button onClick={() => setShowLogout(false)} className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition">
+              <button
+                onClick={() => setShowLogout(false)}
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition"
+              >
                 Permanecer conectado
               </button>
             </div>
@@ -98,27 +120,46 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
       {showEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="text-base font-bold text-[#1E3A5F] mb-4">Editar perfil</h2>
+            <h2 className="text-base font-bold text-[#1E3A5F] mb-4">
+              Editar perfil
+            </h2>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-400 font-medium">Nome</label>
-                <input value={editFirst} onChange={e => setEditFirst(e.target.value)} maxLength={100}
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition" />
+                <label className="text-xs text-gray-400 font-medium">
+                  Nome
+                </label>
+                <input
+                  value={editFirst}
+                  onChange={(e) => setEditFirst(e.target.value)}
+                  maxLength={100}
+                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
+                />
               </div>
               <div>
-                <label className="text-xs text-gray-400 font-medium">Sobrenome</label>
-                <input value={editLast} onChange={e => setEditLast(e.target.value)} maxLength={100}
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition" />
+                <label className="text-xs text-gray-400 font-medium">
+                  Sobrenome
+                </label>
+                <input
+                  value={editLast}
+                  onChange={(e) => setEditLast(e.target.value)}
+                  maxLength={100}
+                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
+                />
               </div>
             </div>
             <div className="flex gap-2 mt-5">
-              <button onClick={() => setShowEdit(false)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition">
+              <button
+                onClick={() => setShowEdit(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition"
+              >
                 Cancelar
               </button>
-              <button onClick={handleSaveProfile} disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-50">
-                {saving ? 'Salvando...' : 'Salvar'}
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-50"
+              >
+                {saving ? "Salvando..." : "Salvar"}
               </button>
             </div>
           </div>
@@ -128,10 +169,13 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
       {/* Header */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="w-full px-4 sm:px-6 lg:px-8 h-14 grid grid-cols-3 items-center">
-
           {/* Logo — coluna esquerda */}
           <Link to="/professor/jornada" className="flex items-center">
-            <img src="/estudamus_logo.png" alt="estudamus" className="h-[22px]" />
+            <img
+              src="/estudamus_logo.png"
+              alt="estudamus"
+              className="h-[22px]"
+            />
           </Link>
 
           {/* Nav central — coluna central */}
@@ -139,9 +183,9 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
             <Link
               to="/professor/jornada"
               className={`text-sm font-medium transition ${
-                location.pathname.startsWith('/professor/jornada')
-                  ? 'text-[#1E3A5F]'
-                  : 'text-gray-400 hover:text-[#1E3A5F]'
+                location.pathname.startsWith("/professor/jornada")
+                  ? "text-[#1E3A5F]"
+                  : "text-gray-400 hover:text-[#1E3A5F]"
               }`}
             >
               Início
@@ -149,9 +193,9 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
             <Link
               to="/professor/alunos"
               className={`relative text-sm font-medium transition ${
-                location.pathname.startsWith('/professor/alunos')
-                  ? 'text-[#1E3A5F]'
-                  : 'text-gray-400 hover:text-[#1E3A5F]'
+                location.pathname.startsWith("/professor/alunos")
+                  ? "text-[#1E3A5F]"
+                  : "text-gray-400 hover:text-[#1E3A5F]"
               }`}
             >
               Alunos
@@ -164,8 +208,8 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
           {/* Hamburger menu — coluna direita */}
           <div className="relative flex justify-end">
             <button
-              onClick={() => setShowMenu(v => !v)}
-              className={`transition ${showMenu ? 'text-[#1E3A5F]' : 'text-gray-400 hover:text-[#1E3A5F]'}`}
+              onClick={() => setShowMenu((v) => !v)}
+              className={`transition ${showMenu ? "text-[#1E3A5F]" : "text-gray-400 hover:text-[#1E3A5F]"}`}
               aria-label="Menu"
             >
               <MdMenu size={22} />
@@ -173,58 +217,99 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
 
             {showMenu && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-lg border border-gray-100 z-50 overflow-hidden">
-
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowMenu(false)}
+                />
+                <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-2xl shadow-lg border border-gray-100 z-50 overflow-hidden">
                   {/* Perfil */}
                   <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt={fullName} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                      <img
+                        src={avatarUrl}
+                        alt={fullName}
+                        className="w-9 h-9 rounded-full object-cover shrink-0"
+                      />
                     ) : (
                       <div className="rounded-full overflow-hidden shrink-0">
-                        <Avatar size={36} name={fullName} variant="beam" colors={AVATAR_COLORS} />
+                        <Avatar
+                          size={36}
+                          name={fullName}
+                          variant="beam"
+                          colors={AVATAR_COLORS}
+                        />
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[#1E3A5F] truncate">{fullName || 'Professor'}</p>
-                      <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                      <p className="text-sm font-semibold text-[#1E3A5F] truncate">
+                        {fullName || "Professor"}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {user?.email}
+                      </p>
                     </div>
                   </div>
 
                   {/* Ações */}
                   <div className="py-1">
-                    <button onClick={() => { setShowMenu(false); navigate('/professor/jornada') }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
-                      <MdEmojiEvents size={18} className="text-[#4A90C4] shrink-0" />
-                      <span className="text-sm font-medium text-gray-700 flex-1">Minha Jornada</span>
-                      <MdChevronRight size={18} className="text-gray-300" />
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        navigate("/professor/jornada");
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left"
+                    >
+                      <MdEmojiEvents
+                        size={18}
+                        className="text-[#4A90C4] shrink-0"
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        Minha Jornada
+                      </span>
                     </button>
-                    <div className="mx-3 border-t border-gray-100" />
-                    <button onClick={() => { setShowMenu(false); navigate('/modo') }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
-                      <MdSwapHoriz size={18} className="text-[#4A90C4] shrink-0" />
-                      <span className="text-sm font-medium text-gray-700 flex-1">Trocar área</span>
-                      <MdChevronRight size={18} className="text-gray-300" />
-                    </button>
-                    <div className="mx-3 border-t border-gray-100" />
-                    <button onClick={openEdit}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
+                    <button
+                      onClick={openEdit}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left"
+                    >
                       <MdEdit size={18} className="text-[#4A90C4] shrink-0" />
-                      <span className="text-sm font-medium text-gray-700">Editar perfil</span>
+                      <span className="text-sm font-medium text-gray-700 flex-1">
+                        Editar perfil
+                      </span>
                     </button>
                     <div className="mx-3 border-t border-gray-100" />
-                    <button onClick={() => { setShowMenu(false); setShowLogout(true) }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-red-50 transition text-left">
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        navigate("/aluno/planejamento");
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left"
+                    >
+                      <MdSwapHoriz
+                        size={18}
+                        className="text-[#4A90C4] shrink-0"
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        Trocar para a área de estudante
+                      </span>
+                    </button>
+                    <div className="mx-3 border-t border-gray-100" />
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        setShowLogout(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-red-50 transition text-left"
+                    >
                       <MdLogout size={18} className="text-red-400 shrink-0" />
-                      <span className="text-sm font-medium text-red-500">Sair</span>
+                      <span className="text-sm font-medium text-red-500">
+                        Sair
+                      </span>
                     </button>
                   </div>
-
                 </div>
               </>
             )}
           </div>
-
         </div>
 
         {/* Nav mobile */}
@@ -232,9 +317,9 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
           <Link
             to="/professor/jornada"
             className={`py-2 text-xs font-medium transition ${
-              location.pathname.startsWith('/professor/jornada')
-                ? 'text-[#1E3A5F] border-b-2 border-[#1E3A5F]'
-                : 'text-gray-400'
+              location.pathname.startsWith("/professor/jornada")
+                ? "text-[#1E3A5F] border-b-2 border-[#1E3A5F]"
+                : "text-gray-400"
             }`}
           >
             Início
@@ -242,9 +327,9 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
           <Link
             to="/professor/alunos"
             className={`relative py-2 text-xs font-medium transition ${
-              location.pathname.startsWith('/professor/alunos')
-                ? 'text-[#1E3A5F] border-b-2 border-[#1E3A5F]'
-                : 'text-gray-400'
+              location.pathname.startsWith("/professor/alunos")
+                ? "text-[#1E3A5F] border-b-2 border-[#1E3A5F]"
+                : "text-gray-400"
             }`}
           >
             Alunos
@@ -256,9 +341,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
       </header>
 
       {/* Conteúdo */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
-        {children}
-      </main>
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-6">{children}</main>
     </div>
-  )
+  );
 }

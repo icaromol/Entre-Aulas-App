@@ -152,23 +152,6 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             </span>
           </button>
 
-          {/* Trocar área — só para professores em modo estudo */}
-          {profile?.role === "teacher" && (
-            <button
-              onClick={() => {
-                setShowMenu(false);
-                navigate("/modo");
-              }}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#D6E4F0] transition text-left"
-            >
-              <MdSwapHoriz size={20} className="text-[#1E3A5F] shrink-0" />
-              <span className="text-sm font-semibold text-[#1E3A5F] flex-1">
-                Trocar área
-              </span>
-              <MdChevronRight size={18} className="text-gray-300" />
-            </button>
-          )}
-
           {/* Meu professor — só para estudantes */}
           {profile?.role === "student" && (
             <button
@@ -179,10 +162,9 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
             >
               <MdSchool size={20} className="text-[#4A90C4] shrink-0" />
-              <span className="text-sm font-medium text-gray-700 flex-1">
+              <span className="text-sm font-medium text-gray-700">
                 Meu professor
               </span>
-              <MdChevronRight size={18} className="text-gray-300" />
             </button>
           )}
 
@@ -195,10 +177,9 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
           >
             <MdAccessTime size={20} className="text-[#4A90C4] shrink-0" />
-            <span className="text-sm font-medium text-gray-700 flex-1">
+            <span className="text-sm font-medium text-gray-700">
               Dias disponíveis
             </span>
-            <MdChevronRight size={18} className="text-gray-300" />
           </button>
 
           {/* Histórico */}
@@ -210,13 +191,28 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
           >
             <MdHistory size={20} className="text-[#4A90C4] shrink-0" />
-            <span className="text-sm font-medium text-gray-700 flex-1">
+            <span className="text-sm font-medium text-gray-700">
               Histórico de sessões
             </span>
-            <MdChevronRight size={18} className="text-gray-300" />
           </button>
 
-          {/* Sair */}
+          {/* Trocar área + Sair */}
+          {profile?.role === "teacher" && (
+            <div className="pt-2 border-t border-gray-100">
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  navigate("/professor/alunos");
+                }}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
+              >
+                <MdSwapHoriz size={20} className="text-[#4A90C4] shrink-0" />
+                <span className="text-sm font-medium text-gray-700">
+                  Trocar para a área do professor
+                </span>
+              </button>
+            </div>
+          )}
           <div className="pt-2 border-t border-gray-100">
             <button
               onClick={() => {
