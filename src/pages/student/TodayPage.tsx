@@ -13,6 +13,7 @@ import {
   MdFlashOn,
 } from "react-icons/md";
 import { ChangeTimeModal } from "@/components/student/ChangeTimeModal";
+import { ContinuityCard } from "@/components/student/ContinuityCard";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -168,6 +169,7 @@ export default function TodayPage() {
   const [planGenerating, setPlanGenerating] = useState(false);
   const [showChangeTime, setShowChangeTime] = useState(false);
   const [essentialMode, setEssentialMode] = useState(false);
+  const [showContinuityModal, setShowContinuityModal] = useState(false);
 
   const monday    = useMemo(() => getMonday(new Date()), []);
   const weekStart = useMemo(() => formatWeekStart(monday), [monday]);
@@ -213,6 +215,12 @@ export default function TodayPage() {
     };
   }, [studentId]);
 
+  // Verifica pendências de dias passados (roda uma vez quando studentId fica disponível)
+  useEffect(() => {
+    if (!studentId) return
+    checkPendingPastItems(studentId)
+  }, [studentId]);
+
   async function fetchDayPlan() {
     setLoading(true);
 
@@ -244,6 +252,45 @@ export default function TodayPage() {
     }
 
     await fetchItems(sid);
+  }
+
+  async function checkPendingPastItems(sid: string) {
+    const { data: plan } = await supabase
+      .from("weekly_plans")
+      .select("id")
+      .eq("student_id", sid)
+      .eq("week_start", weekStart)
+      .maybeSingle()
+
+    if (!plan) return
+
+    const todayDow = getTodayDayOfWeek()
+    // Dias que já passaram nesta semana (ciclo: Mon=1…Sat=6, Sun=0)
+    const pastDays = todayDow === 0
+      ? [1, 2, 3, 4, 5, 6]
+      : Array.from({ length: todayDow - 1 }, (_, i) => i + 1)
+
+    if (pastDays.length === 0) return
+
+    const { data: pendingRows } = await supabase
+      .from("plan_items")
+      .select("id")
+      .eq("plan_id", plan.id)
+      .eq("is_done", false)
+      .in("day_of_week", pastDays)
+      .limit(1)
+
+    if (!pendingRows || pendingRows.length === 0) return
+
+    const EXPLAINED_KEY = "estudamus_continuity_explained"
+    const isFirstTime = !localStorage.getItem(EXPLAINED_KEY)
+
+    await autoGeneratePlan(sid)
+
+    if (isFirstTime) {
+      localStorage.setItem(EXPLAINED_KEY, "1")
+      setShowContinuityModal(true)
+    }
   }
 
   async function handleChangeTime(newMinutes: number) {
@@ -535,6 +582,11 @@ export default function TodayPage() {
 
   return (
     <StudentLayout>
+      {/* Modal de continuidade — primeira vez que o plano é auto-reorganizado */}
+      {showContinuityModal && (
+        <ContinuityCard onDismiss={() => setShowContinuityModal(false)} />
+      )}
+
       {/* Banner de geração de plano */}
       {planGenerating && (
         <div className="flex items-center gap-3 bg-[#1E3A5F] text-white text-sm font-medium px-4 py-3 rounded-2xl mb-4">
