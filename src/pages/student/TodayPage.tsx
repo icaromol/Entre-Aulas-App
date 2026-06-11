@@ -11,6 +11,7 @@ import {
   MdSelfImprovement,
   MdEdit,
   MdFlashOn,
+  MdKeyboardDoubleArrowLeft,
 } from "react-icons/md";
 import { ChangeTimeModal } from "@/components/student/ChangeTimeModal";
 import { ContinuityCard } from "@/components/student/ContinuityCard";
@@ -547,6 +548,13 @@ export default function TodayPage() {
   // Itens com duration_minutes=0 foram descartados pela Sessão Essencial — ocultá-los (salvo se já concluídos)
   const visibleItems = items.filter(i => i.duration_minutes !== 0 || i.is_done)
 
+  const isPastDay = (() => {
+    const order = [1, 2, 3, 4, 5, 6, 0]
+    return order.indexOf(viewDay) < order.indexOf(getTodayDayOfWeek())
+  })()
+  const isToday     = viewDay === getTodayDayOfWeek()
+  const isFutureDay = !isPastDay && !isToday
+
   // Total planejado — só itens do plano, sessões livres não inflam o alvo
   const totalMinutes = visibleItems.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
 
@@ -610,7 +618,7 @@ export default function TodayPage() {
         </button>
         <div className="text-center">
           <h1 className="text-xl font-bold text-[#1E3A5F]">
-            {getDailyGreeting(profile?.first_name ?? '')}
+            {isPastDay ? 'Histórico' : isFutureDay ? 'Planejamento futuro' : getDailyGreeting(profile?.first_name ?? '')}
           </h1>
           <p className="text-sm text-gray-400 mt-0.5">
             {displayDate} · {getDayFullLabel(viewDay)}
@@ -668,11 +676,11 @@ export default function TodayPage() {
       {/* Lista de itens */}
       {visibleItems.length === 0 && freeSessions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
-          <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
-            <MdSelfImprovement size={24} color="white" />
-          </div>
           {hasAnyPlan === false ? (
             <>
+              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+                <MdSelfImprovement size={24} color="white" />
+              </div>
               <p className="text-sm font-semibold text-gray-700">
                 Jornada não iniciada
               </p>
@@ -690,8 +698,23 @@ export default function TodayPage() {
                 </button>
               )}
             </>
+          ) : isPastDay ? (
+            <>
+              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+                <MdKeyboardDoubleArrowLeft size={24} color="white" />
+              </div>
+              <p className="text-sm font-semibold text-gray-700">
+                Este dia já passou
+              </p>
+              <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                Foque no que vem pela frente e continue evoluindo. Seu planejamento é sempre redistribuído automaticamente pra não deixar nenhuma tarefa pra trás!
+              </p>
+            </>
           ) : (
             <>
+              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+                <MdSelfImprovement size={24} color="white" />
+              </div>
               <p className="text-sm font-semibold text-gray-700">
                 Dia livre!
               </p>
@@ -874,7 +897,7 @@ export default function TodayPage() {
       )}
 
       {/* Banner de início rápido */}
-      <button
+      {isToday && <button
         onClick={() =>
           navigate("/aluno/pomodoro", {
             state: {
@@ -900,17 +923,19 @@ export default function TodayPage() {
               : '25 min · 5 min pausa'}
           </p>
         </div>
-      </button>
+      </button>}
 
-      <div className="flex justify-center mt-6">
-        <Button
-          variant="text"
-          onClick={() => navigate("/aluno/pomodoro", { state: { studentId } })}
-          className="text-gray-400 hover:text-gray-600 text-xs"
-        >
-          ou configure sua sessão
-        </Button>
-      </div>
+      {isToday && (
+        <div className="flex justify-center mt-6">
+          <Button
+            variant="text"
+            onClick={() => navigate("/aluno/pomodoro", { state: { studentId } })}
+            className="text-gray-400 hover:text-gray-600 text-xs"
+          >
+            ou configure sua sessão
+          </Button>
+        </div>
+      )}
 
       {/* Tooltip conclusão manual — fora do card para evitar herança de opacidade */}
       {manualTooltip && (
