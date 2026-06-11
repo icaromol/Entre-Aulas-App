@@ -16,6 +16,7 @@ import {
   MdSelfImprovement,
   MdFlashOn,
   MdKeyboardDoubleArrowLeft,
+  MdBuild,
 } from "react-icons/md";
 import { ChangeTimeModal } from "@/components/student/ChangeTimeModal";
 import { ContinuityCard } from "@/components/student/ContinuityCard";
@@ -51,8 +52,8 @@ function itemDisplay(item: PlanItem): {
 } {
   if (item.is_maintenance) {
     return {
-      title: "Manutenção",
-      subtitle: item.piece?.title ?? "—",
+      title: item.piece?.title ?? "—",
+      subtitle: item.programa?.title ?? "",
       maintenanceIcon: true,
     };
   }
@@ -196,6 +197,10 @@ export default function TodayPage() {
   const [skipConfirm, setSkipConfirm] = useState(false);
   const SKIP_KEY = "estudamus_skip_pomodoro_confirm";
   const [manualTooltip, setManualTooltip] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [maintenanceTooltip, setMaintenanceTooltip] = useState<{
     x: number;
     y: number;
   } | null>(null);
@@ -678,7 +683,7 @@ export default function TodayPage() {
       {/* Header com navegação de dias */}
       <div
         id="onboarding-today-nav"
-        className="flex items-center justify-between mb-10 mt-8"
+        className="flex items-center justify-between mb-6 mt-4"
       >
         <button
           onClick={() => setViewDay((d) => (d + 6) % 7)}
@@ -822,7 +827,7 @@ export default function TodayPage() {
               >
                 {/* Barra de progresso de fundo */}
                 <div
-                  className="absolute inset-y-0 left-0 bg-[#DBEAFE] transition-all duration-500 rounded-2xl"
+                  className="absolute inset-y-0 left-0 bg-[#D6E4F0] transition-all duration-500 rounded-2xl"
                   style={{ width: `${itemPct * 100}%` }}
                 />
                 <div className="relative z-10 flex items-stretch">
@@ -847,18 +852,32 @@ export default function TodayPage() {
                       }}
                       className="shrink-0 flex items-center justify-center px-4 bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
                     >
-                      <MdPlayArrow size={26} />
+                      <MdPlayArrow size={28} />
                     </button>
                   )}
 
                   {/* Info */}
-                  <div className={`flex-1 min-w-0 py-3 ${item.is_done ? "px-4" : "pl-3 pr-4"}`}>
+                  <div
+                    className={`flex-1 min-w-0 py-3 ${item.is_done ? "px-4" : "pl-3 pr-4"}`}
+                  >
                     <div className="flex items-center gap-1.5 min-w-0">
                       <p
                         className={`text-sm font-semibold truncate ${item.is_done ? "line-through text-gray-400" : "text-gray-800"}`}
                       >
-                        {maintenanceIcon ? `Manutenção · ${title}` : title}
+                        {title}
                       </p>
+                      {maintenanceIcon && (
+                        <span
+                          className="shrink-0 cursor-default ml-1.5"
+                          onMouseEnter={(e) => {
+                            const r = (e.target as HTMLElement).getBoundingClientRect();
+                            setMaintenanceTooltip({ x: r.left + r.width / 2, y: r.top });
+                          }}
+                          onMouseLeave={() => setMaintenanceTooltip(null)}
+                        >
+                          <MdBuild size={13} className="text-gray-400" />
+                        </span>
+                      )}
                       {item.completed_manually && (
                         <span
                           className="text-[#1E3A5F] font-bold text-sm leading-none cursor-default select-none shrink-0"
@@ -878,10 +897,10 @@ export default function TodayPage() {
                       )}
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5 truncate">
-                      {maintenanceIcon ? "" : subtitle}
+                      {subtitle || ""}
                       {item.duration_minutes ? (
                         <>
-                          {!maintenanceIcon && subtitle ? " · " : ""}
+                          {subtitle ? " · " : ""}
                           {studiedSecs[item.id]
                             ? `${Math.floor((studiedSecs[item.id] ?? 0) / 60)}/${item.duration_minutes} min`
                             : `${item.duration_minutes} min`}
@@ -1000,6 +1019,27 @@ export default function TodayPage() {
             className="leading-snug"
           >
             Não conta XP, badges nem missões.
+          </p>
+        </div>
+      )}
+
+      {/* Tooltip manutenção */}
+      {maintenanceTooltip && (
+        <div
+          className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
+          style={{
+            backgroundColor: "#1E3A5F",
+            top: maintenanceTooltip.y - 8,
+            left: maintenanceTooltip.x,
+            transform: "translate(-50%, -100%)",
+          }}
+        >
+          <p className="font-semibold mb-0.5">Revisão de manutenção</p>
+          <p
+            style={{ color: "rgba(255,255,255,0.75)" }}
+            className="leading-snug"
+          >
+            Peça concluída em revisão periódica.
           </p>
         </div>
       )}

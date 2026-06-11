@@ -1,146 +1,332 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import Avatar from 'boring-avatars'
-import { MdAdd, MdMusicNote, MdFitnessCenter } from 'react-icons/md'
-import { toast } from 'sonner'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/hooks/useAuth'
-import { Spinner } from '@/components/ui/Spinner'
-import { StudentLayout } from '@/components/layout/StudentLayout'
-const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import Avatar from "boring-avatars";
+import { MdAdd, MdMusicNote, MdFitnessCenter } from "react-icons/md";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { Spinner } from "@/components/ui/Spinner";
+import { Switch } from "@/components/ui/switch";
+import { StudentLayout } from "@/components/layout/StudentLayout";
+import { autoGeneratePlan } from "@/lib/autoplan";
+const AVATAR_COLORS = ["#1E3A5F", "#4A90C4", "#D6E4F0", "#F5F7FA", "#FFFFFF"];
 
 interface ChecklistItem {
-  id: string; title: string; category: string | null; position: number; is_optional: boolean
+  id: string;
+  title: string;
+  category: string | null;
+  position: number;
+  is_optional: boolean;
 }
 
 interface Piece {
-  id: string; title: string; composer: string | null; status: string
-  completion_pct: number; checklist_items: ChecklistItem[]
+  id: string;
+  title: string;
+  composer: string | null;
+  status: string;
+  completion_pct: number;
+  checklist_items: ChecklistItem[];
+  is_in_maintenance: boolean;
 }
 
 interface Exercise {
-  id: string; title: string; category: string; status: string
+  id: string;
+  title: string;
+  category: string;
+  status: string;
 }
 
 const pieceStatusLabel: Record<string, string> = {
-  in_progress: 'Em andamento', completed: 'Concluída', paused: 'Pausada', future: 'Repertório futuro',
-}
+  in_progress: "Em andamento",
+  completed: "Concluída",
+  paused: "Pausada",
+  future: "Repertório futuro",
+};
 
 const categoryLabel: Record<string, string> = {
-  technique: 'Técnica', ear_training: 'Percepção musical', harmony: 'Harmonia',
-  history: 'História da música', improvisation: 'Improvisação', other: 'Outro',
-}
+  technique: "Técnica",
+  ear_training: "Percepção musical",
+  harmony: "Harmonia",
+  history: "História da música",
+  improvisation: "Improvisação",
+  other: "Outro",
+};
 
-const exerciseStatusLabel: Record<string, string> = {
-  active: 'Ativo', inactive: 'Inativo', completed: 'Concluído',
-}
 
-type TabKey = 'pieces' | 'exercises'
+type TabKey = "pieces" | "exercises";
 
 export default function RepertoirePage() {
-  const { profile } = useAuth()
-  const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const { profile } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const tabParam = searchParams.get('tab') as TabKey | null
+  const tabParam = searchParams.get("tab") as TabKey | null;
   const [activeTab, setActiveTab] = useState<TabKey>(
-    tabParam === 'exercises' ? tabParam : 'pieces'
-  )
+    tabParam === "exercises" ? tabParam : "pieces",
+  );
 
-  const [pieces, setPieces] = useState<Piece[]>([])
-  const [exercises, setExercises] = useState<Exercise[]>([])
-  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
-  const [loading, setLoading] = useState(true)
-  const [fetchError, setFetchError] = useState<string | null>(null)
-  const [expandedPieceId, setExpandedPieceId] = useState<string | null>(null)
-  const [studentId, setStudentId] = useState<string | null>(null)
-  const [importMode, setImportMode] = useState<'pieces' | 'exercises' | null>(null)
-  const [importText, setImportText] = useState('')
-  const [importing, setImporting] = useState(false)
+  const [pieces, setPieces] = useState<Piece[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [expandedPieceId, setExpandedPieceId] = useState<string | null>(null);
+  const [studentId, setStudentId] = useState<string | null>(null);
+  const [importMode, setImportMode] = useState<"pieces" | "exercises" | null>(
+    null,
+  );
+  const [importText, setImportText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [pendingToggle, setPendingToggle] = useState<{
+    context: "piece_active" | "piece_maintenance" | "exercise";
+    piece?: Piece;
+    exercise?: Exercise;
+    checked: boolean;
+  } | null>(null);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  function requestPieceToggle(piece: Piece, checked: boolean) {
+    const context =
+      piece.status === "completed" ? "piece_maintenance" : "piece_active";
+    const key =
+      context === "piece_maintenance"
+        ? "repertoire_maintenance_warned"
+        : "repertoire_toggle_warned";
+    if (localStorage.getItem(key)) {
+      handlePieceToggle(piece, checked);
+    } else {
+      setDontShowAgain(false);
+      setPendingToggle({ context, piece, checked });
+    }
+  }
+
+  function requestExerciseToggle(exercise: Exercise, checked: boolean) {
+    if (localStorage.getItem("repertoire_toggle_warned")) {
+      handleExerciseToggle(exercise, checked);
+    } else {
+      setDontShowAgain(false);
+      setPendingToggle({ context: "exercise", exercise, checked });
+    }
+  }
+
+  function confirmToggle() {
+    if (!pendingToggle) return;
+    const key =
+      pendingToggle.context === "piece_maintenance"
+        ? "repertoire_maintenance_warned"
+        : "repertoire_toggle_warned";
+    if (dontShowAgain) localStorage.setItem(key, "1");
+    if (pendingToggle.exercise)
+      handleExerciseToggle(pendingToggle.exercise, pendingToggle.checked);
+    else if (pendingToggle.piece)
+      handlePieceToggle(pendingToggle.piece, pendingToggle.checked);
+    setPendingToggle(null);
+  }
+
+  async function handlePieceToggle(piece: Piece, checked: boolean) {
+    if (!studentId) return;
+    const update =
+      piece.status === "completed"
+        ? { is_in_maintenance: checked }
+        : { status: checked ? "in_progress" : "paused" };
+
+    setPieces((prev) =>
+      prev.map((p) => (p.id === piece.id ? { ...p, ...update } : p)),
+    );
+
+    const { error } = await supabase
+      .from("pieces")
+      .update(update)
+      .eq("id", piece.id);
+    if (error) {
+      setPieces((prev) => prev.map((p) => (p.id === piece.id ? piece : p)));
+      toast.error("Erro ao atualizar peça.");
+      return;
+    }
+    autoGeneratePlan(studentId);
+  }
+
+  async function handleExerciseToggle(exercise: Exercise, checked: boolean) {
+    if (!studentId) return;
+    const update = { status: checked ? "active" : "inactive" };
+    setExercises((prev) =>
+      prev.map((e) => (e.id === exercise.id ? { ...e, ...update } : e)),
+    );
+    const { error } = await supabase
+      .from("exercises")
+      .update(update)
+      .eq("id", exercise.id);
+    if (error) {
+      setExercises((prev) =>
+        prev.map((e) => (e.id === exercise.id ? exercise : e)),
+      );
+      toast.error("Erro ao atualizar exercício.");
+      return;
+    }
+    autoGeneratePlan(studentId);
+  }
 
   function switchTab(tab: TabKey) {
-    setActiveTab(tab)
-    setSearchParams({ tab })
+    setActiveTab(tab);
+    setSearchParams({ tab });
   }
 
   function parseNames(text: string): string[] {
-    return text.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+    return text
+      .split(/[\n,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
 
   async function handleImport() {
-    if (!studentId || !importMode) return
-    const names = parseNames(importText)
-    if (names.length === 0) return
-    setImporting(true)
-    if (importMode === 'pieces') {
-      const { data } = await supabase.from('pieces').insert(
-        names.map(title => ({ student_id: studentId, title, status: 'in_progress', difficulty: 6 }))
-      ).select('id, title, composer, status, completion_pct')
-      setPieces(prev => [...prev, ...(data ?? []).map((p: any) => ({ ...p, checklist_items: [] }))])
+    if (!studentId || !importMode) return;
+    const names = parseNames(importText);
+    if (names.length === 0) return;
+    setImporting(true);
+    if (importMode === "pieces") {
+      const { data } = await supabase
+        .from("pieces")
+        .insert(
+          names.map((title) => ({
+            student_id: studentId,
+            title,
+            status: "in_progress",
+            difficulty: 6,
+          })),
+        )
+        .select("id, title, composer, status, completion_pct");
+      setPieces((prev) => [
+        ...prev,
+        ...(data ?? []).map((p: any) => ({ ...p, checklist_items: [] })),
+      ]);
     } else {
-      const { data } = await supabase.from('exercises').insert(
-        names.map(title => ({ student_id: studentId, title, category: 'technique', status: 'active', difficulty: 6 }))
-      ).select('id, title, category, status')
-      setExercises(prev => [...prev, ...(data ?? [])])
+      const { data } = await supabase
+        .from("exercises")
+        .insert(
+          names.map((title) => ({
+            student_id: studentId,
+            title,
+            category: "technique",
+            status: "active",
+            difficulty: 6,
+          })),
+        )
+        .select("id, title, category, status");
+      setExercises((prev) => [...prev, ...(data ?? [])]);
     }
-    setImportText('')
-    setImportMode(null)
-    setImporting(false)
-    toast.success(`${names.length} ${importMode === 'pieces' ? (names.length === 1 ? 'peça criada' : 'peças criadas') : (names.length === 1 ? 'exercício criado' : 'exercícios criados')}!`)
+    setImportText("");
+    setImportMode(null);
+    setImporting(false);
+    toast.success(
+      `${names.length} ${importMode === "pieces" ? (names.length === 1 ? "peça criada" : "peças criadas") : names.length === 1 ? "exercício criado" : "exercícios criados"}!`,
+    );
   }
 
   useEffect(() => {
-    if (profile) fetchAll()
-  }, [profile])
+    if (profile) fetchAll();
+  }, [profile]);
 
   async function fetchAll() {
     const { data: student, error: studentError } = await supabase
-      .from('students').select('id').eq('profile_id', profile!.id).single()
+      .from("students")
+      .select("id")
+      .eq("profile_id", profile!.id)
+      .single();
 
     if (studentError || !student) {
-      console.error('[RepertoirePage] student fetch failed:', studentError)
-      setFetchError('Não foi possível carregar seu repertório. Tente recarregar a página.')
-      setLoading(false)
-      return
+      console.error("[RepertoirePage] student fetch failed:", studentError);
+      setFetchError(
+        "Não foi possível carregar seu repertório. Tente recarregar a página.",
+      );
+      setLoading(false);
+      return;
     }
-    setStudentId(student.id)
+    setStudentId(student.id);
 
     const [piecesRes, exercisesRes, completionsRes] = await Promise.all([
-      supabase.from('pieces')
-        .select('id, title, composer, status, completion_pct, checklist_items(id, title, category, position, is_optional)')
-        .eq('student_id', student.id).order('title'),
-      supabase.from('exercises')
-        .select('id, title, category, status').eq('student_id', student.id).order('title'),
-      supabase.from('checklist_completions')
-        .select('checklist_item_id').eq('student_id', student.id),
-    ])
+      supabase
+        .from("pieces")
+        .select(
+          "id, title, composer, status, completion_pct, is_in_maintenance, checklist_items(id, title, category, position, is_optional)",
+        )
+        .eq("student_id", student.id)
+        .order("title"),
+      supabase
+        .from("exercises")
+        .select("id, title, category, status")
+        .eq("student_id", student.id)
+        .order("title"),
+      supabase
+        .from("checklist_completions")
+        .select("checklist_item_id")
+        .eq("student_id", student.id),
+    ]);
 
     if (piecesRes.error || exercisesRes.error) {
-      console.error('[RepertoirePage] fetch failed:', piecesRes.error ?? exercisesRes.error)
-      setFetchError('Não foi possível carregar o repertório. Tente recarregar a página.')
-      setLoading(false)
-      return
+      console.error(
+        "[RepertoirePage] fetch failed:",
+        piecesRes.error ?? exercisesRes.error,
+      );
+      setFetchError(
+        "Não foi possível carregar o repertório. Tente recarregar a página.",
+      );
+      setLoading(false);
+      return;
     }
 
     setPieces(
       (piecesRes.data ?? []).map((p: Piece) => ({
         ...p,
         checklist_items: (p.checklist_items ?? []).sort(
-          (a: ChecklistItem, b: ChecklistItem) => a.position - b.position
+          (a: ChecklistItem, b: ChecklistItem) => a.position - b.position,
         ),
-      }))
-    )
-    setExercises(exercisesRes.data ?? [])
-    setCompletedIds(new Set((completionsRes.data ?? []).map((c: { checklist_item_id: string }) => c.checklist_item_id)))
-    setLoading(false)
+      })),
+    );
+    setExercises(exercisesRes.data ?? []);
+    setCompletedIds(
+      new Set(
+        (completionsRes.data ?? []).map(
+          (c: { checklist_item_id: string }) => c.checklist_item_id,
+        ),
+      ),
+    );
+    setLoading(false);
   }
 
+  function pieceSortKey(p: Piece): number {
+    if (p.status === "in_progress" || p.status === "future") return 0
+    if (p.status === "completed" && p.is_in_maintenance) return 1
+    if (p.status === "paused") return 2
+    if (p.status === "completed" && !p.is_in_maintenance) return 3
+    return 4
+  }
+
+  function exerciseSortKey(e: Exercise): number {
+    if (e.status === "active") return 0
+    if (e.status === "inactive") return 1
+    if (e.status === "completed") return 2
+    return 3
+  }
+
+  const sortedPieces = [...pieces].sort((a, b) => pieceSortKey(a) - pieceSortKey(b))
+  const sortedExercises = [...exercises].sort((a, b) => exerciseSortKey(a) - exerciseSortKey(b))
+
   if (loading) {
-    return <StudentLayout><div className="flex justify-center py-12"><Spinner /></div></StudentLayout>
+    return (
+      <StudentLayout>
+        <div className="flex justify-center py-12">
+          <Spinner />
+        </div>
+      </StudentLayout>
+    );
   }
 
   if (fetchError) {
-    return <StudentLayout><p className="text-sm text-red-500 text-center py-12">{fetchError}</p></StudentLayout>
+    return (
+      <StudentLayout>
+        <p className="text-sm text-red-500 text-center py-12">{fetchError}</p>
+      </StudentLayout>
+    );
   }
 
   return (
@@ -151,72 +337,153 @@ export default function RepertoirePage() {
       </div>
 
       {/* Tabs */}
-      <div id="onboarding-repertoire-tabs" className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
-        {([
-          { key: 'pieces' as TabKey,    label: `Peças (${pieces.length})` },
-          { key: 'exercises' as TabKey, label: `Exercícios (${exercises.length})` },
-        ]).map(tab => (
-          <button key={tab.key} onClick={() => switchTab(tab.key)}
+      <div
+        id="onboarding-repertoire-tabs"
+        className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5"
+      >
+        {[
+          { key: "pieces" as TabKey, label: `Peças (${pieces.length})` },
+          {
+            key: "exercises" as TabKey,
+            label: `Exercícios (${exercises.length})`,
+          },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => switchTab(tab.key)}
             className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
-              activeTab === tab.key ? 'bg-white text-[#1E3A5F] shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}>
+              activeTab === tab.key
+                ? "bg-white text-[#1E3A5F] shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
             {tab.label}
           </button>
         ))}
       </div>
 
       {/* Tab: Peças */}
-      {activeTab === 'pieces' && (
+      {activeTab === "pieces" && (
         <div className="space-y-3">
-          {pieces.length === 0 ? (
+          {sortedPieces.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
               <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
                 <MdMusicNote size={24} color="white" />
               </div>
-              <p className="text-sm font-semibold text-gray-600">Nenhuma peça cadastrada</p>
-              <p className="text-xs text-gray-400 mt-1">Adicione sua primeira peça!</p>
+              <p className="text-sm font-semibold text-gray-600">
+                Nenhuma peça cadastrada
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Adicione sua primeira peça!
+              </p>
             </div>
           ) : (
-            pieces.map(piece => {
-              const isExpanded = expandedPieceId === piece.id
-              const grouped = piece.checklist_items.reduce<Record<string, ChecklistItem[]>>((acc, item) => {
-                const cat = item.category ?? 'Geral'
-                if (!acc[cat]) acc[cat] = []
-                acc[cat].push(item)
-                return acc
-              }, {})
+            sortedPieces.map((piece) => {
+              const isExpanded = expandedPieceId === piece.id;
+              const grouped = piece.checklist_items.reduce<
+                Record<string, ChecklistItem[]>
+              >((acc, item) => {
+                const cat = item.category ?? "Geral";
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(item);
+                return acc;
+              }, {});
 
               return (
-                <div key={piece.id} id={piece === pieces[0] ? 'onboarding-repertoire-piece' : undefined} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div
+                  key={piece.id}
+                  id={
+                    piece === pieces[0]
+                      ? "onboarding-repertoire-piece"
+                      : undefined
+                  }
+                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
+                >
                   <div className="flex items-center gap-4 px-5 py-4">
-                    <button onClick={() => navigate(`/aluno/repertorio/pecas/${piece.id}`)}
-                      className="relative w-10 h-10 shrink-0">
-                      <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90 absolute inset-0">
-                        <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3"/>
-                        <circle cx="18" cy="18" r="15" fill="none" stroke="#4A90C4" strokeWidth="3"
+                    <button
+                      onClick={() =>
+                        navigate(`/aluno/repertorio/pecas/${piece.id}`)
+                      }
+                      className="relative w-10 h-10 shrink-0"
+                    >
+                      <svg
+                        viewBox="0 0 36 36"
+                        className="w-10 h-10 -rotate-90 absolute inset-0"
+                      >
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="15"
+                          fill="none"
+                          stroke="#F3F4F6"
+                          strokeWidth="3"
+                        />
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="15"
+                          fill="none"
+                          stroke="#4A90C4"
+                          strokeWidth="3"
                           strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`}
-                          strokeLinecap="round" />
+                          strokeLinecap="round"
+                        />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="rounded-full overflow-hidden">
-                          <Avatar size={24} name={piece.title} variant="marble" colors={AVATAR_COLORS} />
+                          <Avatar
+                            size={24}
+                            name={piece.title}
+                            variant="marble"
+                            colors={AVATAR_COLORS}
+                          />
                         </div>
                       </div>
                     </button>
 
-                    <button onClick={() => navigate(`/aluno/repertorio/pecas/${piece.id}`)}
-                      className="flex-1 min-w-0 text-left">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{piece.title}</p>
+                    <button
+                      onClick={() =>
+                        navigate(`/aluno/repertorio/pecas/${piece.id}`)
+                      }
+                      className="flex-1 min-w-0 text-left"
+                    >
+                      <p className="text-sm font-semibold text-gray-800 truncate">
+                        {piece.title}
+                      </p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {piece.composer ?? '—'} · {pieceStatusLabel[piece.status] ?? piece.status}
+                        {piece.composer ?? "—"}
                       </p>
                     </button>
 
-                    <button onClick={() => setExpandedPieceId(isExpanded ? null : piece.id)}
-                      className="shrink-0 text-gray-400 hover:text-gray-600 transition p-1">
-                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                        className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-                        <path d="M9 18l6-6-6-6"/>
+                    <Switch
+                      checked={
+                        piece.status === "completed"
+                          ? piece.is_in_maintenance
+                          : piece.status === "in_progress"
+                      }
+                      onCheckedChange={(checked) =>
+                        requestPieceToggle(piece, checked)
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                      className={`shrink-0 ${piece.status === "completed" ? "data-checked:bg-green-500" : "data-checked:bg-[#1E3A5F]"}`}
+                    />
+
+                    <button
+                      onClick={() =>
+                        setExpandedPieceId(isExpanded ? null : piece.id)
+                      }
+                      className="shrink-0 text-gray-400 hover:text-gray-600 transition p-1"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                      >
+                        <path d="M9 18l6-6-6-6" />
                       </svg>
                     </button>
                   </div>
@@ -224,27 +491,51 @@ export default function RepertoirePage() {
                   {isExpanded && (
                     <div className="px-5 pb-4 border-t border-gray-100">
                       {piece.checklist_items.length === 0 ? (
-                        <p className="text-xs text-gray-400 pt-3">Nenhum item no checklist.</p>
+                        <p className="text-xs text-gray-400 pt-3">
+                          Nenhum item no checklist.
+                        </p>
                       ) : (
                         <div className="space-y-4 pt-3">
                           {Object.entries(grouped).map(([category, items]) => (
                             <div key={category}>
-                              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{category}</p>
+                              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                                {category}
+                              </p>
                               <div className="space-y-2">
-                                {items.map(item => (
-                                  <div key={item.id} className="flex items-center gap-3">
-                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
-                                      completedIds.has(item.id) ? 'bg-[#1E3A5F] border-[#1E3A5F]' : 'border-gray-300'
-                                    }`}>
+                                {items.map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className="flex items-center gap-3"
+                                  >
+                                    <div
+                                      className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
+                                        completedIds.has(item.id)
+                                          ? "bg-[#1E3A5F] border-[#1E3A5F]"
+                                          : "border-gray-300"
+                                      }`}
+                                    >
                                       {completedIds.has(item.id) && (
-                                        <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
-                                          <path d="M5 13l4 4L19 7"/>
+                                        <svg
+                                          width="8"
+                                          height="8"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="white"
+                                          strokeWidth={3}
+                                        >
+                                          <path d="M5 13l4 4L19 7" />
                                         </svg>
                                       )}
                                     </div>
-                                    <span className={`text-xs flex-1 ${completedIds.has(item.id) ? 'line-through text-gray-300' : 'text-gray-600'}`}>
+                                    <span
+                                      className={`text-xs flex-1 ${completedIds.has(item.id) ? "line-through text-gray-300" : "text-gray-600"}`}
+                                    >
                                       {item.title}
-                                      {item.is_optional && <span className="text-gray-400 ml-1">(opcional)</span>}
+                                      {item.is_optional && (
+                                        <span className="text-gray-400 ml-1">
+                                          (opcional)
+                                        </span>
+                                      )}
                                     </span>
                                   </div>
                                 ))}
@@ -256,16 +547,24 @@ export default function RepertoirePage() {
                     </div>
                   )}
                 </div>
-              )
+              );
             })
           )}
           <div className="flex flex-col items-center gap-2 pt-4 pb-2">
-            <button onClick={() => navigate('/aluno/repertorio/pecas/nova')}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">
-              <MdAdd size={18} />Nova peça
+            <button
+              onClick={() => navigate("/aluno/repertorio/pecas/nova")}
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+            >
+              <MdAdd size={18} />
+              Nova peça
             </button>
-            <button onClick={() => { setImportMode('pieces'); setImportText('') }}
-              className="text-xs text-gray-400 hover:text-gray-600 transition">
+            <button
+              onClick={() => {
+                setImportMode("pieces");
+                setImportText("");
+              }}
+              className="text-xs text-gray-400 hover:text-gray-600 transition"
+            >
               ou clique para importar em lote
             </button>
           </div>
@@ -273,56 +572,186 @@ export default function RepertoirePage() {
       )}
 
       {/* Tab: Exercícios */}
-      {activeTab === 'exercises' && (
+      {activeTab === "exercises" && (
         <div className="space-y-3">
-          {exercises.length === 0 ? (
+          {sortedExercises.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
               <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
                 <MdFitnessCenter size={24} color="white" />
               </div>
-              <p className="text-sm font-semibold text-gray-600">Nenhum exercício cadastrado</p>
-              <p className="text-xs text-gray-400 mt-1">Adicione seu primeiro exercício!</p>
+              <p className="text-sm font-semibold text-gray-600">
+                Nenhum exercício cadastrado
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Adicione seu primeiro exercício!
+              </p>
             </div>
           ) : (
-            exercises.map(ex => (
-              <button key={ex.id} onClick={() => navigate(`/aluno/repertorio/exercicios/${ex.id}`)}
-                className="w-full bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4]/40 transition text-left">
-                <div className="shrink-0 rounded-lg overflow-hidden">
-                  <Avatar size={36} name={ex.title} variant="pixel" colors={AVATAR_COLORS} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{ex.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {categoryLabel[ex.category] ?? ex.category} · {exerciseStatusLabel[ex.status] ?? ex.status}
+            sortedExercises.map((ex) => (
+              <div
+                key={ex.id}
+                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4"
+              >
+                <button
+                  onClick={() =>
+                    navigate(`/aluno/repertorio/exercicios/${ex.id}`)
+                  }
+                  className="shrink-0 rounded-lg overflow-hidden"
+                >
+                  <Avatar
+                    size={36}
+                    name={ex.title}
+                    variant="pixel"
+                    colors={AVATAR_COLORS}
+                  />
+                </button>
+                <button
+                  onClick={() =>
+                    navigate(`/aluno/repertorio/exercicios/${ex.id}`)
+                  }
+                  className="flex-1 min-w-0 text-left"
+                >
+                  <p className="text-sm font-semibold text-gray-800 truncate">
+                    {ex.title}
                   </p>
-                </div>
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                  <path d="M9 18l6-6-6-6"/>
-                </svg>
-              </button>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {categoryLabel[ex.category] ?? ex.category}
+                  </p>
+                </button>
+                <Switch
+                  checked={ex.status === "active"}
+                  onCheckedChange={(checked) =>
+                    requestExerciseToggle(ex, checked)
+                  }
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0 data-checked:bg-[#1E3A5F]"
+                />
+                <button
+                  onClick={() =>
+                    navigate(`/aluno/repertorio/exercicios/${ex.id}`)
+                  }
+                  className="shrink-0 text-gray-400 hover:text-gray-600 transition p-1"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+              </div>
             ))
           )}
           <div className="flex flex-col items-center gap-2 pt-4 pb-2">
-            <button onClick={() => navigate('/aluno/repertorio/exercicios/novo')}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">
-              <MdAdd size={18} />Novo exercício
+            <button
+              onClick={() => navigate("/aluno/repertorio/exercicios/novo")}
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+            >
+              <MdAdd size={18} />
+              Novo exercício
             </button>
-            <button onClick={() => { setImportMode('exercises'); setImportText('') }}
-              className="text-xs text-gray-400 hover:text-gray-600 transition">
+            <button
+              onClick={() => {
+                setImportMode("exercises");
+                setImportText("");
+              }}
+              className="text-xs text-gray-400 hover:text-gray-600 transition"
+            >
               ou clique para importar em lote
             </button>
           </div>
         </div>
       )}
 
+      {/* Toggle warning modal */}
+      {pendingToggle && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-5"
+          onClick={() => setPendingToggle(null)}
+        >
+          <div
+            className="bg-white rounded-2xl py-10 px-8 w-full max-w-sm space-y-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-3">
+              <h3 className="text-xl font-bold text-[#1E3A5F]">
+                Controle de estudo
+              </h3>
+              {pendingToggle?.context === "piece_maintenance" ? (
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  Ao <strong>desligar</strong> uma peça concluída, ela sai da
+                  fila de manutenção e não entra mais no planejamento.
+                  <br />
+                  <br />
+                  Ao <strong>ligar</strong>, ela volta para a revisão regular.
+                </p>
+              ) : pendingToggle?.context === "exercise" ? (
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  Ao <strong>desligar</strong> um exercício, ele é desativado e
+                  removido do planejamento automático.
+                  <br />
+                  <br />
+                  Ao <strong>ligar</strong>, ele volta como ativo e entra no
+                  plano.
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  Ao <strong>desligar</strong> uma peça, ela é pausada e
+                  removida do planejamento automático.
+                  <br />
+                  <br />
+                  Ao <strong>ligar</strong>, ela volta como ativa e entra no
+                  plano.
+                </p>
+              )}
+            </div>
+            <label className="flex items-center justify-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={dontShowAgain}
+                onChange={(e) => setDontShowAgain(e.target.checked)}
+                className="w-4 h-4 rounded accent-[#1E3A5F] cursor-pointer"
+              />
+              <span className="text-xs text-gray-500">
+                Não mostrar novamente
+              </span>
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPendingToggle(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-500 hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmToggle}
+                className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+              >
+                Entendi, continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Import modal */}
       {importMode && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-5"
-          onClick={() => setImportMode(null)}>
-          <div className="bg-white rounded-2xl p-6 w-[60%] space-y-3" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-5"
+          onClick={() => setImportMode(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 w-[60%] space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div>
               <h3 className="text-base font-bold text-[#1E3A5F]">
-                Importar {importMode === 'pieces' ? 'peças' : 'exercícios'} em lote
+                Importar {importMode === "pieces" ? "peças" : "exercícios"} em
+                lote
               </h3>
               <p className="text-sm text-gray-400 leading-relaxed mt-0.5">
                 Digite os nomes separados por vírgula ou um por linha.
@@ -331,22 +760,32 @@ export default function RepertoirePage() {
             <textarea
               autoFocus
               value={importText}
-              onChange={e => setImportText(e.target.value)}
-              placeholder={importMode === 'pieces'
-                ? 'Sonatina Op.36 nº1\nFur Elise\nNocturno Op.9 nº2'
-                : 'Escala de Dó maior\nArpejo de Sol\nHanon nº1'}
+              onChange={(e) => setImportText(e.target.value)}
+              placeholder={
+                importMode === "pieces"
+                  ? "Sonatina Op.36 nº1\nFur Elise\nNocturno Op.9 nº2"
+                  : "Escala de Dó maior\nArpejo de Sol\nHanon nº1"
+              }
               rows={6}
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition resize-none"
             />
-            <button onClick={handleImport} disabled={importing || !importText.trim()}
-              className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-50">
+            <button
+              onClick={handleImport}
+              disabled={importing || !importText.trim()}
+              className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-50"
+            >
               {importing
-                ? 'Criando...'
-                : (() => { const n = parseNames(importText).length; return n > 0 ? `Criar ${n} ${importMode === 'pieces' ? (n === 1 ? 'peça' : 'peças') : (n === 1 ? 'exercício' : 'exercícios')}` : 'Criar' })()}
+                ? "Criando..."
+                : (() => {
+                    const n = parseNames(importText).length;
+                    return n > 0
+                      ? `Criar ${n} ${importMode === "pieces" ? (n === 1 ? "peça" : "peças") : n === 1 ? "exercício" : "exercícios"}`
+                      : "Criar";
+                  })()}
             </button>
           </div>
         </div>
       )}
     </StudentLayout>
-  )
+  );
 }

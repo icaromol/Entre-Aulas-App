@@ -88,7 +88,7 @@ export async function autoGeneratePlan(
     const [{ data: allPieces }, { data: allExercises }] = await Promise.all([
       supabase
         .from('pieces')
-        .select('id, title, difficulty, completion_pct, status')
+        .select('id, title, difficulty, completion_pct, status, is_in_maintenance')
         .eq('student_id', studentId)
         .in('status', ['in_progress', 'future', 'completed']),
       supabase
@@ -166,7 +166,7 @@ export async function autoGeneratePlan(
     })
 
     const completedPieces: MaintenancePiece[] = (allPieces ?? [])
-      .filter(p => p.status === 'completed')
+      .filter(p => p.status === 'completed' && p.is_in_maintenance !== false)
       .map(p => ({ pieceId: p.id, pieceTitle: p.title }))
 
     const hasCompleted = completedPieces.length > 0
