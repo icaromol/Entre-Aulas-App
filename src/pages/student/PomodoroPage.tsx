@@ -16,7 +16,7 @@ import { StudentLayout } from "@/components/layout/StudentLayout";
 import { Button } from "@/components/ui/button";
 import { PillSlider } from "@/components/ui/PillSlider";
 import { grantXp, ACHIEVEMENT_LABEL } from "@/lib/xpHelpers";
-import { formatWeekStart, getMonday } from "@/lib/weekUtils";
+import { formatWeekStart, getMonday, getTodayDayOfWeek } from "@/lib/weekUtils";
 import { fireBasic, fireStars, hasRankUp } from "@/lib/confettiEffects";
 import { sound } from "@/lib/soundEffects";
 
@@ -88,7 +88,15 @@ interface DayGroup {
   sourceId: string;
   sourceTitle: string;
   kind: "piece" | "exercise";
+  status: string;
   items: ChecklistEntry[];
+  planItemIds: string[];
+}
+
+function groupTextColor(status: string): string {
+  if (status === "completed") return "text-green-600";
+  if (status === "in_progress" || status === "active") return "text-gray-900";
+  return "text-gray-300";
 }
 
 const CIRCUMFERENCE = 2 * Math.PI * 54;
@@ -277,6 +285,7 @@ async function linkSessionItems(
   checklistIds: string[],
   directPlanItemId: string | null,
   totalWorkSecs: number,
+  extraPlanItemIds: string[] = [],
 ): Promise<void> {
   const itemData: Record<
     string,
@@ -297,6 +306,19 @@ async function linkSessionItems(
         piece_id: piRow.piece_id,
         exercise_id: piRow.exercise_id,
       };
+  }
+
+  // Grupos sem checklist_items trabalhados: plan_item_ids diretos
+  if (extraPlanItemIds.length > 0) {
+    const { data: extraRows } = await supabase
+      .from("plan_items")
+      .select("id, piece_id, exercise_id")
+      .in("id", extraPlanItemIds);
+    for (const row of (extraRows ?? []) as any[]) {
+      if (!itemData[row.id]) {
+        itemData[row.id] = { weight: 1, piece_id: row.piece_id, exercise_id: row.exercise_id };
+      }
+    }
   }
 
   if (checklistIds.length > 0) {
@@ -486,10 +508,25 @@ export default function PomodoroPage() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [workedIds, setWorkedIds] = useState<Set<string>>(new Set());
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  // Grupos sem checklist_items: rastreia "trabalhei neste grupo" por sourceId
+  const [workedGroupIds, setWorkedGroupIds] = useState<Set<string>>(new Set());
   const [difficulty, setDifficulty] = useState<"easy" | "ok" | "hard" | "">("");
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingItems, setLoadingItems] = useState(false);
+
+  // ── Custom items ──
+  const [customItems, setCustomItems] = useState<
+    { id: string; title: string; type: "piece" | "exercise" | "other" }[]
+  >([]);
+  const [workedCustomIds, setWorkedCustomIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [newCustomTitle, setNewCustomTitle] = useState("");
+  const [newCustomType, setNewCustomType] = useState<
+    "piece" | "exercise" | "other"
+  >("other");
 
   // ── Timer phase initializer — shared by startSession, auto-start and phase transitions ──
   function initPhase(secs: number, isWorkPhase: boolean) {
@@ -630,17 +667,65 @@ export default function PomodoroPage() {
       return;
     }
 
+    const weekStart = formatWeekStart(getMonday(new Date()));
+    const todayDow = getTodayDayOfWeek();
+
+    // Busca plano da semana atual
+    const { data: plan } = await supabase
+      .from("weekly_plans")
+      .select("id")
+      .eq("student_id", sid)
+      .eq("week_start", weekStart)
+      .maybeSingle();
+
+    let todayPieceIds: string[] = [];
+    let todayExerciseIds: string[] = [];
+    let planItemOrder: { pieceId: string | null; exerciseId: string | null; planItemId: string }[] = [];
+
+    if (plan?.id) {
+      const { data: todayItems } = await supabase
+        .from("plan_items")
+        .select("id, piece_id, exercise_id")
+        .eq("plan_id", plan.id)
+        .eq("day_of_week", todayDow)
+        .order("position", { ascending: true });
+
+      for (const item of (todayItems ?? []) as any[]) {
+        const pid = item.piece_id as string | null;
+        const eid = item.exercise_id as string | null;
+        if (pid && !todayPieceIds.includes(pid)) todayPieceIds.push(pid);
+        if (eid && !todayExerciseIds.includes(eid)) todayExerciseIds.push(eid);
+        planItemOrder.push({ pieceId: pid, exerciseId: eid, planItemId: item.id as string });
+      }
+    }
+
+    const hasFilter = todayPieceIds.length > 0 || todayExerciseIds.length > 0;
+
     const [piecesRes, exercisesRes, completionsRes] = await Promise.all([
-      supabase
-        .from("pieces")
-        .select("id, title, checklist_items(id, title, piece_id, exercise_id)")
-        .eq("student_id", sid)
-        .in("status", ["in_progress", "paused", "future"]),
-      supabase
-        .from("exercises")
-        .select("id, title, checklist_items(id, title, piece_id, exercise_id)")
-        .eq("student_id", sid)
-        .eq("status", "active"),
+      hasFilter && todayPieceIds.length > 0
+        ? supabase
+            .from("pieces")
+            .select("id, title, status, checklist_items(id, title, piece_id, exercise_id)")
+            .in("id", todayPieceIds)
+        : !hasFilter
+          ? supabase
+              .from("pieces")
+              .select("id, title, status, checklist_items(id, title, piece_id, exercise_id)")
+              .eq("student_id", sid)
+              .in("status", ["in_progress", "paused", "future"])
+          : Promise.resolve({ data: [], error: null }),
+      hasFilter && todayExerciseIds.length > 0
+        ? supabase
+            .from("exercises")
+            .select("id, title, status, checklist_items(id, title, piece_id, exercise_id)")
+            .in("id", todayExerciseIds)
+        : !hasFilter
+          ? supabase
+              .from("exercises")
+              .select("id, title, status, checklist_items(id, title, piece_id, exercise_id)")
+              .eq("student_id", sid)
+              .eq("status", "active")
+          : Promise.resolve({ data: [], error: null }),
       supabase
         .from("checklist_completions")
         .select("checklist_item_id")
@@ -651,7 +736,7 @@ export default function PomodoroPage() {
         ),
     ]);
 
-    if (piecesRes.error || exercisesRes.error) {
+    if ((piecesRes as any).error || (exercisesRes as any).error) {
       setLoadingItems(false);
       return;
     }
@@ -661,30 +746,84 @@ export default function PomodoroPage() {
     );
     setCompletedIds(alreadyDone);
 
-    const groups: DayGroup[] = [];
+    const pieceMap = new Map<string, any>();
+    for (const p of ((piecesRes.data ?? []) as any[])) pieceMap.set(p.id, p);
+    const exerciseMap = new Map<string, any>();
+    for (const e of ((exercisesRes.data ?? []) as any[])) exerciseMap.set(e.id, e);
 
-    for (const piece of (piecesRes.data ?? []) as any[]) {
-      if ((piece.checklist_items ?? []).length === 0) continue;
-      groups.push({
-        sourceId: piece.id,
-        sourceTitle: piece.title,
-        kind: "piece",
-        items: piece.checklist_items as ChecklistEntry[],
-      });
+    const groups: DayGroup[] = [];
+    const seenIds = new Set<string>();
+
+    // Mapa sourceId → plan_item_ids para tracking de grupos sem checklist
+    const planItemsBySource = new Map<string, string[]>();
+    for (const { pieceId, exerciseId, planItemId } of planItemOrder) {
+      const sid2 = pieceId ?? exerciseId;
+      if (!sid2) continue;
+      if (!planItemsBySource.has(sid2)) planItemsBySource.set(sid2, []);
+      planItemsBySource.get(sid2)!.push(planItemId);
     }
-    for (const ex of (exercisesRes.data ?? []) as any[]) {
-      if ((ex.checklist_items ?? []).length === 0) continue;
-      groups.push({
-        sourceId: ex.id,
-        sourceTitle: ex.title,
-        kind: "exercise",
-        items: ex.checklist_items as ChecklistEntry[],
-      });
+
+    if (hasFilter) {
+      // Mantém a ordem do plano — inclui grupos SEM checklist_items
+      for (const { pieceId, exerciseId } of planItemOrder) {
+        if (pieceId && !seenIds.has(pieceId)) {
+          const piece = pieceMap.get(pieceId);
+          if (piece) {
+            seenIds.add(pieceId);
+            groups.push({
+              sourceId: piece.id,
+              sourceTitle: piece.title,
+              kind: "piece",
+              status: piece.status ?? "in_progress",
+              items: (piece.checklist_items ?? []) as ChecklistEntry[],
+              planItemIds: planItemsBySource.get(pieceId) ?? [],
+            });
+          }
+        }
+        if (exerciseId && !seenIds.has(exerciseId)) {
+          const ex = exerciseMap.get(exerciseId);
+          if (ex) {
+            seenIds.add(exerciseId);
+            groups.push({
+              sourceId: ex.id,
+              sourceTitle: ex.title,
+              kind: "exercise",
+              status: ex.status ?? "active",
+              items: (ex.checklist_items ?? []) as ChecklistEntry[],
+              planItemIds: planItemsBySource.get(exerciseId) ?? [],
+            });
+          }
+        }
+      }
+    } else {
+      // Fallback: sem plano, mostra tudo ativo (mantém filtro de checklist_items)
+      for (const piece of ((piecesRes.data ?? []) as any[])) {
+        if ((piece.checklist_items ?? []).length === 0) continue;
+        groups.push({
+          sourceId: piece.id,
+          sourceTitle: piece.title,
+          kind: "piece",
+          status: piece.status ?? "in_progress",
+          items: piece.checklist_items as ChecklistEntry[],
+          planItemIds: [],
+        });
+      }
+      for (const ex of ((exercisesRes.data ?? []) as any[])) {
+        if ((ex.checklist_items ?? []).length === 0) continue;
+        groups.push({
+          sourceId: ex.id,
+          sourceTitle: ex.title,
+          kind: "exercise",
+          status: ex.status ?? "active",
+          items: ex.checklist_items as ChecklistEntry[],
+          planItemIds: [],
+        });
+      }
     }
 
     setDayGroups(groups);
 
-    // Pre-select items when launched from a specific piece task
+    // Pré-seleciona grupo quando veio de um item específico do plano
     if (nav?.planItemId && groups.length > 0) {
       const { data: piRow } = await supabase
         .from("plan_items")
@@ -764,6 +903,11 @@ export default function PomodoroPage() {
     // ── Persistência em background + navigate imediato ──
     const checklistIds = [...workedIds];
     const sessionId = sessionData!.id;
+    const selectedCustom = customItems.filter((ci) => workedCustomIds.has(ci.id));
+    // Plan_item_ids de grupos sem checklist_items marcados como trabalhados
+    const extraPlanItemIds = dayGroups
+      .filter((g) => g.items.length === 0 && workedGroupIds.has(g.sourceId))
+      .flatMap((g) => g.planItemIds);
 
     navigate("/aluno/hoje");
 
@@ -867,7 +1011,57 @@ export default function PomodoroPage() {
         checklistIds,
         nav?.planItemId ?? null,
         totalWorkSecs,
+        extraPlanItemIds,
       ),
+
+      selectedCustom.length > 0
+        ? (async () => {
+            const perItem = Math.round(
+              totalWorkSecs / Math.max(1, selectedCustom.length + 1),
+            );
+            for (const ci of selectedCustom) {
+              if (ci.type === "piece") {
+                const { data: newPiece } = await supabase
+                  .from("pieces")
+                  .insert({
+                    student_id: sid,
+                    title: ci.title,
+                    status: "in_progress",
+                  })
+                  .select("id")
+                  .single();
+                if (newPiece) {
+                  await supabase.from("session_items").insert({
+                    session_id: sessionId,
+                    plan_item_id: null,
+                    piece_id: newPiece.id,
+                    duration_seconds: perItem,
+                  });
+                }
+              } else if (ci.type === "exercise") {
+                const { data: newEx } = await supabase
+                  .from("exercises")
+                  .insert({
+                    student_id: sid,
+                    title: ci.title,
+                    status: "active",
+                    category: "other",
+                  })
+                  .select("id")
+                  .single();
+                if (newEx) {
+                  await supabase.from("session_items").insert({
+                    session_id: sessionId,
+                    plan_item_id: null,
+                    exercise_id: newEx.id,
+                    duration_seconds: perItem,
+                  });
+                }
+              }
+              // type === "other": não salva no banco
+            }
+          })()
+        : Promise.resolve(),
     ]).catch(() => {
       toast.error(
         "Alguns dados da sessão não foram salvos. Verifique sua conexão.",
@@ -1212,17 +1406,50 @@ export default function PomodoroPage() {
               <Spinner size={16} />
             </div>
           ) : (
-            dayGroups.length > 0 && (
-              <div
-                id="onboarding-pomodoro-checklist"
-                className="bg-white rounded-2xl border border-gray-100 p-4"
-              >
-                <p className="text-sm font-semibold text-gray-600 mb-3">
-                  Selecione os itens que você está trabalhando.
-                </p>
+            <div
+              id="onboarding-pomodoro-checklist"
+              className="bg-white rounded-2xl border border-gray-100 p-4"
+            >
+              <p className="text-sm font-semibold text-gray-600 mb-3">
+                Selecione os itens que você está trabalhando.
+              </p>
+              {dayGroups.length > 0 && (
                 <div className="space-y-2">
                   {dayGroups.map((group) => {
+                    const hasItems = group.items.length > 0;
                     const expanded = expandedGroups.has(group.sourceId);
+
+                    // Grupo SEM checklist_items: 2 estados via workedGroupIds
+                    if (!hasItems) {
+                      const worked = workedGroupIds.has(group.sourceId);
+                      return (
+                        <div key={group.sourceId} className="pt-3 first:pt-0">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() =>
+                                setWorkedGroupIds((prev) => {
+                                  const n = new Set(prev);
+                                  n.has(group.sourceId)
+                                    ? n.delete(group.sourceId)
+                                    : n.add(group.sourceId);
+                                  return n;
+                                })
+                              }
+                              className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition ${
+                                worked
+                                  ? "bg-[#1E3A5F]"
+                                  : "border-2 border-gray-300"
+                              }`}
+                            />
+                            <span className={`text-sm font-semibold truncate ${groupTextColor(group.status)}`}>
+                              {group.sourceTitle}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Grupo COM checklist_items: 3 estados + expansão
                     const groupChecked = group.items.every((ci) =>
                       workedIds.has(ci.id),
                     );
@@ -1313,7 +1540,7 @@ export default function PomodoroPage() {
                             }
                             className="flex-1 flex items-center justify-between gap-2 text-left py-0.5"
                           >
-                            <span className="text-sm font-semibold text-gray-700 truncate">
+                            <span className={`text-sm font-semibold truncate ${groupTextColor(group.status)}`}>
                               {group.sourceTitle}
                             </span>
                             <svg
@@ -1405,8 +1632,137 @@ export default function PomodoroPage() {
                     );
                   })}
                 </div>
-              </div>
-            )
+              )}
+
+              {/* Custom items */}
+              {customItems.length > 0 && (
+                <div className={`space-y-2 ${dayGroups.length > 0 ? "mt-3 pt-3 border-t border-gray-100" : ""}`}>
+                  {customItems.map((ci) => {
+                    const worked = workedCustomIds.has(ci.id);
+                    const typeLabel =
+                      ci.type === "piece"
+                        ? "Peça"
+                        : ci.type === "exercise"
+                          ? "Exercício"
+                          : "Outro";
+                    return (
+                      <div key={ci.id} className="flex items-center gap-3">
+                        <button
+                          onClick={() =>
+                            setWorkedCustomIds((prev) => {
+                              const n = new Set(prev);
+                              n.has(ci.id) ? n.delete(ci.id) : n.add(ci.id);
+                              return n;
+                            })
+                          }
+                          className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition ${
+                            worked
+                              ? "bg-[#1E3A5F]"
+                              : "border-2 border-gray-300"
+                          }`}
+                        />
+                        <span className="flex-1 text-sm text-gray-700 truncate">
+                          {ci.title}
+                        </span>
+                        <span className="text-xs text-gray-400 shrink-0">
+                          {typeLabel}
+                        </span>
+                        <button
+                          onClick={() =>
+                            setCustomItems((prev) =>
+                              prev.filter((x) => x.id !== ci.id),
+                            )
+                          }
+                          className="shrink-0 text-gray-300 hover:text-red-400 transition text-base leading-none"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Adicionar personalizado */}
+              {!showCustomForm ? (
+                <button
+                  onClick={() => setShowCustomForm(true)}
+                  className="mt-3 flex items-center gap-1.5 text-xs text-[#4A90C4] hover:text-[#1E3A5F] transition font-medium"
+                >
+                  <span className="text-base leading-none">+</span> Adicionar personalizado
+                </button>
+              ) : (
+                <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={newCustomTitle}
+                    onChange={(e) => setNewCustomTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newCustomTitle.trim()) {
+                        const id = crypto.randomUUID();
+                        setCustomItems((prev) => [
+                          ...prev,
+                          { id, title: newCustomTitle.trim(), type: newCustomType },
+                        ]);
+                        setWorkedCustomIds((prev) => new Set(prev).add(id));
+                        setNewCustomTitle("");
+                        setShowCustomForm(false);
+                      }
+                      if (e.key === "Escape") {
+                        setNewCustomTitle("");
+                        setShowCustomForm(false);
+                      }
+                    }}
+                    placeholder="Nome do item…"
+                    className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-[#4A90C4]"
+                  />
+                  <div className="flex gap-1.5">
+                    {(["piece", "exercise", "other"] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setNewCustomType(t)}
+                        className={`flex-1 text-xs py-1.5 rounded-lg border transition font-medium ${
+                          newCustomType === t
+                            ? "bg-[#1E3A5F] border-[#1E3A5F] text-white"
+                            : "border-gray-200 text-gray-500 hover:border-[#4A90C4]"
+                        }`}
+                      >
+                        {t === "piece" ? "Peça" : t === "exercise" ? "Exercício" : "Outro"}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (!newCustomTitle.trim()) return;
+                        const id = crypto.randomUUID();
+                        setCustomItems((prev) => [
+                          ...prev,
+                          { id, title: newCustomTitle.trim(), type: newCustomType },
+                        ]);
+                        setWorkedCustomIds((prev) => new Set(prev).add(id));
+                        setNewCustomTitle("");
+                        setShowCustomForm(false);
+                      }}
+                      disabled={!newCustomTitle.trim()}
+                      className="flex-1 bg-[#1E3A5F] text-white text-xs font-semibold py-2 rounded-xl disabled:opacity-40 hover:bg-[#1E3A5F]/90 transition"
+                    >
+                      Adicionar
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNewCustomTitle("");
+                        setShowCustomForm(false);
+                      }}
+                      className="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold py-2 rounded-xl hover:bg-gray-50 transition"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Dificuldade */}
