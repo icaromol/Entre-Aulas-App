@@ -443,13 +443,17 @@ export default function PomodoroPage() {
   async function handleSaveConfig() {
     if (!profile?.id) return;
     setSavingConfig(true);
-    const { data: student } = await supabase
-      .from("students")
-      .select("id")
-      .eq("profile_id", profile.id)
-      .single();
-    if (student?.id) {
-      await supabase
+    try {
+      const { data: student, error: fetchErr } = await supabase
+        .from("students")
+        .select("id")
+        .eq("profile_id", profile.id)
+        .single();
+      if (fetchErr || !student?.id) {
+        toast.error("Não foi possível encontrar seu perfil.");
+        return;
+      }
+      const { error: updateErr } = await supabase
         .from("students")
         .update({
           pomodoro_work: customWork,
@@ -457,9 +461,23 @@ export default function PomodoroPage() {
           pomodoro_cycles: customCycles,
         })
         .eq("id", student.id);
+      if (updateErr) {
+        toast.error("Erro ao salvar configuração. Tente novamente.");
+        return;
+      }
+      localStorage.setItem(
+        "estudamus_pomodoro_config",
+        JSON.stringify({ work: customWork, break: customBreak, cycles: customCycles }),
+      );
+      window.dispatchEvent(
+        new CustomEvent("POMODORO_CONFIG_CHANGED", {
+          detail: { work: customWork, break: customBreak, cycles: customCycles },
+        }),
+      );
+      toast.success("Configuração salva como padrão!");
+    } finally {
+      setSavingConfig(false);
     }
-    setSavingConfig(false);
-    toast.success("Configuração salva como padrão!");
   }
 
   // ── Timer ──
@@ -1035,6 +1053,7 @@ export default function PomodoroPage() {
                     session_id: sessionId,
                     plan_item_id: null,
                     piece_id: newPiece.id,
+                    custom_label: ci.title,
                     duration_seconds: perItem,
                   });
                 }
@@ -1054,11 +1073,18 @@ export default function PomodoroPage() {
                     session_id: sessionId,
                     plan_item_id: null,
                     exercise_id: newEx.id,
+                    custom_label: ci.title,
                     duration_seconds: perItem,
                   });
                 }
+              } else if (ci.type === "other") {
+                await supabase.from("session_items").insert({
+                  session_id: sessionId,
+                  plan_item_id: null,
+                  custom_label: ci.title,
+                  duration_seconds: perItem,
+                });
               }
-              // type === "other": não salva no banco
             }
           })()
         : Promise.resolve(),

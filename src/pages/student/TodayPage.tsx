@@ -156,7 +156,14 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [studentId, setStudentId] = useState<string | null>(profile?.studentId ?? null);
-  const [pomodoroConfig, setPomodoroConfig] = useState<{ work: number; break: number; cycles: number } | null>(null);
+  const POMODORO_CONFIG_KEY = "estudamus_pomodoro_config";
+  function loadCachedConfig(): { work: number; break: number; cycles: number } | null {
+    try {
+      const raw = localStorage.getItem(POMODORO_CONFIG_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+  const [pomodoroConfig, setPomodoroConfig] = useState<{ work: number; break: number; cycles: number } | null>(loadCachedConfig);
   const [hasTeacher, setHasTeacher] = useState<boolean | null>(null);
   const [hasAnyPlan, setHasAnyPlan] = useState<boolean | null>(null);
   const [viewDay, setViewDay] = useState(getTodayDayOfWeek());
@@ -216,6 +223,18 @@ export default function TodayPage() {
     };
   }, [studentId]);
 
+  // Atualiza config de pomodoro quando salva em PomodoroPage
+  useEffect(() => {
+    const onConfigChanged = (e: Event) => {
+      const { work, break: brk, cycles } = (e as CustomEvent<{ work: number; break: number; cycles: number }>).detail;
+      const cfg = { work, break: brk, cycles };
+      localStorage.setItem(POMODORO_CONFIG_KEY, JSON.stringify(cfg));
+      setPomodoroConfig(cfg);
+    };
+    window.addEventListener("POMODORO_CONFIG_CHANGED", onConfigChanged);
+    return () => window.removeEventListener("POMODORO_CONFIG_CHANGED", onConfigChanged);
+  }, []);
+
   // Verifica pendências de dias passados (roda uma vez quando studentId fica disponível)
   useEffect(() => {
     if (!studentId) return
@@ -244,11 +263,9 @@ export default function TodayPage() {
         .single();
       setHasTeacher(!!student?.teacher_id);
       if (student?.pomodoro_work && student?.pomodoro_break && student?.pomodoro_cycles) {
-        setPomodoroConfig({
-          work:   student.pomodoro_work,
-          break:  student.pomodoro_break,
-          cycles: student.pomodoro_cycles,
-        });
+        const cfg = { work: student.pomodoro_work, break: student.pomodoro_break, cycles: student.pomodoro_cycles };
+        localStorage.setItem(POMODORO_CONFIG_KEY, JSON.stringify(cfg));
+        setPomodoroConfig(cfg);
       }
     }
 
@@ -434,7 +451,7 @@ export default function TodayPage() {
 
     const { data: sessRows } = await supabase
       .from("study_sessions")
-      .select("id, cycle_name, duration_seconds, session_items(plan_item_id)")
+      .select("id, cycle_name, duration_seconds, session_items(plan_item_id, custom_label)")
       .eq("student_id", sid)
       .gte("started_at", dayStart.toISOString())
       .lte("started_at", dayEnd.toISOString());
@@ -446,10 +463,13 @@ export default function TodayPage() {
       );
       if (!hasLinkedItem && sess.duration_seconds > 0) {
         const mins = Math.round(sess.duration_seconds / 60);
+        const customLabel = (sess.session_items ?? []).find(
+          (si: any) => si.custom_label,
+        )?.custom_label as string | undefined;
         free.push({
           id: sess.id,
           minutes: mins,
-          label: sess.cycle_name ?? "Sessão livre",
+          label: customLabel ?? sess.cycle_name ?? "Sessão livre",
         });
       }
     }

@@ -14,6 +14,7 @@ interface PlanItemJoin {
 
 interface SessionItem {
   plan_item_id: string | null
+  custom_label: string | null
   plan_item: PlanItemJoin | null
 }
 
@@ -69,6 +70,7 @@ function sessionWeekStart(startedAt: string): string {
 }
 
 function planItemLabel(si: SessionItem): string | null {
+  if (si.custom_label) return si.custom_label
   const p = si.plan_item
   if (!p) return null
   if (p.is_maintenance) return p.piece?.title ?? 'Manutenção'
@@ -101,6 +103,7 @@ export default function HistoryPage() {
           id, started_at, duration_seconds, cycle_name, difficulty_felt, notes,
           session_items(
             plan_item_id,
+            custom_label,
             plan_item:plan_items(
               is_maintenance,
               piece:pieces(title),
