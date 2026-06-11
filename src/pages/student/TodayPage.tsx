@@ -200,10 +200,6 @@ export default function TodayPage() {
     x: number;
     y: number;
   } | null>(null);
-  const [maintenanceTooltip, setMaintenanceTooltip] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
   const [planGenerating, setPlanGenerating] = useState(false);
   const [showChangeTime, setShowChangeTime] = useState(false);
   const [essentialMode, setEssentialMode] = useState(false);
@@ -827,9 +823,15 @@ export default function TodayPage() {
               >
                 {/* Barra de progresso de fundo */}
                 <div
-                  className="absolute inset-y-0 left-0 bg-[#D6E4F0] transition-all duration-500 rounded-2xl"
+                  className={`absolute inset-y-0 left-0 bg-[#D6E4F0] transition-all duration-500 rounded-l-2xl ${itemPct >= 0.95 ? "rounded-r-2xl" : ""}`}
                   style={{ width: `${itemPct * 100}%` }}
                 />
+                {/* Ícone de manutenção — watermark centralizado */}
+                {maintenanceIcon && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <MdBuild className="h-3/5 w-auto opacity-[0.12] text-gray-500" />
+                  </div>
+                )}
                 <div className="relative z-10 flex items-stretch">
                   {/* Botão iniciar — esquerda */}
                   {!item.is_done && (
@@ -866,18 +868,7 @@ export default function TodayPage() {
                       >
                         {title}
                       </p>
-                      {maintenanceIcon && (
-                        <span
-                          className="shrink-0 cursor-default ml-1.5"
-                          onMouseEnter={(e) => {
-                            const r = (e.target as HTMLElement).getBoundingClientRect();
-                            setMaintenanceTooltip({ x: r.left + r.width / 2, y: r.top });
-                          }}
-                          onMouseLeave={() => setMaintenanceTooltip(null)}
-                        >
-                          <MdBuild size={13} className="text-gray-400" />
-                        </span>
-                      )}
+
                       {item.completed_manually && (
                         <span
                           className="text-[#1E3A5F] font-bold text-sm leading-none cursor-default select-none shrink-0"
@@ -1019,27 +1010,6 @@ export default function TodayPage() {
             className="leading-snug"
           >
             Não conta XP, badges nem missões.
-          </p>
-        </div>
-      )}
-
-      {/* Tooltip manutenção */}
-      {maintenanceTooltip && (
-        <div
-          className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
-          style={{
-            backgroundColor: "#1E3A5F",
-            top: maintenanceTooltip.y - 8,
-            left: maintenanceTooltip.x,
-            transform: "translate(-50%, -100%)",
-          }}
-        >
-          <p className="font-semibold mb-0.5">Revisão de manutenção</p>
-          <p
-            style={{ color: "rgba(255,255,255,0.75)" }}
-            className="leading-snug"
-          >
-            Peça concluída em revisão periódica.
           </p>
         </div>
       )}
