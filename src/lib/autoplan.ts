@@ -29,6 +29,15 @@ export async function autoGeneratePlan(
   try {
     const weekStart = options?.weekStart ?? formatWeekStart(getMonday(new Date()))
 
+    // Dias restantes da semana atual (Mon=1…Sat=6, Sun=0)
+    const todayWeekStart = formatWeekStart(getMonday(new Date()))
+    const isCurrentWeek  = weekStart === todayWeekStart
+    const WEEK_ORDER     = [1, 2, 3, 4, 5, 6, 0]
+    const todayDow       = new Date().getDay()
+    const remainingDows  = isCurrentWeek
+      ? WEEK_ORDER.slice(WEEK_ORDER.indexOf(todayDow))
+      : WEEK_ORDER
+
     // 1. Disponibilidade
     const { data: availData } = await supabase
       .from('student_availability')
@@ -41,10 +50,17 @@ export async function autoGeneratePlan(
       return { ok: false, reason: 'no_availability' }
     }
 
-    const availability: DayAvailability[] = availData.map(a => ({
-      dayOfWeek: a.day_of_week,
-      minutesAvailable: a.minutes_available,
-    }))
+    const availability: DayAvailability[] = availData
+      .filter(a => remainingDows.includes(a.day_of_week))
+      .map(a => ({
+        dayOfWeek: a.day_of_week,
+        minutesAvailable: a.minutes_available,
+      }))
+
+    if (availability.length === 0) {
+      toast.dismiss('autoplan')
+      return { ok: false, reason: 'no_availability' }
+    }
 
     // 2. Nível do aluno
     const { data: studentData } = await supabase
@@ -182,6 +198,7 @@ export async function autoGeneratePlan(
         .delete()
         .eq('plan_id', planId)
         .eq('is_done', false)
+        .in('day_of_week', remainingDows)
       if (delErr) throw delErr
     } else {
       const { data: created, error: err } = await supabase
