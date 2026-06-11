@@ -607,17 +607,6 @@ export default function TodayPage() {
     setFreeSessions((prev) => prev.filter((s) => s.id !== sessionId));
   }
 
-  function handleItemClick(item: PlanItem) {
-    if (item.is_done) {
-      toggleDone(item);
-    } else if (localStorage.getItem(SKIP_KEY) === "1") {
-      toggleDone(item, true);
-    } else {
-      setSkipConfirm(false);
-      setPendingItem(item);
-    }
-  }
-
   // Itens com duration_minutes=0 foram descartados pela Sessão Essencial — ocultá-los (salvo se já concluídos)
   const visibleItems = items.filter(
     (i) => i.duration_minutes !== 0 || i.is_done,
@@ -814,7 +803,7 @@ export default function TodayPage() {
               </span>
             </div>
           )}
-          {visibleItems.map((item, itemIdx) => {
+          {visibleItems.map((item) => {
             const { title, subtitle, maintenanceIcon } = itemDisplay(item);
 
             const itemPct = item.duration_minutes
@@ -836,37 +825,34 @@ export default function TodayPage() {
                   className="absolute inset-y-0 left-0 bg-[#DBEAFE] transition-all duration-500 rounded-2xl"
                   style={{ width: `${itemPct * 100}%` }}
                 />
-                <div className="relative z-10 px-4 py-3 flex items-center gap-3">
-                  {/* Checkbox */}
-                  <button
-                    id={itemIdx === 0 ? "onboarding-today-checkbox" : undefined}
-                    onClick={() => handleItemClick(item)}
-                    className="hover:opacity-80 transition shrink-0"
-                  >
-                    <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition ${
-                        item.is_done
-                          ? "bg-[#1E3A5F] border-[#1E3A5F]"
-                          : "border-gray-300 hover:border-[#4A90C4]"
-                      }`}
+                <div className="relative z-10 flex items-stretch">
+                  {/* Botão iniciar — esquerda */}
+                  {!item.is_done && (
+                    <button
+                      onClick={() => {
+                        const alreadySecs = studiedSecs[item.id] ?? 0;
+                        const totalSecs = (item.duration_minutes ?? 0) * 60;
+                        const remainSecs = Math.max(
+                          60,
+                          totalSecs - alreadySecs,
+                        );
+                        navigate("/aluno/pomodoro", {
+                          state: {
+                            planItemId: item.id,
+                            title: subtitle ? `${title} — ${subtitle}` : title,
+                            durationMinutes: Math.ceil(remainSecs / 60),
+                            studentId,
+                          },
+                        });
+                      }}
+                      className="shrink-0 flex items-center justify-center px-4 bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
                     >
-                      {item.is_done && (
-                        <svg
-                          width="10"
-                          height="10"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="white"
-                          strokeWidth={3.5}
-                        >
-                          <path d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                  </button>
+                      <MdPlayArrow size={26} />
+                    </button>
+                  )}
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
+                  <div className={`flex-1 min-w-0 py-3 ${item.is_done ? "px-4" : "pl-3 pr-4"}`}>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <p
                         className={`text-sm font-semibold truncate ${item.is_done ? "line-through text-gray-400" : "text-gray-800"}`}
@@ -905,34 +891,6 @@ export default function TodayPage() {
                       )}
                     </p>
                   </div>
-
-                  {/* Botão iniciar */}
-                  {!item.is_done && (
-                    <button
-                      onClick={() => {
-                        const alreadySecs = studiedSecs[item.id] ?? 0;
-                        const totalSecs = (item.duration_minutes ?? 0) * 60;
-                        const remainSecs = Math.max(
-                          60,
-                          totalSecs - alreadySecs,
-                        );
-                        navigate("/aluno/pomodoro", {
-                          state: {
-                            planItemId: item.id,
-                            title: subtitle ? `${title} — ${subtitle}` : title,
-                            durationMinutes: Math.ceil(remainSecs / 60),
-                            studentId,
-                          },
-                        });
-                      }}
-                      className="shrink-0 flex flex-col items-center justify-center gap-1 px-4 py-2.5 rounded-xl bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
-                    >
-                      <MdPlayArrow size={22} />
-                      <span className="text-xs font-bold leading-none">
-                        Iniciar
-                      </span>
-                    </button>
-                  )}
                 </div>
               </div>
             );
