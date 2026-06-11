@@ -13,9 +13,7 @@ import {
   MdChevronRight,
   MdPlayArrow,
   MdDeleteOutline,
-  MdCheckCircle,
   MdSelfImprovement,
-  MdEdit,
   MdFlashOn,
   MdKeyboardDoubleArrowLeft,
 } from "react-icons/md";
@@ -722,45 +720,36 @@ export default function TodayPage() {
         </button>
       </div>
 
-      {/* Progresso do dia */}
+      {/* Progresso do dia — barra clicável */}
       {total > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
-          {pct >= 100 && (
-            <div className="flex items-center gap-2 mb-3">
-              <MdCheckCircle size={20} className="text-green-500 shrink-0" />
-              <p className="text-sm font-bold text-[#1E3A5F]">
-                Você <span className="font-bold">já</span> completou o estudo de
-                hoje.
-              </p>
-            </div>
-          )}
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-gray-600">
-              Progresso de hoje
-            </span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-[#1E3A5F]">
-                {totalMinutes > 0
-                  ? `${studiedMinutes}/${totalMinutes} min`
-                  : `${studiedMinutes} min`}
-              </span>
-              {visibleItems.some((i) => !i.is_done) && (
-                <button
-                  onClick={() => setShowChangeTime(true)}
-                  className="text-gray-400 hover:text-[#1E3A5F] transition"
-                >
-                  <MdEdit size={13} />
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+        <button
+          className="w-full mb-5 cursor-pointer px-4"
+          onClick={() => setShowChangeTime(true)}
+        >
+          <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${pct >= 100 ? "bg-green-500" : "bg-[#4A90C4]"}`}
+              className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 bg-green-500"
               style={{ width: `${pct}%` }}
             />
+            {/* Texto cinza escuro — visível sobre o fundo cinza */}
+            <div className="absolute inset-0 flex items-center px-2.5">
+              <span className="text-[9px] font-bold text-gray-400 leading-none whitespace-nowrap">
+                {studiedMinutes} / {totalMinutes}
+              </span>
+            </div>
+            {/* Texto branco — clipado à largura da barra verde, só aparece quando barra > 0 */}
+            {pct > 0 && (
+              <div
+                className="absolute inset-y-0 left-0 overflow-hidden transition-all duration-500 flex items-center px-2.5"
+                style={{ width: `${pct}%` }}
+              >
+                <span className="text-[9px] font-bold text-white leading-none whitespace-nowrap">
+                  {studiedMinutes} / {totalMinutes}
+                </span>
+              </div>
+            )}
           </div>
-        </div>
+        </button>
       )}
 
       {/* Lista de itens */}
