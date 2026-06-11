@@ -751,7 +751,10 @@ export default function StudentProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div id="onboarding-teacher-tabs" className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
+      <div
+        id="onboarding-teacher-tabs"
+        className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5"
+      >
         {(
           [
             { key: "plans", label: "Planejamentos", Icon: MdCalendarMonth },
@@ -901,7 +904,7 @@ export default function StudentProfilePage() {
                                   task.exercise?.title ??
                                   "—");
                               const cardBg = task.is_maintenance
-                                ? "bg-gray-100 hover:bg-gray-200/70"
+                                ? "bg-gray-100 hover:bg-gray-100/70"
                                 : task.exercise_id
                                   ? "bg-rose-50 hover:bg-rose-100/80"
                                   : "bg-[#D6E4F0]/60 hover:bg-[#D6E4F0]";
@@ -1104,21 +1107,31 @@ export default function StudentProfilePage() {
                           cy="18"
                           r="15"
                           fill="none"
-                          stroke="#4A90C4"
+                          stroke={
+                            piece.status === "paused"
+                              ? "#D1D5DB"
+                              : piece.status === "completed"
+                                ? "#22c55e"
+                                : "#4A90C4"
+                          }
                           strokeWidth="3"
                           strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`}
                           strokeLinecap="round"
                         />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="rounded-full overflow-hidden">
-                          <Avatar
-                            size={24}
-                            name={piece.title}
-                            variant="marble"
-                            colors={AVATAR_COLORS}
-                          />
-                        </div>
+                        {piece.status === "paused" ? (
+                          <div className="w-6 h-6 rounded-full bg-gray-100" />
+                        ) : (
+                          <div className="rounded-full overflow-hidden">
+                            <Avatar
+                              size={24}
+                              name={piece.title}
+                              variant="marble"
+                              colors={AVATAR_COLORS}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1173,13 +1186,19 @@ export default function StudentProfilePage() {
                     to={`/professor/alunos/${studentId}/exercicios/${ex.id}`}
                     className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
                   >
-                    <div className="shrink-0 rounded-lg overflow-hidden">
-                      <Avatar
-                        size={36}
-                        name={ex.title}
-                        variant="pixel"
-                        colors={AVATAR_COLORS}
-                      />
+                    <div className="shrink-0">
+                      {ex.status === "inactive" ? (
+                        <div className="w-9 h-9 rounded-full bg-gray-100" />
+                      ) : (
+                        <div className="rounded-lg overflow-hidden">
+                          <Avatar
+                            size={36}
+                            name={ex.title}
+                            variant="pixel"
+                            colors={AVATAR_COLORS}
+                          />
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-800 truncate">

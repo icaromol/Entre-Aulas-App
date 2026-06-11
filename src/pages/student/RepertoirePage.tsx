@@ -423,21 +423,31 @@ export default function RepertoirePage() {
                           cy="18"
                           r="15"
                           fill="none"
-                          stroke="#4A90C4"
+                          stroke={
+                            piece.status === "paused"
+                              ? "#D1D5DB"
+                              : piece.status === "completed"
+                                ? "#22c55e"
+                                : "#4A90C4"
+                          }
                           strokeWidth="3"
                           strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`}
                           strokeLinecap="round"
                         />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="rounded-full overflow-hidden">
-                          <Avatar
-                            size={24}
-                            name={piece.title}
-                            variant="marble"
-                            colors={AVATAR_COLORS}
-                          />
-                        </div>
+                        {piece.status === "paused" ? (
+                          <div className="w-6 h-6 rounded-full bg-gray-100" />
+                        ) : (
+                          <div className="rounded-full overflow-hidden">
+                            <Avatar
+                              size={24}
+                              name={piece.title}
+                              variant="marble"
+                              colors={AVATAR_COLORS}
+                            />
+                          </div>
+                        )}
                       </div>
                     </button>
 
@@ -596,14 +606,20 @@ export default function RepertoirePage() {
                   onClick={() =>
                     navigate(`/aluno/repertorio/exercicios/${ex.id}`)
                   }
-                  className="shrink-0 rounded-lg overflow-hidden"
+                  className="shrink-0"
                 >
-                  <Avatar
-                    size={36}
-                    name={ex.title}
-                    variant="pixel"
-                    colors={AVATAR_COLORS}
-                  />
+                  {ex.status === "inactive" ? (
+                    <div className="w-9 h-9 rounded-full bg-gray-100" />
+                  ) : (
+                    <div className="rounded-lg overflow-hidden">
+                      <Avatar
+                        size={36}
+                        name={ex.title}
+                        variant="pixel"
+                        colors={AVATAR_COLORS}
+                      />
+                    </div>
+                  )}
                 </button>
                 <button
                   onClick={() =>
