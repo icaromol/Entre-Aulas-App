@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { autoGeneratePlan, PLAN_GENERATING_EVENT, PLAN_DONE_EVENT, lastPlanGeneratedAt } from "@/lib/autoplan";
+import { autoGeneratePlan, redistributePendingItems, PLAN_GENERATING_EVENT, PLAN_DONE_EVENT, lastPlanGeneratedAt } from "@/lib/autoplan";
 import {
   MdChevronLeft,
   MdChevronRight,
@@ -285,7 +285,12 @@ export default function TodayPage() {
     const EXPLAINED_KEY = "estudamus_continuity_explained"
     const isFirstTime = !localStorage.getItem(EXPLAINED_KEY)
 
-    await autoGeneratePlan(sid)
+    const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]
+    const todayDow2  = getTodayDayOfWeek()
+    const remaining  = WEEK_ORDER.slice(WEEK_ORDER.indexOf(todayDow2))
+    const moved = await redistributePendingItems(plan.id, remaining)
+
+    if (moved) await fetchItems(sid)
 
     if (isFirstTime) {
       localStorage.setItem(EXPLAINED_KEY, "1")

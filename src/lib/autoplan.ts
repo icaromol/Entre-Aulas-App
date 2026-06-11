@@ -255,3 +255,57 @@ export async function autoGeneratePlan(
     return { ok: false, reason: 'error' }
   }
 }
+
+// Move itens is_done=false de dias passados para os dias restantes da semana via UPDATE.
+// Não deleta nem regenera — só redistribui os mesmos plan_item ids.
+// Retorna true se havia pendências e foram movidas, false caso contrário.
+export async function redistributePendingItems(
+  planId: string,
+  remainingDows: number[]
+): Promise<boolean> {
+  if (remainingDows.length === 0) return false
+
+  const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]
+  const pastDows = WEEK_ORDER.filter(d => !remainingDows.includes(d))
+  if (pastDows.length === 0) return false
+
+  const { data: pending } = await supabase
+    .from('plan_items')
+    .select('id')
+    .eq('plan_id', planId)
+    .eq('is_done', false)
+    .in('day_of_week', pastDows)
+    .order('day_of_week')
+    .order('position')
+
+  if (!pending || pending.length === 0) return false
+
+  // Posição máxima atual por dia restante (para anexar após os existentes)
+  const { data: existing } = await supabase
+    .from('plan_items')
+    .select('day_of_week, position')
+    .eq('plan_id', planId)
+    .in('day_of_week', remainingDows)
+
+  const maxPos: Record<number, number> = {}
+  for (const dow of remainingDows) maxPos[dow] = -1
+  for (const row of existing ?? []) {
+    if ((row.position ?? 0) > maxPos[row.day_of_week]) {
+      maxPos[row.day_of_week] = row.position
+    }
+  }
+
+  // Round-robin: distribui pendentes pelos dias restantes em sequência
+  await Promise.all(
+    pending.map((item, i) => {
+      const dow = remainingDows[i % remainingDows.length]
+      maxPos[dow] += 1
+      return supabase
+        .from('plan_items')
+        .update({ day_of_week: dow, position: maxPos[dow] })
+        .eq('id', item.id)
+    })
+  )
+
+  return true
+}
