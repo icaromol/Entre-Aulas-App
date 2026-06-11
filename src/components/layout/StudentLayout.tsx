@@ -1,85 +1,96 @@
-import { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import Avatar from 'boring-avatars'
-import { toast } from 'sonner'
-import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@/lib/supabase'
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import Avatar from "boring-avatars";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
 import {
-  MdCalendarToday, MdLibraryMusic, MdHistory, MdStars, MdFlag,
-  MdMenu, MdClose, MdEdit, MdSchool, MdLogout, MdChevronRight, MdSwapHoriz,
+  MdCalendarToday,
+  MdLibraryMusic,
+  MdHistory,
+  MdStars,
+  MdFlag,
+  MdMenu,
+  MdClose,
+  MdEdit,
+  MdSchool,
+  MdLogout,
+  MdChevronRight,
+  MdSwapHoriz,
   MdAccessTime,
-} from 'react-icons/md'
-import { OnboardingController } from '@/components/onboarding/OnboardingController'
-import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
+} from "react-icons/md";
+import { OnboardingController } from "@/components/onboarding/OnboardingController";
+import { AvailabilityEditor } from "@/components/ui/AvailabilityEditor";
 
-const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
+const AVATAR_COLORS = ["#1E3A5F", "#4A90C4", "#D6E4F0", "#F5F7FA", "#FFFFFF"];
 
 interface StudentLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 const navItems = [
-  { label: 'Hoje',        path: '/aluno/hoje',          Icon: MdCalendarToday },
-  { label: 'Repertório',  path: '/aluno/repertorio',    Icon: MdLibraryMusic  },
-  { label: 'Objetivos',   path: '/aluno/objetivos',     Icon: MdFlag          },
-  { label: 'Jornada',     path: '/aluno/jornada',       Icon: MdStars         },
-]
+  { label: "Planejamento", path: "/aluno/planejamento", Icon: MdCalendarToday },
+  { label: "Repertório", path: "/aluno/repertorio", Icon: MdLibraryMusic },
+  { label: "Objetivos", path: "/aluno/objetivos", Icon: MdFlag },
+  { label: "Jornada", path: "/aluno/jornada", Icon: MdStars },
+];
 
 export function StudentLayout({ children }: StudentLayoutProps) {
-  const { user, profile, signOut } = useAuth()
-  const location = useLocation()
-  const navigate = useNavigate()
+  const { user, profile, signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const [showMenu, setShowMenu]               = useState(false)
-  const [showLogout, setShowLogout]           = useState(false)
-  const [showEdit, setShowEdit]               = useState(false)
-  const [showAvailability, setShowAvailability] = useState(false)
-  const [editFirst, setEditFirst]             = useState('')
-  const [editLast, setEditLast]               = useState('')
-  const [saving, setSaving]                   = useState(false)
-  const [nameOverride, setNameOverride]       = useState<{ first: string; last: string } | null>(null)
-
+  const [showMenu, setShowMenu] = useState(false);
+  const [showLogout, setShowLogout] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showAvailability, setShowAvailability] = useState(false);
+  const [editFirst, setEditFirst] = useState("");
+  const [editLast, setEditLast] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [nameOverride, setNameOverride] = useState<{
+    first: string;
+    last: string;
+  } | null>(null);
 
   function openEdit() {
-    setEditFirst(nameOverride?.first ?? profile?.first_name ?? '')
-    setEditLast(nameOverride?.last  ?? profile?.last_name  ?? '')
-    setShowMenu(false)
-    setShowEdit(true)
+    setEditFirst(nameOverride?.first ?? profile?.first_name ?? "");
+    setEditLast(nameOverride?.last ?? profile?.last_name ?? "");
+    setShowMenu(false);
+    setShowEdit(true);
   }
 
   async function handleSaveProfile() {
-    if (!user || !profile) return
-    setSaving(true)
-    const { error } = await supabase.rpc('complete_user_profile', {
-      p_role:       profile.role,
+    if (!user || !profile) return;
+    setSaving(true);
+    const { error } = await supabase.rpc("complete_user_profile", {
+      p_role: profile.role,
       p_first_name: editFirst.trim(),
-      p_last_name:  editLast.trim(),
+      p_last_name: editLast.trim(),
       p_avatar_url: profile.avatar_url,
-    })
-    setSaving(false)
+    });
+    setSaving(false);
     if (error) {
-      toast.error('Erro ao salvar perfil.')
-      return
+      toast.error("Erro ao salvar perfil.");
+      return;
     }
-    setNameOverride({ first: editFirst.trim(), last: editLast.trim() })
-    setShowEdit(false)
-    toast.success('Perfil atualizado!')
+    setNameOverride({ first: editFirst.trim(), last: editLast.trim() });
+    setShowEdit(false);
+    toast.success("Perfil atualizado!");
   }
 
   async function handleSignOut() {
-    setShowLogout(false)
-    await signOut()
-    navigate('/login')
+    setShowLogout(false);
+    await signOut();
+    navigate("/login");
   }
 
-  const displayFirst = nameOverride?.first ?? profile?.first_name ?? ''
-  const displayLast  = nameOverride?.last  ?? profile?.last_name  ?? ''
-  const fullName     = `${displayFirst} ${displayLast}`.trim()
-  const avatarUrl    = profile?.avatar_url ?? user?.user_metadata?.avatar_url
+  const displayFirst = nameOverride?.first ?? profile?.first_name ?? "";
+  const displayLast = nameOverride?.last ?? profile?.last_name ?? "";
+  const fullName = `${displayFirst} ${displayLast}`.trim();
+  const avatarUrl = profile?.avatar_url ?? user?.user_metadata?.avatar_url;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-
       <OnboardingController role="student" />
 
       {/* Overlay do menu */}
@@ -91,11 +102,15 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       )}
 
       {/* Bottom sheet menu — sempre no DOM para transição */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl transition-transform duration-300 ease-out ${showMenu ? 'translate-y-0' : 'translate-y-full'}`}>
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl transition-transform duration-300 ease-out ${showMenu ? "translate-y-0" : "translate-y-full"}`}
+      >
         <div className="px-6 pt-4 pb-8 space-y-1">
-
           <div className="flex justify-end mb-2">
-            <button onClick={() => setShowMenu(false)} className="text-gray-400 hover:text-gray-600 transition">
+            <button
+              onClick={() => setShowMenu(false)}
+              className="text-gray-400 hover:text-gray-600 transition"
+            >
               <MdClose size={22} />
             </button>
           </div>
@@ -103,14 +118,25 @@ export function StudentLayout({ children }: StudentLayoutProps) {
           {/* Card de perfil */}
           <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={fullName} className="w-11 h-11 rounded-full object-cover shrink-0" />
+              <img
+                src={avatarUrl}
+                alt={fullName}
+                className="w-11 h-11 rounded-full object-cover shrink-0"
+              />
             ) : (
               <div className="rounded-full overflow-hidden shrink-0">
-                <Avatar size={44} name={fullName} variant="beam" colors={AVATAR_COLORS} />
+                <Avatar
+                  size={44}
+                  name={fullName}
+                  variant="beam"
+                  colors={AVATAR_COLORS}
+                />
               </div>
             )}
             <div className="leading-tight min-w-0">
-              <p className="text-sm font-semibold text-[#1E3A5F] truncate">{fullName || 'Aluno'}</p>
+              <p className="text-sm font-semibold text-[#1E3A5F] truncate">
+                {fullName || "Aluno"}
+              </p>
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
             </div>
           </div>
@@ -121,64 +147,90 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
           >
             <MdEdit size={20} className="text-[#4A90C4] shrink-0" />
-            <span className="text-sm font-medium text-gray-700">Editar perfil</span>
+            <span className="text-sm font-medium text-gray-700">
+              Editar perfil
+            </span>
           </button>
 
           {/* Trocar área — só para professores em modo estudo */}
-          {profile?.role === 'teacher' && (
+          {profile?.role === "teacher" && (
             <button
-              onClick={() => { setShowMenu(false); navigate('/modo') }}
+              onClick={() => {
+                setShowMenu(false);
+                navigate("/modo");
+              }}
               className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#D6E4F0] transition text-left"
             >
               <MdSwapHoriz size={20} className="text-[#1E3A5F] shrink-0" />
-              <span className="text-sm font-semibold text-[#1E3A5F] flex-1">Trocar área</span>
+              <span className="text-sm font-semibold text-[#1E3A5F] flex-1">
+                Trocar área
+              </span>
               <MdChevronRight size={18} className="text-gray-300" />
             </button>
           )}
 
           {/* Meu professor — só para estudantes */}
-          {profile?.role === 'student' && (
+          {profile?.role === "student" && (
             <button
-              onClick={() => { setShowMenu(false); navigate('/aluno/professor') }}
+              onClick={() => {
+                setShowMenu(false);
+                navigate("/aluno/professor");
+              }}
               className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
             >
               <MdSchool size={20} className="text-[#4A90C4] shrink-0" />
-              <span className="text-sm font-medium text-gray-700 flex-1">Meu professor</span>
+              <span className="text-sm font-medium text-gray-700 flex-1">
+                Meu professor
+              </span>
               <MdChevronRight size={18} className="text-gray-300" />
             </button>
           )}
 
           {/* Dias disponíveis */}
           <button
-            onClick={() => { setShowMenu(false); setShowAvailability(true) }}
+            onClick={() => {
+              setShowMenu(false);
+              setShowAvailability(true);
+            }}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
           >
             <MdAccessTime size={20} className="text-[#4A90C4] shrink-0" />
-            <span className="text-sm font-medium text-gray-700 flex-1">Dias disponíveis</span>
+            <span className="text-sm font-medium text-gray-700 flex-1">
+              Dias disponíveis
+            </span>
             <MdChevronRight size={18} className="text-gray-300" />
           </button>
 
           {/* Histórico */}
           <button
-            onClick={() => { setShowMenu(false); navigate('/aluno/historico') }}
+            onClick={() => {
+              setShowMenu(false);
+              navigate("/aluno/historico");
+            }}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
           >
             <MdHistory size={20} className="text-[#4A90C4] shrink-0" />
-            <span className="text-sm font-medium text-gray-700 flex-1">Histórico de sessões</span>
+            <span className="text-sm font-medium text-gray-700 flex-1">
+              Histórico de sessões
+            </span>
             <MdChevronRight size={18} className="text-gray-300" />
           </button>
 
           {/* Sair */}
           <div className="pt-2 border-t border-gray-100">
             <button
-              onClick={() => { setShowMenu(false); setShowLogout(true) }}
+              onClick={() => {
+                setShowMenu(false);
+                setShowLogout(true);
+              }}
               className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-red-50 transition text-left"
             >
               <MdLogout size={20} className="text-red-400 shrink-0" />
-              <span className="text-sm font-medium text-red-500">Sair do app</span>
+              <span className="text-sm font-medium text-red-500">
+                Sair do app
+              </span>
             </button>
           </div>
-
         </div>
       </div>
 
@@ -186,13 +238,23 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       {showLogout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Quer sair?</h2>
-            <p className="text-sm text-gray-400 mb-5">Você será desconectado da sua conta.</p>
+            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">
+              Quer sair?
+            </h2>
+            <p className="text-sm text-gray-400 mb-5">
+              Você será desconectado da sua conta.
+            </p>
             <div className="flex flex-col gap-2">
-              <button onClick={handleSignOut} className="w-full py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition">
+              <button
+                onClick={handleSignOut}
+                className="w-full py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition"
+              >
                 Sair e fazer logout
               </button>
-              <button onClick={() => setShowLogout(false)} className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition">
+              <button
+                onClick={() => setShowLogout(false)}
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition"
+              >
                 Permanecer conectado
               </button>
             </div>
@@ -204,22 +266,28 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       {showEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="text-base font-bold text-[#1E3A5F] mb-4">Editar perfil</h2>
+            <h2 className="text-base font-bold text-[#1E3A5F] mb-4">
+              Editar perfil
+            </h2>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-400 font-medium">Nome</label>
+                <label className="text-xs text-gray-400 font-medium">
+                  Nome
+                </label>
                 <input
                   value={editFirst}
-                  onChange={e => setEditFirst(e.target.value)}
+                  onChange={(e) => setEditFirst(e.target.value)}
                   maxLength={100}
                   className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400 font-medium">Sobrenome</label>
+                <label className="text-xs text-gray-400 font-medium">
+                  Sobrenome
+                </label>
                 <input
                   value={editLast}
-                  onChange={e => setEditLast(e.target.value)}
+                  onChange={(e) => setEditLast(e.target.value)}
                   maxLength={100}
                   className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
                 />
@@ -237,7 +305,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                 disabled={saving}
                 className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-50"
               >
-                {saving ? 'Salvando...' : 'Salvar'}
+                {saving ? "Salvando..." : "Salvar"}
               </button>
             </div>
           </div>
@@ -249,7 +317,9 @@ export function StudentLayout({ children }: StudentLayoutProps) {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
           <div className="bg-white rounded-t-2xl w-full max-w-lg shadow-xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
-              <h2 className="text-base font-bold text-[#1E3A5F]">Dias disponíveis</h2>
+              <h2 className="text-base font-bold text-[#1E3A5F]">
+                Dias disponíveis
+              </h2>
               <button
                 onClick={() => setShowAvailability(false)}
                 className="text-gray-400 hover:text-gray-600 transition"
@@ -276,27 +346,27 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       </header>
 
       {/* Conteúdo */}
-      <main className="px-4 py-5">
-        {children}
-      </main>
+      <main className="px-4 py-5">{children}</main>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-10">
         <div className="flex">
           {navItems.map(({ label, path, Icon }) => {
-            const active = location.pathname.startsWith(path)
+            const active = location.pathname.startsWith(path);
             return (
               <Link
                 key={path}
                 to={path}
                 className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
               >
-                <Icon size={22} color={active ? '#1E3A5F' : '#9CA3AF'} />
-                <span className={`text-[10px] font-medium ${active ? 'text-[#1E3A5F]' : 'text-gray-400'}`}>
+                <Icon size={22} color={active ? "#1E3A5F" : "#9CA3AF"} />
+                <span
+                  className={`text-[10px] font-medium ${active ? "text-[#1E3A5F]" : "text-gray-400"}`}
+                >
                   {label}
                 </span>
               </Link>
-            )
+            );
           })}
 
           {/* Menu sanduíche */}
@@ -304,14 +374,15 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             onClick={() => setShowMenu(true)}
             className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
           >
-            <MdMenu size={22} color={showMenu ? '#1E3A5F' : '#9CA3AF'} />
-            <span className={`text-[10px] font-medium ${showMenu ? 'text-[#1E3A5F]' : 'text-gray-400'}`}>
+            <MdMenu size={22} color={showMenu ? "#1E3A5F" : "#9CA3AF"} />
+            <span
+              className={`text-[10px] font-medium ${showMenu ? "text-[#1E3A5F]" : "text-gray-400"}`}
+            >
               Menu
             </span>
           </button>
         </div>
       </nav>
-
     </div>
-  )
+  );
 }

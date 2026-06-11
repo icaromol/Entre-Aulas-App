@@ -45,7 +45,6 @@ const StudentNewProgramaPage    = lazy(() => import('@/pages/student/NewPrograma
 const StudentProgramaDetailPage = lazy(() => import('@/pages/student/ProgramaDetailPage'))
 const StudentEditProgramaPage      = lazy(() => import('@/pages/student/EditProgramaPage'))
 const StudentPendingPage           = lazy(() => import('@/pages/student/StudentPendingPage'))
-const StudentPlanejamentoPage      = lazy(() => import('@/pages/student/StudentPlanejamentoPage'))
 const ObjetivosPage                = lazy(() => import('@/pages/student/ObjetivosPage'))
 
 function PageSpinner() {
@@ -89,9 +88,9 @@ function AppRoutes() {
 
           {/* Aluno */}
           <Route path="/aluno/pendente"      element={<AuthGuard allowedRole="student"><StudentPendingPage /></AuthGuard>} />
-          <Route path="/aluno/planejamento" element={<AuthGuard allowedRole="student"><StudentPlanejamentoPage /></AuthGuard>} />
-          <Route path="/aluno" element={<AuthGuard allowedRole="student"><Navigate to="/aluno/hoje" replace /></AuthGuard>} />
-          <Route path="/aluno/hoje" element={<AuthGuard allowedRole="student"><TodayPage /></AuthGuard>} />
+          <Route path="/aluno" element={<AuthGuard allowedRole="student"><Navigate to="/aluno/planejamento" replace /></AuthGuard>} />
+          <Route path="/aluno/hoje" element={<AuthGuard allowedRole="student"><Navigate to="/aluno/planejamento" replace /></AuthGuard>} />
+          <Route path="/aluno/planejamento" element={<AuthGuard allowedRole="student"><TodayPage /></AuthGuard>} />
           <Route path="/aluno/pomodoro" element={<AuthGuard allowedRole="student"><PomodoroPage /></AuthGuard>} />
           <Route path="/aluno/repertorio" element={<AuthGuard allowedRole="student"><RepertoirePage /></AuthGuard>} />
           <Route path="/aluno/repertorio/pecas/nova" element={<AuthGuard allowedRole="student"><StudentNewPiecePage /></AuthGuard>} />

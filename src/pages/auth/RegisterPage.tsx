@@ -172,7 +172,7 @@ export default function RegisterPage() {
     }
 
     window.location.replace(
-      selectedRole === "teacher" ? "/modo" : "/aluno/hoje",
+      selectedRole === "teacher" ? "/modo" : "/aluno/planejamento",
     );
   }
 

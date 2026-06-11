@@ -16,8 +16,7 @@ type TeacherStep = 'welcome' | 'done'
 
 // Tour names that map to progress keys in useOnboarding
 const STUDENT_TOURS: { tour: string; path: string; key: string }[] = [
-  { tour: 'tour_planning',   path: '/aluno/planejamento', key: 'tour_planning_seen'   },
-  { tour: 'tour_today',      path: '/aluno/hoje',         key: 'tour_today_seen'      },
+  { tour: 'tour_today',      path: '/aluno/planejamento', key: 'tour_today_seen'      },
   { tour: 'tour_pomodoro',   path: '/aluno/pomodoro',     key: 'tour_pomodoro_seen'   },
   { tour: 'tour_repertoire', path: '/aluno/repertorio',   key: 'tour_repertoire_seen' },
 ]
@@ -137,9 +136,9 @@ function StudentOnboarding() {
             const result = await autoGeneratePlan(realStudentId)
             if (result.ok) {
               toast.success('Seu plano está pronto! Bons estudos!')
-              navigate('/aluno/hoje')
+              navigate('/aluno/planejamento')
             } else {
-              navigate('/aluno/hoje')
+              navigate('/aluno/planejamento')
             }
           }}
         />

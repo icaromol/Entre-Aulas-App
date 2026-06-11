@@ -28,7 +28,7 @@ export default function ModeSelectPage() {
 
   async function handleStudent() {
     setMode('student')
-    navigate('/aluno/hoje', { replace: true })
+    navigate('/aluno/planejamento', { replace: true })
   }
 
   async function handleActivatePersonal() {
@@ -43,7 +43,7 @@ export default function ModeSelectPage() {
     })
     setActivating(false)
     setMode('student')
-    navigate('/aluno/hoje', { replace: true })
+    navigate('/aluno/planejamento', { replace: true })
   }
 
   const hasPersonalArea = profile?.studentId !== null

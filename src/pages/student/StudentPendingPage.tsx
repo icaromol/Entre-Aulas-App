@@ -61,7 +61,7 @@ export default function StudentPendingPage() {
     if (updateErr) { toast.error('Erro ao vincular conta. Tente novamente.'); setLinking(false); return }
 
     toast.success('Professor vinculado com sucesso!')
-    window.location.replace('/aluno/hoje')
+    window.location.replace('/aluno/planejamento')
   }
 
   return (

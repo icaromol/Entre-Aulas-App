@@ -75,14 +75,14 @@ export default function AuthCallbackPage() {
       if (profile?.role === 'teacher') {
         const savedMode = sessionStorage.getItem('app_mode')
         if (savedMode === 'student') {
-          window.location.replace('/aluno/hoje')
+          window.location.replace('/aluno/planejamento')
         } else if (savedMode === 'teacher') {
           window.location.replace('/professor/jornada')
         } else {
           window.location.replace('/modo')
         }
       } else if (profile?.role === 'student') {
-        window.location.replace('/aluno/hoje')
+        window.location.replace('/aluno/planejamento')
       } else {
         window.location.replace('/cadastro?auto=1')
       }

@@ -869,7 +869,7 @@ export default function PomodoroPage() {
     const c = activeCycle.current;
     if (!sid || !c) {
       setSaving(false);
-      navigate("/aluno/hoje");
+      navigate("/aluno/planejamento");
       return;
     }
 
@@ -927,7 +927,7 @@ export default function PomodoroPage() {
       .filter((g) => g.items.length === 0 && workedGroupIds.has(g.sourceId))
       .flatMap((g) => g.planItemIds);
 
-    navigate("/aluno/hoje");
+    navigate("/aluno/planejamento");
 
     // Tudo abaixo roda após o redirect, sem bloquear o usuário
     Promise.all([
@@ -1899,7 +1899,7 @@ export default function PomodoroPage() {
 
       <div className="flex gap-3">
         <Button
-          onClick={() => navigate("/aluno/hoje")}
+          onClick={() => navigate("/aluno/planejamento")}
           variant="outline"
           className="flex-1 h-12 rounded-2xl text-sm text-red-500 border-red-200 hover:bg-red-50"
         >
