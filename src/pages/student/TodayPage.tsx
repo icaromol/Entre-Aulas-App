@@ -17,9 +17,15 @@ import {
   MdFlashOn,
   MdKeyboardDoubleArrowLeft,
   MdBuild,
+  MdAccessTime,
+  MdGpsFixed,
+  MdClose,
+  MdArrowForward,
 } from "react-icons/md";
 import { ChangeTimeModal } from "@/components/student/ChangeTimeModal";
 import { ContinuityCard } from "@/components/student/ContinuityCard";
+import { FocusModal } from "@/components/student/FocusModal";
+import { MoveTaskModal } from "@/components/student/MoveTaskModal";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -204,6 +210,22 @@ export default function TodayPage() {
   const [showChangeTime, setShowChangeTime] = useState(false);
   const [essentialMode, setEssentialMode] = useState(false);
   const [showContinuityModal, setShowContinuityModal] = useState(false);
+  const [showFocusModal, setShowFocusModal] = useState(false);
+  const [focusPrePieceId, setFocusPrePieceId] = useState<string | null>(null);
+  const [focusPreExerciseId, setFocusPreExerciseId] = useState<string | null>(
+    null,
+  );
+  const [moveTaskItem, setMoveTaskItem] = useState<PlanItem | null>(null);
+  const [focusDayPieceId, setFocusDayPieceId] = useState<string | null>(null);
+  const [focusDayExerciseId, setFocusDayExerciseId] = useState<string | null>(null);
+  const [focusWeekPieceId, setFocusWeekPieceId] = useState<string | null>(null);
+  const [focusWeekExerciseId, setFocusWeekExerciseId] = useState<string | null>(null);
+
+  const [pendingAction, setPendingAction] = useState<{
+    type: "skip" | "focus" | "move";
+    item: PlanItem;
+    dontShowAgain: boolean;
+  } | null>(null);
 
   const monday = useMemo(() => getMonday(new Date()), []);
   const weekStart = useMemo(() => formatWeekStart(monday), [monday]);
@@ -291,11 +313,27 @@ export default function TodayPage() {
     if (!studentId) {
       setStudentId(sid);
       // Busca teacher_id e config de pomodoro
-      const { data: student } = await supabase
+      const { data: studentRaw } = await supabase
         .from("students")
-        .select("teacher_id, pomodoro_work, pomodoro_break, pomodoro_cycles")
+        .select(
+          "teacher_id, pomodoro_work, pomodoro_break, pomodoro_cycles, " +
+          "focus_day_piece_id, focus_day_exercise_id, focus_day_date, " +
+          "focus_week_piece_id, focus_week_exercise_id, focus_week_start",
+        )
         .eq("id", sid)
         .single();
+      const student = studentRaw as {
+        teacher_id: string | null;
+        pomodoro_work: number | null;
+        pomodoro_break: number | null;
+        pomodoro_cycles: number | null;
+        focus_day_piece_id: string | null;
+        focus_day_exercise_id: string | null;
+        focus_day_date: string | null;
+        focus_week_piece_id: string | null;
+        focus_week_exercise_id: string | null;
+        focus_week_start: string | null;
+      } | null;
       setHasTeacher(!!student?.teacher_id);
       if (
         student?.pomodoro_work &&
@@ -309,6 +347,17 @@ export default function TodayPage() {
         };
         localStorage.setItem(POMODORO_CONFIG_KEY, JSON.stringify(cfg));
         setPomodoroConfig(cfg);
+      }
+      // Carrega foco do dia (válido somente se for hoje)
+      const todayStr = new Date().toISOString().slice(0, 10);
+      if (student?.focus_day_date === todayStr) {
+        setFocusDayPieceId(student.focus_day_piece_id ?? null);
+        setFocusDayExerciseId(student.focus_day_exercise_id ?? null);
+      }
+      // Carrega foco da semana (válido somente se for esta semana)
+      if (student?.focus_week_start === weekStart) {
+        setFocusWeekPieceId(student.focus_week_piece_id ?? null);
+        setFocusWeekExerciseId(student.focus_week_exercise_id ?? null);
       }
     }
 
@@ -387,6 +436,246 @@ export default function TodayPage() {
     }
   }
 
+  const ACTION_SKIP_KEY = "estudamus_action_skip_confirmed";
+  const ACTION_FOCUS_KEY = "estudamus_action_focus_confirmed";
+  const ACTION_MOVE_KEY = "estudamus_action_move_confirmed";
+
+  function handleActionClick(type: "skip" | "focus" | "move", item: PlanItem) {
+    const key =
+      type === "skip"
+        ? ACTION_SKIP_KEY
+        : type === "focus"
+          ? ACTION_FOCUS_KEY
+          : ACTION_MOVE_KEY;
+
+    if (localStorage.getItem(key)) {
+      executeAction(type, item);
+    } else {
+      setPendingAction({ type, item, dontShowAgain: false });
+    }
+  }
+
+  function executeAction(type: "skip" | "focus" | "move", item: PlanItem) {
+    if (type === "skip") {
+      handleSkipToday(item);
+    } else if (type === "focus") {
+      setFocusPrePieceId(item.piece_id ?? null);
+      setFocusPreExerciseId(item.exercise_id ?? null);
+      setShowFocusModal(true);
+    } else {
+      setMoveTaskItem(item);
+    }
+  }
+
+  async function handleSkipToday(item: PlanItem) {
+    const freedMinutes = item.duration_minutes ?? 0;
+    await supabase
+      .from("plan_items")
+      .update({ duration_minutes: 0 })
+      .eq("id", item.id);
+
+    const others = items.filter(
+      (i) =>
+        i.id !== item.id &&
+        i.day_of_week === viewDay &&
+        !i.is_done &&
+        (i.duration_minutes ?? 0) > 0,
+    );
+
+    if (others.length > 0 && freedMinutes > 0) {
+      const bonus = Math.round(freedMinutes / others.length);
+      await Promise.all(
+        others.map((o) =>
+          supabase
+            .from("plan_items")
+            .update({ duration_minutes: (o.duration_minutes ?? 0) + bonus })
+            .eq("id", o.id),
+        ),
+      );
+      setItems((prev) =>
+        prev
+          .filter((i) => i.id !== item.id)
+          .map((i) =>
+            others.find((o) => o.id === i.id)
+              ? { ...i, duration_minutes: (i.duration_minutes ?? 0) + bonus }
+              : i,
+          ),
+      );
+    } else {
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
+    }
+
+    toast.success("Pulada! Tempo redistribuído.");
+  }
+
+  async function handleMoveTask(item: PlanItem, newDow: number) {
+    await supabase
+      .from("plan_items")
+      .update({ day_of_week: newDow, moved_from_dow: item.day_of_week })
+      .eq("id", item.id);
+    setItems((prev) => prev.filter((i) => i.id !== item.id));
+    setMoveTaskItem(null);
+    toast.success(`Tarefa movida para ${getDayExtendedLabel(newDow)}.`);
+  }
+
+  async function handleApplyFocus(
+    scope: "day" | "week",
+    pieceId: string | null,
+    exerciseId: string | null,
+  ) {
+    setShowFocusModal(false);
+    setFocusPrePieceId(null);
+    setFocusPreExerciseId(null);
+
+    if (scope === "day") {
+      const focusedItems = items.filter(
+        (i) =>
+          i.day_of_week === viewDay &&
+          !i.is_done &&
+          ((pieceId && i.piece_id === pieceId) ||
+            (exerciseId && i.exercise_id === exerciseId)),
+      );
+      if (!focusedItems.length) return;
+
+      const dayUndone = items.filter(
+        (i) => i.day_of_week === viewDay && !i.is_done,
+      );
+      const total = dayUndone.reduce(
+        (s, i) => s + (i.duration_minutes ?? 0),
+        0,
+      );
+      const bonus = Math.round(total * 0.3);
+      const others = dayUndone.filter(
+        (i) => !focusedItems.find((f) => f.id === i.id),
+      );
+      const othersTotal = others.reduce(
+        (s, i) => s + (i.duration_minutes ?? 0),
+        0,
+      );
+
+      const extra = Math.round(bonus / Math.max(1, focusedItems.length));
+      await Promise.all(
+        focusedItems.map((i) =>
+          supabase
+            .from("plan_items")
+            .update({ duration_minutes: (i.duration_minutes ?? 0) + extra })
+            .eq("id", i.id),
+        ),
+      );
+      await Promise.all(
+        others.map((i) => {
+          const reduction =
+            othersTotal > 0
+              ? Math.round((bonus * (i.duration_minutes ?? 0)) / othersTotal)
+              : 0;
+          const newDur = Math.max(5, (i.duration_minutes ?? 0) - reduction);
+          return supabase
+            .from("plan_items")
+            .update({ duration_minutes: newDur })
+            .eq("id", i.id);
+        }),
+      );
+
+      // Persiste foco do dia no banco
+      if (studentId) {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        await supabase.from("students").update({
+          focus_day_piece_id: pieceId,
+          focus_day_exercise_id: exerciseId,
+          focus_day_date: todayStr,
+        } as Record<string, unknown>).eq("id", studentId);
+        setFocusDayPieceId(pieceId);
+        setFocusDayExerciseId(exerciseId);
+        await fetchItems(studentId);
+      }
+      toast.success("Foco aplicado para hoje!");
+    } else {
+      const planId = items[0]?.plan_id;
+      if (!planId) return;
+
+      const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+      const todayIdx = WEEK_ORDER.indexOf(viewDay);
+      const remainingDows = WEEK_ORDER.slice(todayIdx + 1);
+      if (!remainingDows.length) return;
+
+      const { data: weekItems } = await supabase
+        .from("plan_items")
+        .select(
+          "id, plan_id, day_of_week, piece_id, exercise_id, duration_minutes, is_done",
+        )
+        .eq("plan_id", planId)
+        .in("day_of_week", remainingDows)
+        .eq("is_done", false);
+
+      const weekData = (weekItems ?? []) as Array<{
+        id: string;
+        day_of_week: number;
+        piece_id: string | null;
+        exercise_id: string | null;
+        duration_minutes: number | null;
+        is_done: boolean;
+      }>;
+
+      for (const dow of remainingDows) {
+        const dayItems = weekData.filter((i) => i.day_of_week === dow);
+        const focused = dayItems.filter(
+          (i) =>
+            (pieceId && i.piece_id === pieceId) ||
+            (exerciseId && i.exercise_id === exerciseId),
+        );
+        if (!focused.length) continue;
+
+        const total = dayItems.reduce(
+          (s, i) => s + (i.duration_minutes ?? 0),
+          0,
+        );
+        const bonus = Math.round(total * 0.25);
+        const others = dayItems.filter(
+          (i) => !focused.find((f) => f.id === i.id),
+        );
+        const othersTotal = others.reduce(
+          (s, i) => s + (i.duration_minutes ?? 0),
+          0,
+        );
+        const extra = Math.round(bonus / Math.max(1, focused.length));
+
+        await Promise.all(
+          focused.map((i) =>
+            supabase
+              .from("plan_items")
+              .update({ duration_minutes: (i.duration_minutes ?? 0) + extra })
+              .eq("id", i.id),
+          ),
+        );
+        await Promise.all(
+          others.map((i) => {
+            const reduction =
+              othersTotal > 0
+                ? Math.round((bonus * (i.duration_minutes ?? 0)) / othersTotal)
+                : 0;
+            const newDur = Math.max(5, (i.duration_minutes ?? 0) - reduction);
+            return supabase
+              .from("plan_items")
+              .update({ duration_minutes: newDur })
+              .eq("id", i.id);
+          }),
+        );
+      }
+
+      // Persiste foco da semana no banco
+      if (studentId) {
+        await supabase.from("students").update({
+          focus_week_piece_id: pieceId,
+          focus_week_exercise_id: exerciseId,
+          focus_week_start: weekStart,
+        } as Record<string, unknown>).eq("id", studentId);
+        setFocusWeekPieceId(pieceId);
+        setFocusWeekExerciseId(exerciseId);
+      }
+      toast.success("Foco aplicado para a semana!");
+    }
+  }
+
   async function fetchItems(sid: string) {
     const { data: plan, error: planError } = await supabase
       .from("weekly_plans")
@@ -427,7 +716,7 @@ export default function TodayPage() {
       .select(
         `
         id, plan_id, day_of_week, piece_id, exercise_id, program_id,
-        duration_minutes, position, is_done, done_at, is_maintenance, completed_manually,
+        duration_minutes, position, is_done, done_at, is_maintenance, completed_manually, moved_from_dow,
         piece:pieces(title, composer),
         exercise:exercises(title, category),
         programa:programas(title, type)
@@ -676,46 +965,63 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Header com navegação de dias */}
+      {/* Header — linha única: < 🕐 [data] 🎯 > */}
       <div
         id="onboarding-today-nav"
-        className="flex items-center justify-between mb-6 mt-4"
+        className="flex items-center mb-6 mt-4 gap-1"
       >
         <button
           onClick={() => setViewDay((d) => (d + 6) % 7)}
-          className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer shrink-0"
+          className="shrink-0 p-1 rounded-xl hover:bg-gray-100 transition cursor-pointer text-gray-300 hover:text-[#1E3A5F]"
         >
-          <MdChevronLeft size={22} className="text-gray-400" />
+          <MdChevronLeft size={36} />
         </button>
-        <div className="flex-1 flex justify-center mx-2">
-          <div className="flex items-center gap-3">
-            <div className="shrink-0 text-right">
-              <p className="text-7xl font-black text-[#1E3A5F] leading-none">
-                {dayNum}
-              </p>
-            </div>
-            <div>
-              <h1 className="text-4xl font-normal text-[#1E3A5F] leading-none">
-                {getDayExtendedLabel(viewDay)}
-              </h1>
-              <p className="text-sm text-gray-400 mt-1 mx-0.5">{monthLabel}</p>
-            </div>
+
+        <button
+          onClick={() => setShowChangeTime(true)}
+          className="shrink-0 p-1 text-gray-300 hover:text-[#1E3A5F] transition cursor-pointer"
+          title="Ajustar tempo disponível"
+        >
+          <MdAccessTime size={36} />
+        </button>
+
+        <div className="flex-1 flex justify-center items-center gap-3">
+          <div className="shrink-0 text-right">
+            <p className="text-7xl font-black text-[#1E3A5F] leading-none">
+              {dayNum}
+            </p>
+          </div>
+          <div>
+            <h1 className="text-4xl font-normal text-[#1E3A5F] leading-none">
+              {getDayExtendedLabel(viewDay)}
+            </h1>
+            <p className="text-sm text-gray-400 mt-1 mx-0.5">{monthLabel}</p>
           </div>
         </div>
+
+        <button
+          onClick={() => {
+            setFocusPrePieceId(null);
+            setFocusPreExerciseId(null);
+            setShowFocusModal(true);
+          }}
+          className="shrink-0 p-1 text-gray-300 hover:text-[#1E3A5F] transition cursor-pointer"
+          title="Dar um foco especial"
+        >
+          <MdGpsFixed size={36} />
+        </button>
+
         <button
           onClick={() => setViewDay((d) => (d + 1) % 7)}
-          className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer shrink-0"
+          className="shrink-0 p-1 rounded-xl hover:bg-gray-100 transition cursor-pointer text-gray-300 hover:text-[#1E3A5F]"
         >
-          <MdChevronRight size={22} className="text-gray-400" />
+          <MdChevronRight size={36} />
         </button>
       </div>
 
-      {/* Progresso do dia — barra clicável */}
+      {/* Progresso do dia */}
       {total > 0 && (
-        <button
-          className="w-full mb-5 cursor-pointer px-4"
-          onClick={() => setShowChangeTime(true)}
-        >
+        <div className="w-full mb-5 px-4">
           <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 bg-green-500"
@@ -739,7 +1045,7 @@ export default function TodayPage() {
               </div>
             )}
           </div>
-        </button>
+        </div>
       )}
 
       {/* Lista de itens */}
@@ -816,10 +1122,52 @@ export default function TodayPage() {
                 ? 1
                 : 0;
 
+            // Card compacto para itens concluídos
+            if (item.is_done) {
+              const doneLabel = item.completed_manually
+                ? "Manual"
+                : "Automático";
+              const parts = [
+                doneLabel,
+                subtitle,
+                item.duration_minutes ? `${item.duration_minutes} min` : null,
+              ].filter(Boolean);
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-2 rounded-xl border border-gray-100 bg-[#F6F6F6] px-3 py-1.5 opacity-60"
+                >
+                  <div className="w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                    <svg
+                      width="8"
+                      height="8"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="white"
+                      strokeWidth={3.5}
+                    >
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-xs text-gray-400 truncate">
+                    <span className="font-medium text-gray-500">{title}</span>
+                    {parts.length > 0 && ` · ${parts.join(" · ")}`}
+                  </p>
+                </div>
+              );
+            }
+
+            const cardHref = item.piece_id
+              ? `/aluno/repertorio/pecas/${item.piece_id}`
+              : item.exercise_id
+                ? `/aluno/repertorio/exercicios/${item.exercise_id}`
+                : null;
+
             return (
               <div
                 key={item.id}
-                className={`relative rounded-2xl border border-gray-200 bg-[#F6F6F6] overflow-hidden transition ${item.is_done ? "opacity-70" : ""}`}
+                className={`relative rounded-2xl border border-gray-200 bg-[#F6F6F6] overflow-hidden transition ${cardHref ? "cursor-pointer" : ""}`}
+                onClick={() => cardHref && navigate(cardHref)}
               >
                 {/* Barra de progresso de fundo */}
                 <div
@@ -832,17 +1180,21 @@ export default function TodayPage() {
                     <MdBuild className="h-3/5 w-auto opacity-[0.12] text-gray-500" />
                   </div>
                 )}
+                {/* Ícone de movido — watermark centralizado */}
+                {!maintenanceIcon && item.moved_from_dow != null && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <MdArrowForward className="h-3/5 w-auto opacity-[0.12] text-gray-500" />
+                  </div>
+                )}
                 <div className="relative z-10 flex items-stretch">
                   {/* Botão iniciar — esquerda */}
                   {!item.is_done && (
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         const alreadySecs = studiedSecs[item.id] ?? 0;
                         const totalSecs = (item.duration_minutes ?? 0) * 60;
-                        const remainSecs = Math.max(
-                          60,
-                          totalSecs - alreadySecs,
-                        );
+                        const remainSecs = Math.max(60, totalSecs - alreadySecs);
                         navigate("/aluno/pomodoro", {
                           state: {
                             planItemId: item.id,
@@ -859,13 +1211,9 @@ export default function TodayPage() {
                   )}
 
                   {/* Info */}
-                  <div
-                    className={`flex-1 min-w-0 py-3 ${item.is_done ? "px-4" : "pl-3 pr-4"}`}
-                  >
+                  <div className="flex-1 min-w-0 py-2 pl-3 pr-2">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <p
-                        className={`text-sm font-semibold truncate ${item.is_done ? "line-through text-gray-400" : "text-gray-800"}`}
-                      >
+                      <p className="text-sm font-semibold truncate text-gray-800">
                         {title}
                       </p>
 
@@ -901,48 +1249,78 @@ export default function TodayPage() {
                       )}
                     </p>
                   </div>
+
+                  {/* Ações rápidas — só para itens não concluídos */}
+                  {!item.is_done && (() => {
+                    const isFocusDay =
+                      (item.piece_id && item.piece_id === focusDayPieceId) ||
+                      (item.exercise_id && item.exercise_id === focusDayExerciseId);
+                    const isFocusWeek =
+                      (item.piece_id && item.piece_id === focusWeekPieceId) ||
+                      (item.exercise_id && item.exercise_id === focusWeekExerciseId);
+                    return (
+                      <div className="flex flex-row items-center gap-2 pr-2 pl-1 shrink-0">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleActionClick("focus", item); }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center transition hover:opacity-80"
+                          style={{
+                            background: "#D6E4F0",
+                            color: isFocusDay ? "#4A90C4" : isFocusWeek ? "#1E3A5F" : "#111",
+                          }}
+                        >
+                          <MdGpsFixed size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleActionClick("move", item); }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-black transition hover:opacity-80"
+                          style={{ background: "#D6E4F0" }}
+                        >
+                          <MdArrowForward size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleActionClick("skip", item); }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-black transition hover:opacity-80"
+                          style={{ background: "#D6E4F0" }}
+                        >
+                          <MdClose size={16} />
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             );
           })}
 
-          {/* Sessões livres do dia (read-only, já concluídas) */}
+          {/* Sessões livres do dia (compactas, inline) */}
           {freeSessions.map((sess) => (
             <div
               key={sess.id}
-              className="group rounded-2xl border border-gray-100 opacity-70 hover:opacity-100 transition"
+              className="group flex items-center gap-2 rounded-xl border border-gray-100 px-3 py-1.5 opacity-60 hover:opacity-100 transition"
               style={{ background: "#D6E4F0" }}
             >
-              <div className="px-4 py-3 flex items-center gap-3">
-                <div className="shrink-0">
-                  <div className="w-6 h-6 rounded-full bg-[#1E3A5F] border-2 border-[#1E3A5F] flex items-center justify-center">
-                    <svg
-                      width="10"
-                      height="10"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="white"
-                      strokeWidth={3.5}
-                    >
-                      <path d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate line-through text-gray-400">
-                    {sess.label}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Sessão livre · {sess.minutes} min
-                  </p>
-                </div>
-                <button
-                  onClick={() => deleteSession(sess.id)}
-                  className="shrink-0 opacity-0 group-hover:opacity-100 transition p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-400"
+              <div className="w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                <svg
+                  width="8"
+                  height="8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="white"
+                  strokeWidth={3.5}
                 >
-                  <MdDeleteOutline size={18} />
-                </button>
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
               </div>
+              <p className="text-xs text-gray-400 truncate min-w-0 flex-1">
+                <span className="font-medium text-gray-500">{sess.label}</span>
+                {` · Sessão livre · ${sess.minutes} min`}
+              </p>
+              <button
+                onClick={() => deleteSession(sess.id)}
+                className="shrink-0 opacity-0 group-hover:opacity-100 transition p-1 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-400"
+              >
+                <MdDeleteOutline size={16} />
+              </button>
             </div>
           ))}
         </div>
@@ -1021,6 +1399,111 @@ export default function TodayPage() {
           currentMinutes={totalMinutes}
           onConfirm={handleChangeTime}
         />
+      )}
+
+      {/* Modal de foco */}
+      {showFocusModal && (
+        <FocusModal
+          items={visibleItems}
+          preSelectedPieceId={focusPrePieceId}
+          preSelectedExerciseId={focusPreExerciseId}
+          onClose={() => {
+            setShowFocusModal(false);
+            setFocusPrePieceId(null);
+            setFocusPreExerciseId(null);
+          }}
+          onApply={handleApplyFocus}
+        />
+      )}
+
+      {/* Modal de mover tarefa */}
+      {moveTaskItem && (
+        <MoveTaskModal
+          item={moveTaskItem}
+          todayDow={viewDay}
+          onClose={() => setMoveTaskItem(null)}
+          onMove={handleMoveTask}
+        />
+      )}
+
+      {/* Modal de confirmação de ação rápida */}
+      {pendingAction && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 pb-8 px-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <p className="text-base font-bold text-gray-800 mb-2">
+              {pendingAction.type === "skip"
+                ? "Pular esta tarefa hoje?"
+                : pendingAction.type === "focus"
+                  ? "Dar foco especial a esta tarefa?"
+                  : "Mover esta tarefa?"}
+            </p>
+            <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+              {pendingAction.type === "skip"
+                ? "O tempo será redistribuído para as outras tarefas do dia."
+                : pendingAction.type === "focus"
+                  ? "Você pode aumentar o tempo dedicado a esta peça ou exercício hoje ou durante toda a semana."
+                  : "A tarefa será movida para outro dia desta semana."}
+            </p>
+            <button
+              onClick={() =>
+                setPendingAction((prev) =>
+                  prev ? { ...prev, dontShowAgain: !prev.dontShowAgain } : prev,
+                )
+              }
+              className="flex items-center gap-3 mb-6 group"
+            >
+              <div
+                className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
+                  pendingAction.dontShowAgain
+                    ? "bg-[#1E3A5F] border-[#1E3A5F]"
+                    : "border-gray-300 group-hover:border-[#4A90C4]"
+                }`}
+              >
+                {pendingAction.dontShowAgain && (
+                  <svg
+                    width="10"
+                    height="10"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="white"
+                    strokeWidth={3.5}
+                  >
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              <span className="text-sm text-gray-400">
+                Não mostrar novamente
+              </span>
+            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPendingAction(null)}
+                className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#4A90C4] transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const key =
+                    pendingAction.type === "skip"
+                      ? ACTION_SKIP_KEY
+                      : pendingAction.type === "focus"
+                        ? ACTION_FOCUS_KEY
+                        : ACTION_MOVE_KEY;
+                  if (pendingAction.dontShowAgain)
+                    localStorage.setItem(key, "1");
+                  const { type, item } = pendingAction;
+                  setPendingAction(null);
+                  executeAction(type, item);
+                }}
+                className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal de confirmação manual */}

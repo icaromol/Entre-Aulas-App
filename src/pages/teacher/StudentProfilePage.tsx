@@ -8,6 +8,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { isValidUUID } from "@/lib/utils";
+import { DEFAULT_CHECKLIST } from "@/lib/defaultChecklist";
 import {
   MdArrowBack,
   MdMusicNote,
@@ -418,9 +419,23 @@ export default function StudentProfilePage() {
           })),
         )
         .select("id, title, composer, status, completion_pct");
+      const createdPieces = data ?? [];
+      if (createdPieces.length > 0) {
+        await supabase.from("checklist_items").insert(
+          createdPieces.flatMap((p: any) =>
+            DEFAULT_CHECKLIST.map((item) => ({
+              piece_id: p.id,
+              title: item.title,
+              category: item.category,
+              position: item.position,
+              is_optional: item.is_optional,
+            })),
+          ),
+        );
+      }
       setPieces((prev) => [
         ...prev,
-        ...(data ?? []).map((p: any) => ({ ...p, checklist_items: [] })),
+        ...createdPieces.map((p: any) => ({ ...p, checklist_items: [] })),
       ]);
     } else {
       const { data } = await supabase
