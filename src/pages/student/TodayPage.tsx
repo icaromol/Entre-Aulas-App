@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { autoGeneratePlan, redistributePendingItems, PLAN_GENERATING_EVENT, PLAN_DONE_EVENT, lastPlanGeneratedAt } from "@/lib/autoplan";
+import {
+  autoGeneratePlan,
+  redistributePendingItems,
+  PLAN_GENERATING_EVENT,
+  PLAN_DONE_EVENT,
+  lastPlanGeneratedAt,
+} from "@/lib/autoplan";
 import {
   MdChevronLeft,
   MdChevronRight,
@@ -20,7 +26,11 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/Spinner";
 import { StudentLayout } from "@/components/layout/StudentLayout";
-import { grantXp, EXERCISE_ATTRIBUTE_MAP, ACHIEVEMENT_LABEL } from "@/lib/xpHelpers";
+import {
+  grantXp,
+  EXERCISE_ATTRIBUTE_MAP,
+  ACHIEVEMENT_LABEL,
+} from "@/lib/xpHelpers";
 import type { XpAttribute } from "@/lib/xpHelpers";
 import {
   fireBasic,
@@ -32,7 +42,7 @@ import type { PlanItem } from "@/types/plan";
 import {
   getMonday,
   formatWeekStart,
-  getDayFullLabel,
+  getDayExtendedLabel,
   getTodayDayOfWeek,
 } from "@/lib/weekUtils";
 
@@ -77,68 +87,73 @@ const ATTRIBUTE_LABEL: Partial<Record<XpAttribute, string>> = {
   historia: "História",
 };
 
-const GREETINGS = [
-  (name: string) => `Pronto pra estudar com foco hoje, ${name}? 😉`,
-  (name: string) => `Um belo dia para estudar focado, ${name}! 😎`,
-  (name: string) => `Bora evoluir hoje, ${name}? 🎵`,
-  (name: string) => `Cada prática conta, ${name}. Vamos lá! 🎯`,
-  (name: string) => `O palco agradece a dedicação de hoje, ${name}! 🎶`,
-  (name: string) => `Consistência é tudo, ${name}. Hora de praticar! 💪`,
-  (name: string) => `Que tal uma boa sessão de estudos hoje, ${name}? 🎼`,
-];
-
-function getDailyGreeting(name: string): string {
-  const idx = new Date().getDate() % GREETINGS.length;
-  return GREETINGS[idx](name);
-}
-
 // Redistribui duration_minutes dos itens não concluídos para caber em newTotalMinutes.
 // Itens concluídos nunca são alterados.
-function redistributeDayItems(items: PlanItem[], newTotalMinutes: number): PlanItem[] {
-  const doneItems = items.filter(i => i.is_done)
-  const undoneItems = [...items.filter(i => !i.is_done)].sort((a, b) => a.position - b.position)
+function redistributeDayItems(
+  items: PlanItem[],
+  newTotalMinutes: number,
+): PlanItem[] {
+  const doneItems = items.filter((i) => i.is_done);
+  const undoneItems = [...items.filter((i) => !i.is_done)].sort(
+    (a, b) => a.position - b.position,
+  );
 
-  const doneMinutes = doneItems.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
-  const available = Math.max(0, newTotalMinutes - doneMinutes)
+  const doneMinutes = doneItems.reduce(
+    (s, i) => s + (i.duration_minutes ?? 0),
+    0,
+  );
+  const available = Math.max(0, newTotalMinutes - doneMinutes);
 
-  if (available < 5 || undoneItems.length === 0) return items
+  if (available < 5 || undoneItems.length === 0) return items;
 
   // Sessão Essencial: ≤ 20 min disponíveis — mantém itens de maior prioridade até esgatar budget
   if (available <= 20) {
-    let remaining = available
-    const updated = undoneItems.map(item => {
+    let remaining = available;
+    const updated = undoneItems.map((item) => {
       if (remaining >= 5) {
-        const dur = Math.min(item.duration_minutes ?? 5, remaining)
-        remaining -= dur
-        return { ...item, duration_minutes: dur }
+        const dur = Math.min(item.duration_minutes ?? 5, remaining);
+        remaining -= dur;
+        return { ...item, duration_minutes: dur };
       }
-      return { ...item, duration_minutes: 0 }
-    })
-    return [...doneItems, ...updated]
+      return { ...item, duration_minutes: 0 };
+    });
+    return [...doneItems, ...updated];
   }
 
   // Redistribuição proporcional
-  const currentTotal = undoneItems.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
+  const currentTotal = undoneItems.reduce(
+    (s, i) => s + (i.duration_minutes ?? 0),
+    0,
+  );
 
   if (currentTotal <= 0) {
-    const perItem = Math.max(5, Math.round(available / undoneItems.length))
-    return [...doneItems, ...undoneItems.map(i => ({ ...i, duration_minutes: perItem }))]
+    const perItem = Math.max(5, Math.round(available / undoneItems.length));
+    return [
+      ...doneItems,
+      ...undoneItems.map((i) => ({ ...i, duration_minutes: perItem })),
+    ];
   }
 
-  const ratio = available / currentTotal
-  const scaled = undoneItems.map(i => ({
+  const ratio = available / currentTotal;
+  const scaled = undoneItems.map((i) => ({
     ...i,
-    duration_minutes: Math.max(5, Math.round((i.duration_minutes ?? 0) * ratio)),
-  }))
+    duration_minutes: Math.max(
+      5,
+      Math.round((i.duration_minutes ?? 0) * ratio),
+    ),
+  }));
 
   // Ajusta diferença de arredondamento no item de maior prioridade
-  const scaledTotal = scaled.reduce((s, i) => s + (i.duration_minutes ?? 0), 0)
-  const diff = available - scaledTotal
+  const scaledTotal = scaled.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
+  const diff = available - scaledTotal;
   if (diff !== 0) {
-    scaled[0] = { ...scaled[0], duration_minutes: Math.max(5, (scaled[0].duration_minutes ?? 0) + diff) }
+    scaled[0] = {
+      ...scaled[0],
+      duration_minutes: Math.max(5, (scaled[0].duration_minutes ?? 0) + diff),
+    };
   }
 
-  return [...doneItems, ...scaled]
+  return [...doneItems, ...scaled];
 }
 
 export default function TodayPage() {
@@ -155,15 +170,27 @@ export default function TodayPage() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [studentId, setStudentId] = useState<string | null>(profile?.studentId ?? null);
+  const [studentId, setStudentId] = useState<string | null>(
+    profile?.studentId ?? null,
+  );
   const POMODORO_CONFIG_KEY = "estudamus_pomodoro_config";
-  function loadCachedConfig(): { work: number; break: number; cycles: number } | null {
+  function loadCachedConfig(): {
+    work: number;
+    break: number;
+    cycles: number;
+  } | null {
     try {
       const raw = localStorage.getItem(POMODORO_CONFIG_KEY);
       return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
-  const [pomodoroConfig, setPomodoroConfig] = useState<{ work: number; break: number; cycles: number } | null>(loadCachedConfig);
+  const [pomodoroConfig, setPomodoroConfig] = useState<{
+    work: number;
+    break: number;
+    cycles: number;
+  } | null>(loadCachedConfig);
   const [hasTeacher, setHasTeacher] = useState<boolean | null>(null);
   const [hasAnyPlan, setHasAnyPlan] = useState<boolean | null>(null);
   const [viewDay, setViewDay] = useState(getTodayDayOfWeek());
@@ -179,15 +206,18 @@ export default function TodayPage() {
   const [essentialMode, setEssentialMode] = useState(false);
   const [showContinuityModal, setShowContinuityModal] = useState(false);
 
-  const monday    = useMemo(() => getMonday(new Date()), []);
+  const monday = useMemo(() => getMonday(new Date()), []);
   const weekStart = useMemo(() => formatWeekStart(monday), [monday]);
-
   const viewDate = new Date(monday);
   viewDate.setDate(viewDate.getDate() + (viewDay === 0 ? 6 : viewDay - 1));
   const displayDate = viewDate.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
   });
+  const dayNum = String(viewDate.getDate()).padStart(2, "0");
+  const monthLabel = viewDate
+    .toLocaleDateString("pt-BR", { month: "long" })
+    .replace(/^\w/, (c) => c.toUpperCase());
 
   useEffect(() => {
     if (profile) fetchDayPlan();
@@ -202,7 +232,7 @@ export default function TodayPage() {
 
     // Re-fetcha imediatamente se um plano foi gerado enquanto esta página não estava ativa
     if (studentId && lastPlanGeneratedAt > lastFetchAt.current) {
-      fetchItems(studentId)
+      fetchItems(studentId);
     }
 
     return () => document.removeEventListener("visibilitychange", onVisible);
@@ -210,11 +240,11 @@ export default function TodayPage() {
 
   // Escuta eventos de regeneração do plano disparados por qualquer tela
   useEffect(() => {
-    const onGenerating = () => setPlanGenerating(true)
+    const onGenerating = () => setPlanGenerating(true);
     const onDone = () => {
-      setPlanGenerating(false)
-      if (studentId) setTimeout(() => fetchItems(studentId), 300)
-    }
+      setPlanGenerating(false);
+      if (studentId) setTimeout(() => fetchItems(studentId), 300);
+    };
     window.addEventListener(PLAN_GENERATING_EVENT, onGenerating);
     window.addEventListener(PLAN_DONE_EVENT, onDone);
     return () => {
@@ -226,19 +256,25 @@ export default function TodayPage() {
   // Atualiza config de pomodoro quando salva em PomodoroPage
   useEffect(() => {
     const onConfigChanged = (e: Event) => {
-      const { work, break: brk, cycles } = (e as CustomEvent<{ work: number; break: number; cycles: number }>).detail;
+      const {
+        work,
+        break: brk,
+        cycles,
+      } = (e as CustomEvent<{ work: number; break: number; cycles: number }>)
+        .detail;
       const cfg = { work, break: brk, cycles };
       localStorage.setItem(POMODORO_CONFIG_KEY, JSON.stringify(cfg));
       setPomodoroConfig(cfg);
     };
     window.addEventListener("POMODORO_CONFIG_CHANGED", onConfigChanged);
-    return () => window.removeEventListener("POMODORO_CONFIG_CHANGED", onConfigChanged);
+    return () =>
+      window.removeEventListener("POMODORO_CONFIG_CHANGED", onConfigChanged);
   }, []);
 
   // Verifica pendências de dias passados (roda uma vez quando studentId fica disponível)
   useEffect(() => {
-    if (!studentId) return
-    checkPendingPastItems(studentId)
+    if (!studentId) return;
+    checkPendingPastItems(studentId);
   }, [studentId]);
 
   async function fetchDayPlan() {
@@ -262,8 +298,16 @@ export default function TodayPage() {
         .eq("id", sid)
         .single();
       setHasTeacher(!!student?.teacher_id);
-      if (student?.pomodoro_work && student?.pomodoro_break && student?.pomodoro_cycles) {
-        const cfg = { work: student.pomodoro_work, break: student.pomodoro_break, cycles: student.pomodoro_cycles };
+      if (
+        student?.pomodoro_work &&
+        student?.pomodoro_break &&
+        student?.pomodoro_cycles
+      ) {
+        const cfg = {
+          work: student.pomodoro_work,
+          break: student.pomodoro_break,
+          cycles: student.pomodoro_cycles,
+        };
         localStorage.setItem(POMODORO_CONFIG_KEY, JSON.stringify(cfg));
         setPomodoroConfig(cfg);
       }
@@ -278,17 +322,18 @@ export default function TodayPage() {
       .select("id")
       .eq("student_id", sid)
       .eq("week_start", weekStart)
-      .maybeSingle()
+      .maybeSingle();
 
-    if (!plan) return
+    if (!plan) return;
 
-    const todayDow = getTodayDayOfWeek()
+    const todayDow = getTodayDayOfWeek();
     // Dias que já passaram nesta semana (ciclo: Mon=1…Sat=6, Sun=0)
-    const pastDays = todayDow === 0
-      ? [1, 2, 3, 4, 5, 6]
-      : Array.from({ length: todayDow - 1 }, (_, i) => i + 1)
+    const pastDays =
+      todayDow === 0
+        ? [1, 2, 3, 4, 5, 6]
+        : Array.from({ length: todayDow - 1 }, (_, i) => i + 1);
 
-    if (pastDays.length === 0) return
+    if (pastDays.length === 0) return;
 
     const { data: pendingRows } = await supabase
       .from("plan_items")
@@ -296,45 +341,50 @@ export default function TodayPage() {
       .eq("plan_id", plan.id)
       .eq("is_done", false)
       .in("day_of_week", pastDays)
-      .limit(1)
+      .limit(1);
 
-    if (!pendingRows || pendingRows.length === 0) return
+    if (!pendingRows || pendingRows.length === 0) return;
 
-    const EXPLAINED_KEY = "estudamus_continuity_explained"
-    const isFirstTime = !localStorage.getItem(EXPLAINED_KEY)
+    const EXPLAINED_KEY = "estudamus_continuity_explained";
+    const isFirstTime = !localStorage.getItem(EXPLAINED_KEY);
 
-    const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]
-    const todayDow2  = getTodayDayOfWeek()
-    const remaining  = WEEK_ORDER.slice(WEEK_ORDER.indexOf(todayDow2))
-    const moved = await redistributePendingItems(plan.id, remaining)
+    const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+    const todayDow2 = getTodayDayOfWeek();
+    const remaining = WEEK_ORDER.slice(WEEK_ORDER.indexOf(todayDow2));
+    const moved = await redistributePendingItems(plan.id, remaining);
 
-    if (moved) await fetchItems(sid)
+    if (moved) await fetchItems(sid);
 
     if (isFirstTime) {
-      localStorage.setItem(EXPLAINED_KEY, "1")
-      setShowContinuityModal(true)
+      localStorage.setItem(EXPLAINED_KEY, "1");
+      setShowContinuityModal(true);
     }
   }
 
   async function handleChangeTime(newMinutes: number) {
-    const redistributed = redistributeDayItems(items, newMinutes)
-    const isEssential = redistributed.some(i => !i.is_done && i.duration_minutes === 0)
+    const redistributed = redistributeDayItems(items, newMinutes);
+    const isEssential = redistributed.some(
+      (i) => !i.is_done && i.duration_minutes === 0,
+    );
 
-    setItems(redistributed)
-    setEssentialMode(isEssential)
-    setShowChangeTime(false)
+    setItems(redistributed);
+    setEssentialMode(isEssential);
+    setShowChangeTime(false);
 
-    const undone = redistributed.filter(i => !i.is_done)
+    const undone = redistributed.filter((i) => !i.is_done);
     await Promise.all(
-      undone.map(i =>
-        supabase.from("plan_items").update({ duration_minutes: i.duration_minutes }).eq("id", i.id)
-      )
-    )
+      undone.map((i) =>
+        supabase
+          .from("plan_items")
+          .update({ duration_minutes: i.duration_minutes })
+          .eq("id", i.id),
+      ),
+    );
 
     if (isEssential) {
-      toast.success("Sessão Essencial ativada — foco no que mais importa")
+      toast.success("Sessão Essencial ativada — foco no que mais importa");
     } else {
-      toast.success(`Plano adaptado para ${newMinutes} min`)
+      toast.success(`Plano adaptado para ${newMinutes} min`);
     }
   }
 
@@ -355,11 +405,11 @@ export default function TodayPage() {
 
     if (!plan) {
       // Tenta gerar automaticamente o plano da semana
-      const result = await autoGeneratePlan(sid)
+      const result = await autoGeneratePlan(sid);
       if (result.ok) {
         // Re-fetch agora que o plano existe
-        await fetchItems(sid)
-        return
+        await fetchItems(sid);
+        return;
       }
       // Sem disponibilidade ou sem programas — mostra empty state normal
       const { count } = await supabase
@@ -397,7 +447,9 @@ export default function TodayPage() {
 
     const resolvedItems = (planItems ?? []) as unknown as PlanItem[];
     setItems(resolvedItems);
-    setEssentialMode(resolvedItems.some(i => !i.is_done && i.duration_minutes === 0));
+    setEssentialMode(
+      resolvedItems.some((i) => !i.is_done && i.duration_minutes === 0),
+    );
 
     // Buscar segundos estudados por plan_item
     const planItemIds = resolvedItems.map((i) => i.id);
@@ -409,7 +461,8 @@ export default function TodayPage() {
 
       const secsMap: Record<string, number> = {};
       for (const row of (sessionRows ?? []) as any[]) {
-        secsMap[row.plan_item_id] = (secsMap[row.plan_item_id] ?? 0) + (row.duration_seconds ?? 0);
+        secsMap[row.plan_item_id] =
+          (secsMap[row.plan_item_id] ?? 0) + (row.duration_seconds ?? 0);
       }
       setStudiedSecs(secsMap);
 
@@ -451,7 +504,9 @@ export default function TodayPage() {
 
     const { data: sessRows } = await supabase
       .from("study_sessions")
-      .select("id, cycle_name, duration_seconds, session_items(plan_item_id, custom_label)")
+      .select(
+        "id, cycle_name, duration_seconds, session_items(plan_item_id, custom_label)",
+      )
       .eq("student_id", sid)
       .gte("started_at", dayStart.toISOString())
       .lte("started_at", dayEnd.toISOString());
@@ -566,21 +621,26 @@ export default function TodayPage() {
   }
 
   // Itens com duration_minutes=0 foram descartados pela Sessão Essencial — ocultá-los (salvo se já concluídos)
-  const visibleItems = items.filter(i => i.duration_minutes !== 0 || i.is_done)
+  const visibleItems = items.filter(
+    (i) => i.duration_minutes !== 0 || i.is_done,
+  );
 
   const isPastDay = (() => {
-    const order = [1, 2, 3, 4, 5, 6, 0]
-    return order.indexOf(viewDay) < order.indexOf(getTodayDayOfWeek())
-  })()
-  const isToday     = viewDay === getTodayDayOfWeek()
-  const isFutureDay = !isPastDay && !isToday
+    const order = [1, 2, 3, 4, 5, 6, 0];
+    return order.indexOf(viewDay) < order.indexOf(getTodayDayOfWeek());
+  })();
+  const isToday = viewDay === getTodayDayOfWeek();
 
   // Total planejado — só itens do plano, sessões livres não inflam o alvo
-  const totalMinutes = visibleItems.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
+  const totalMinutes = visibleItems.reduce(
+    (s, i) => s + (i.duration_minutes ?? 0),
+    0,
+  );
 
   // Minutos estudados: segundos reais de session_items + itens concluídos manualmente + sessões livres
   const studiedSecsTotal = items.reduce((s, i) => {
-    if (i.is_done && i.completed_manually) return s + (i.duration_minutes ?? 0) * 60;
+    if (i.is_done && i.completed_manually)
+      return s + (i.duration_minutes ?? 0) * 60;
     return s + (studiedSecs[i.id] ?? 0);
   }, 0);
   const studiedMinutes =
@@ -629,24 +689,34 @@ export default function TodayPage() {
       )}
 
       {/* Header com navegação de dias */}
-      <div id="onboarding-today-nav" className="flex items-center justify-between mb-8 mt-4">
+      <div
+        id="onboarding-today-nav"
+        className="flex items-center justify-between mb-10 mt-8"
+      >
         <button
           onClick={() => setViewDay((d) => (d + 6) % 7)}
-          className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
+          className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer shrink-0"
         >
           <MdChevronLeft size={22} className="text-gray-400" />
         </button>
-        <div className="text-center">
-          <h1 className="text-xl font-bold text-[#1E3A5F]">
-            {isPastDay ? 'Histórico' : isFutureDay ? 'Planejamento futuro' : getDailyGreeting(profile?.first_name ?? '')}
-          </h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {displayDate} · {getDayFullLabel(viewDay)}
-          </p>
+        <div className="flex-1 flex justify-center mx-2">
+          <div className="flex items-center gap-3">
+            <div className="shrink-0 text-right">
+              <p className="text-7xl font-black text-[#1E3A5F] leading-none">
+                {dayNum}
+              </p>
+            </div>
+            <div>
+              <h1 className="text-4xl font-normal text-[#1E3A5F] leading-none">
+                {getDayExtendedLabel(viewDay)}
+              </h1>
+              <p className="text-sm text-gray-400 mt-1 mx-0.5">{monthLabel}</p>
+            </div>
+          </div>
         </div>
         <button
           onClick={() => setViewDay((d) => (d + 1) % 7)}
-          className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
+          className="p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer shrink-0"
         >
           <MdChevronRight size={22} className="text-gray-400" />
         </button>
@@ -674,7 +744,7 @@ export default function TodayPage() {
                   ? `${studiedMinutes}/${totalMinutes} min`
                   : `${studiedMinutes} min`}
               </span>
-              {visibleItems.some(i => !i.is_done) && (
+              {visibleItems.some((i) => !i.is_done) && (
                 <button
                   onClick={() => setShowChangeTime(true)}
                   className="text-gray-400 hover:text-[#1E3A5F] transition"
@@ -727,7 +797,9 @@ export default function TodayPage() {
                 Este dia já passou
               </p>
               <p className="text-sm text-gray-400 mt-1 leading-relaxed">
-                Foque no que vem pela frente e continue evoluindo. Seu planejamento é sempre redistribuído automaticamente pra não deixar nenhuma tarefa pra trás!
+                Foque no que vem pela frente e continue evoluindo. Seu
+                planejamento é sempre redistribuído automaticamente pra não
+                deixar nenhuma tarefa pra trás!
               </p>
             </>
           ) : (
@@ -735,11 +807,10 @@ export default function TodayPage() {
               <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
                 <MdSelfImprovement size={24} color="white" />
               </div>
-              <p className="text-sm font-semibold text-gray-700">
-                Dia livre!
-              </p>
+              <p className="text-sm font-semibold text-gray-700">Dia livre!</p>
               <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                Nenhuma tarefa programada. Aproveite para um estudo livre ou explore o repertório.
+                Nenhuma tarefa programada. Aproveite para um estudo livre ou
+                explore o repertório.
               </p>
             </>
           )}
@@ -749,7 +820,9 @@ export default function TodayPage() {
           {essentialMode && (
             <div className="rounded-xl bg-orange-50 border border-orange-200 px-3 py-2.5 flex items-center gap-2">
               <MdFlashOn size={16} className="text-orange-500" />
-              <span className="text-xs text-orange-700 font-medium">Sessão Essencial — foco no que mais importa</span>
+              <span className="text-xs text-orange-700 font-medium">
+                Sessão Essencial — foco no que mais importa
+              </span>
             </div>
           )}
           {visibleItems.map((item, itemIdx) => {
@@ -777,7 +850,7 @@ export default function TodayPage() {
                 <div className="relative z-10 px-4 py-3 flex items-center gap-3">
                   {/* Checkbox */}
                   <button
-                    id={itemIdx === 0 ? 'onboarding-today-checkbox' : undefined}
+                    id={itemIdx === 0 ? "onboarding-today-checkbox" : undefined}
                     onClick={() => handleItemClick(item)}
                     className="hover:opacity-80 transition shrink-0"
                   >
@@ -838,7 +911,9 @@ export default function TodayPage() {
                             ? `${Math.floor((studiedSecs[item.id] ?? 0) / 60)}/${item.duration_minutes} min`
                             : `${item.duration_minutes} min`}
                         </>
-                      ) : ""}
+                      ) : (
+                        ""
+                      )}
                     </p>
                   </div>
 
@@ -917,39 +992,43 @@ export default function TodayPage() {
       )}
 
       {/* Banner de início rápido */}
-      {isToday && <button
-        onClick={() =>
-          navigate("/aluno/pomodoro", {
-            state: {
-              title: "Sessão de hoje",
-              durationMinutes: totalMinutes || pomodoroConfig?.work || 25,
-              studentId,
-              autoStart: true,
-              pomodoroConfig: pomodoroConfig ?? undefined,
-            },
-          })
-        }
-        id="onboarding-today-start-btn"
-        className="mt-5 w-full bg-[#1E3A5F] rounded-2xl px-5 py-5 flex items-center justify-center gap-4 hover:bg-[#1E3A5F]/90 transition cursor-pointer"
-      >
-        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-          <MdPlayArrow size={28} className="text-white ml-1" />
-        </div>
-        <div className="text-left">
-          <p className="text-base font-bold text-white">Início rápido</p>
-          <p className="text-xs text-white/60 mt-0.5">
-            {pomodoroConfig
-              ? `${pomodoroConfig.work} min · ${pomodoroConfig.break} min pausa`
-              : '25 min · 5 min pausa'}
-          </p>
-        </div>
-      </button>}
+      {isToday && (
+        <button
+          onClick={() =>
+            navigate("/aluno/pomodoro", {
+              state: {
+                title: "Sessão de hoje",
+                durationMinutes: totalMinutes || pomodoroConfig?.work || 25,
+                studentId,
+                autoStart: true,
+                pomodoroConfig: pomodoroConfig ?? undefined,
+              },
+            })
+          }
+          id="onboarding-today-start-btn"
+          className="mt-5 w-full bg-[#1E3A5F] rounded-2xl px-5 py-5 flex items-center justify-center gap-4 hover:bg-[#1E3A5F]/90 transition cursor-pointer"
+        >
+          <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+            <MdPlayArrow size={28} className="text-white ml-1" />
+          </div>
+          <div className="text-left">
+            <p className="text-base font-bold text-white">Início rápido</p>
+            <p className="text-xs text-white/60 mt-0.5">
+              {pomodoroConfig
+                ? `${pomodoroConfig.work} min · ${pomodoroConfig.break} min pausa`
+                : "25 min · 5 min pausa"}
+            </p>
+          </div>
+        </button>
+      )}
 
       {isToday && (
         <div className="flex justify-center mt-6">
           <Button
             variant="text"
-            onClick={() => navigate("/aluno/pomodoro", { state: { studentId } })}
+            onClick={() =>
+              navigate("/aluno/pomodoro", { state: { studentId } })
+            }
             className="text-gray-400 hover:text-gray-600 text-xs"
           >
             ou configure sua sessão
