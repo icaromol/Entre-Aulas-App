@@ -280,6 +280,10 @@ export default function TodayPage() {
     item: PlanItem;
     dontShowAgain: boolean;
   } | null>(null);
+  const [showChangeTime, setShowChangeTime] = useState(false);
+  const [changeTimeMinutes, setChangeTimeMinutes] = useState(60);
+  const [showRebalanceConfirm, setShowRebalanceConfirm] = useState(false);
+  const [ungroupConfirmItem, setUngroupConfirmItem] = useState<PlanItem | null>(null);
 
   const monday = useMemo(() => getMonday(new Date()), []);
   const weekStart = useMemo(() => formatWeekStart(monday), [monday]);
@@ -457,6 +461,23 @@ export default function TodayPage() {
       localStorage.setItem(EXPLAINED_KEY, "1");
       setShowContinuityModal(true);
     }
+  }
+
+  async function handleChangeTimeConfirm() {
+    const undone = items.filter((i) => i.day_of_week === viewDay && !i.is_done);
+    if (undone.length === 0) { setShowChangeTime(false); return; }
+    const perTask = Math.max(5, Math.floor(changeTimeMinutes / undone.length));
+    const updated = items.map((i) =>
+      undone.find((u) => u.id === i.id) ? { ...i, duration_minutes: perTask } : i,
+    );
+    setItems(updated);
+    await Promise.all(
+      undone.map((i) =>
+        supabase.from("plan_items").update({ duration_minutes: perTask }).eq("id", i.id),
+      ),
+    );
+    setShowChangeTime(false);
+    toast.success("Tempo do dia atualizado");
   }
 
   async function handleEqualizeTime() {
@@ -1833,12 +1854,13 @@ export default function TodayPage() {
       {/* Banner de início rápido */}
       {isToday && (
         <div className="mt-5 bg-[#1E3A5F] rounded-2xl flex items-center gap-3 p-3">
-          <div
-            className="rounded-xl bg-[#D6E4F0] flex items-center justify-center shrink-0"
+          <button
+            onClick={() => { setChangeTimeMinutes(totalMinutes || 60); setShowChangeTime(true); }}
+            className="rounded-xl bg-[#D6E4F0] flex items-center justify-center shrink-0 hover:bg-[#c4d9ec] transition"
             style={{ width: 56, height: 56 }}
           >
             <MdTimer size={24} className="text-[#1E3A5F]" />
-          </div>
+          </button>
           <button
             onClick={() =>
               navigate("/aluno/pomodoro", {
@@ -1867,7 +1889,7 @@ export default function TodayPage() {
             </div>
           </button>
           <button
-            onClick={handleEqualizeTime}
+            onClick={() => setShowRebalanceConfirm(true)}
             className="rounded-xl bg-[#D6E4F0] flex items-center justify-center shrink-0 hover:bg-[#c4d9ec] transition"
             style={{ width: 56, height: 56 }}
           >
@@ -1999,7 +2021,11 @@ export default function TodayPage() {
                     onClick={() => {
                       setOpenMenuItemId(null);
                       setMenuAnchor(null);
-                      toggleDone(menuItem, true);
+                      if (localStorage.getItem(SKIP_KEY)) {
+                        toggleDone(menuItem, true);
+                      } else {
+                        setPendingItem(menuItem);
+                      }
                     }}
                     className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA] transition"
                   >
@@ -2011,7 +2037,7 @@ export default function TodayPage() {
                   onClick={() => {
                     setOpenMenuItemId(null);
                     setMenuAnchor(null);
-                    handleUngroup(menuItem);
+                    setUngroupConfirmItem(menuItem);
                   }}
                   className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA] transition"
                 >
@@ -2226,10 +2252,15 @@ export default function TodayPage() {
               </span>{" "}
               manualmente
             </p>
-            <p className="text-sm text-gray-400 mb-6">
+            <p className="text-sm text-gray-400 mb-4">
               Você não concluiu uma sessão pomodoro. Deseja marcar como
               concluído mesmo assim?
             </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
+              <p className="text-xs text-amber-700 leading-relaxed">
+                A conclusão rápida <span className="font-semibold">não conta XP, não dá medalhas e não completa missões do dia.</span> Para ganhar recompensas, conclua pelo Pomodoro.
+              </p>
+            </div>
             <button
               onClick={() => setSkipConfirm((v) => !v)}
               className="flex items-center gap-3 mb-6 group"
@@ -2275,6 +2306,124 @@ export default function TodayPage() {
               >
                 Sim, concluir
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — confirmar desagrupar */}
+      {ungroupConfirmItem && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-t-2xl w-full max-w-sm pb-8 pt-5 px-6">
+            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Desagrupar tarefa</h2>
+            <p className="text-xs text-gray-400 mb-4">
+              A tarefa será dividida em blocos do tamanho do seu pomodoro ({pomodoroConfig?.work ?? 25} min).
+            </p>
+
+            {/* Exemplo visual fixo: 60min → blocos do pomodoro */}
+            {(() => {
+              const blockMin = pomodoroConfig?.work ?? 25;
+              const exampleTotal = 60;
+              const exBlocks: number[] = [];
+              let rem = exampleTotal;
+              while (rem > 0) { exBlocks.push(Math.min(blockMin, rem)); rem -= blockMin; }
+              return (
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="flex-1 bg-[#F5F7FA] rounded-xl p-3">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Antes</p>
+                    <div className="h-7 rounded-lg bg-[#4A90C4]/30 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-[#1E3A5F]">{exampleTotal} min</span>
+                    </div>
+                  </div>
+
+                  <div className="text-[#4A90C4] text-lg font-bold shrink-0">→</div>
+
+                  <div className="flex-1 bg-[#F5F7FA] rounded-xl p-3">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Depois</p>
+                    <div className="space-y-1">
+                      {exBlocks.map((b, i) => (
+                        <div key={i} className="h-5 rounded-md bg-[#1E3A5F]/50 flex items-center justify-center">
+                          <span className="text-[10px] font-semibold text-white">{b} min</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="flex gap-3">
+              <button onClick={() => setUngroupConfirmItem(null)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#4A90C4] transition">Cancelar</button>
+              <button onClick={() => { handleUngroup(ungroupConfirmItem); setUngroupConfirmItem(null); }} className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">Desagrupar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — alterar tempo disponível hoje */}
+      {showChangeTime && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-t-2xl w-full max-w-sm pb-8 pt-5 px-6">
+            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Tempo disponível hoje</h2>
+            <p className="text-xs text-gray-400 mb-5">As tarefas pendentes serão redistribuídas igualmente.</p>
+            <div className="flex items-center gap-4 mb-6">
+              <input
+                type="range"
+                min={10}
+                max={240}
+                step={5}
+                value={changeTimeMinutes}
+                onChange={(e) => setChangeTimeMinutes(Number(e.target.value))}
+                className="flex-1 accent-[#1E3A5F]"
+              />
+              <span className="text-lg font-bold text-[#1E3A5F] w-16 text-right">{changeTimeMinutes} min</span>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowChangeTime(false)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#4A90C4] transition">Cancelar</button>
+              <button onClick={handleChangeTimeConfirm} className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">Aplicar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — confirmar rebalanceamento */}
+      {showRebalanceConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-t-2xl w-full max-w-sm pb-8 pt-5 px-6">
+            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Rebalancear dia</h2>
+            <p className="text-xs text-gray-400 mb-4">O tempo restante é dividido igualmente entre as tarefas pendentes.</p>
+
+            {/* Exemplo visual antes → depois */}
+            <div className="flex items-center gap-2 mb-6">
+              {/* Antes */}
+              <div className="flex-1 bg-[#F5F7FA] rounded-xl p-3 space-y-1.5">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Antes</p>
+                {[20, 35, 10].map((min, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="h-2 rounded-full bg-[#4A90C4]/30" style={{ width: `${(min / 35) * 100}%`, minWidth: 8 }} />
+                    <span className="text-[10px] text-gray-400 shrink-0">{min}m</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Seta */}
+              <div className="text-[#4A90C4] text-lg font-bold shrink-0">→</div>
+
+              {/* Depois */}
+              <div className="flex-1 bg-[#F5F7FA] rounded-xl p-3 space-y-1.5">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Depois</p>
+                {[22, 22, 21].map((min, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="h-2 rounded-full bg-[#1E3A5F]/50" style={{ width: `${(min / 35) * 100}%`, minWidth: 8 }} />
+                    <span className="text-[10px] text-gray-400 shrink-0">{min}m</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setShowRebalanceConfirm(false)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#4A90C4] transition">Cancelar</button>
+              <button onClick={() => { setShowRebalanceConfirm(false); handleEqualizeTime(); }} className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition">Rebalancear</button>
             </div>
           </div>
         </div>

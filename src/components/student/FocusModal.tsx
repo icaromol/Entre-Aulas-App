@@ -3,8 +3,8 @@ import {
   MdMusicNote,
   MdFitnessCenter,
   MdClose,
-  MdArrowBack,
   MdGpsFixed,
+  MdCalendarToday,
 } from "react-icons/md";
 import type { PlanItem } from "@/types/plan";
 
@@ -38,10 +38,7 @@ export function FocusModal({
 }: Props) {
   const hasPreSelection = !!(preSelectedPieceId || preSelectedExerciseId);
 
-  const [step, setStep] = useState<"scope" | "pick">("scope");
-  const [scope, setScope] = useState<"day" | "week" | null>(null);
-
-  const selected = useMemo<FocusOption | null>(() => {
+  const preSelected = useMemo<FocusOption | null>(() => {
     if (preSelectedPieceId) {
       const item = items.find((i) => i.piece_id === preSelectedPieceId);
       if (item?.piece)
@@ -69,22 +66,18 @@ export function FocusModal({
     return null;
   }, [preSelectedPieceId, preSelectedExerciseId, items]);
 
-  // Deduplica itens por piece_id / exercise_id
   const options = buildOptions(items);
 
-  function handleScopeSelect(s: "day" | "week") {
-    setScope(s);
-    if (hasPreSelection && selected) {
-      onApply(s, selected.pieceId, selected.exerciseId);
-    } else {
-      setStep("pick");
-    }
-  }
+  const [selectedKey, setSelectedKey] = useState<string | null>(
+    hasPreSelection && preSelected ? preSelected.key : null,
+  );
 
-  function handleOptionSelect(opt: FocusOption) {
-    if (scope) {
-      onApply(scope, opt.pieceId, opt.exerciseId);
-    }
+  const selectedOption =
+    options.find((o) => o.key === selectedKey) ?? preSelected;
+
+  function handleApply(scope: "day" | "week") {
+    if (!selectedOption) return;
+    onApply(scope, selectedOption.pieceId, selectedOption.exerciseId);
   }
 
   return (
@@ -92,19 +85,7 @@ export function FocusModal({
       <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <div className="flex items-center gap-2">
-            {step === "pick" && (
-              <button
-                onClick={() => setStep("scope")}
-                className="p-1 rounded-lg hover:bg-gray-100 transition text-gray-400 hover:text-gray-600"
-              >
-                <MdArrowBack size={20} />
-              </button>
-            )}
-            <p className="text-base font-bold text-gray-800">
-              {step === "scope" ? "Dar um foco especial?" : "O que você quer focar?"}
-            </p>
-          </div>
+          <p className="text-base font-bold text-gray-800">Dar um foco especial?</p>
           <button
             onClick={onClose}
             className="p-1.5 rounded-xl hover:bg-gray-100 transition text-gray-400"
@@ -113,84 +94,120 @@ export function FocusModal({
           </button>
         </div>
 
-        {step === "scope" ? (
-          <div className="px-5 pb-6">
-            <p className="text-sm text-gray-400 mb-5 leading-relaxed">
-              {hasPreSelection && selected
-                ? `Quer dar mais atenção a "${selected.title}" hoje ou durante toda a semana?`
-                : "Está a fim de dar mais atenção a algo hoje ou nesta semana?"}
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => handleScopeSelect("day")}
-                className="flex items-center gap-4 w-full rounded-xl border-2 border-[#D6E4F0] bg-[#F5F7FA] px-4 py-4 hover:border-[#4A90C4] hover:bg-[#D6E4F0] transition text-left"
-              >
-                <div className="w-10 h-10 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
-                  <MdGpsFixed size={20} color="white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-[#1E3A5F]">
-                    Foco do Dia
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Redistribui o tempo só para hoje
-                  </p>
-                </div>
-              </button>
-              <button
-                onClick={() => handleScopeSelect("week")}
-                className="flex items-center gap-4 w-full rounded-xl border-2 border-[#D6E4F0] bg-[#F5F7FA] px-4 py-4 hover:border-[#4A90C4] hover:bg-[#D6E4F0] transition text-left"
-              >
-                <div className="w-10 h-10 rounded-full bg-[#4A90C4] flex items-center justify-center shrink-0">
-                  <MdGpsFixed size={20} color="white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-[#1E3A5F]">
-                    Foco da Semana
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Prioriza esse conteúdo nos dias restantes
-                  </p>
-                </div>
-              </button>
+        <div className="px-5 pb-6 space-y-4">
+          {/* Visual antes → depois */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-[#F5F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Antes</p>
+              <div className="space-y-1.5">
+                {[["Peça A", 25], ["Peça B", 25]].map(([label, min]) => (
+                  <div key={label as string} className="flex items-center gap-2">
+                    <div className="h-5 rounded-md bg-[#4A90C4]/30 flex items-center justify-center flex-1">
+                      <span className="text-[10px] font-medium text-[#1E3A5F]">{label}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 shrink-0">{min}m</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-[#4A90C4] text-lg font-bold shrink-0">→</div>
+
+            <div className="flex-1 bg-[#F5F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Com foco</p>
+              <div className="space-y-1.5">
+                {[["Peça A ⭐", 35, true], ["Peça B", 15, false]].map(([label, min, focus]) => (
+                  <div key={label as string} className="flex items-center gap-2">
+                    <div className={`h-5 rounded-md flex items-center justify-center flex-1 ${focus ? "bg-[#1E3A5F]" : "bg-[#4A90C4]/20"}`}>
+                      <span className={`text-[10px] font-medium ${focus ? "text-white" : "text-[#1E3A5F]"}`}>{label}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 shrink-0">{min}m</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="px-5 pb-6">
-            {options.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">
-                Nenhum item disponível para focar hoje.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
-                {options.map((opt) => {
+
+          {/* Lista de itens — oculta se já há pré-seleção */}
+          {!hasPreSelection && (
+            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+              {options.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-2">
+                  Nenhum item disponível para focar hoje.
+                </p>
+              ) : (
+                options.map((opt) => {
                   const Icon = opt.type === "piece" ? MdMusicNote : MdFitnessCenter;
+                  const active = selectedKey === opt.key;
                   return (
                     <button
                       key={opt.key}
-                      onClick={() => handleOptionSelect(opt)}
-                      className="flex items-center gap-3 w-full rounded-xl border border-gray-100 bg-[#F5F7FA] px-4 py-3 hover:border-[#4A90C4] hover:bg-[#D6E4F0] transition text-left"
+                      onClick={() => setSelectedKey(active ? null : opt.key)}
+                      className={`flex items-center gap-3 w-full rounded-xl border-2 px-4 py-3 transition text-left ${
+                        active
+                          ? "border-[#1E3A5F] bg-[#D6E4F0]"
+                          : "border-gray-100 bg-[#F5F7FA] hover:border-[#4A90C4]"
+                      }`}
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
-                        <Icon size={16} color="white" />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${active ? "bg-[#1E3A5F]" : "bg-[#4A90C4]/30"}`}>
+                        <Icon size={16} color={active ? "white" : "#1E3A5F"} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-800 truncate">
-                          {opt.title}
-                        </p>
+                        <p className="text-sm font-semibold text-gray-800 truncate">{opt.title}</p>
                         {opt.subtitle && (
-                          <p className="text-xs text-gray-400 truncate">
-                            {opt.subtitle}
-                          </p>
+                          <p className="text-xs text-gray-400 truncate">{opt.subtitle}</p>
                         )}
                       </div>
                     </button>
                   );
-                })}
+                })
+              )}
+            </div>
+          )}
+
+          {/* Item pré-selecionado destacado */}
+          {hasPreSelection && preSelected && (
+            <div className="flex items-center gap-3 rounded-xl border-2 border-[#1E3A5F] bg-[#D6E4F0] px-4 py-3">
+              <div className="w-8 h-8 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                {preSelected.type === "piece"
+                  ? <MdMusicNote size={16} color="white" />
+                  : <MdFitnessCenter size={16} color="white" />}
               </div>
-            )}
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-800 truncate">{preSelected.title}</p>
+                {preSelected.subtitle && (
+                  <p className="text-xs text-gray-400 truncate">{preSelected.subtitle}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Botões de escopo */}
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => handleApply("day")}
+              disabled={!selectedOption}
+              className="flex-1 flex flex-col items-center gap-1 rounded-xl border-2 border-[#D6E4F0] bg-[#F5F7FA] px-3 py-3 hover:border-[#1E3A5F] hover:bg-[#D6E4F0] transition disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#1E3A5F] flex items-center justify-center">
+                <MdGpsFixed size={16} color="white" />
+              </div>
+              <p className="text-xs font-semibold text-[#1E3A5F]">Foco do Dia</p>
+              <p className="text-[10px] text-gray-400 text-center leading-tight">Redistribui o tempo hoje</p>
+            </button>
+            <button
+              onClick={() => handleApply("week")}
+              disabled={!selectedOption}
+              className="flex-1 flex flex-col items-center gap-1 rounded-xl border-2 border-[#D6E4F0] bg-[#F5F7FA] px-3 py-3 hover:border-[#4A90C4] hover:bg-[#D6E4F0] transition disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#4A90C4] flex items-center justify-center">
+                <MdCalendarToday size={16} color="white" />
+              </div>
+              <p className="text-xs font-semibold text-[#1E3A5F]">Foco da Semana</p>
+              <p className="text-[10px] text-gray-400 text-center leading-tight">Prioriza nos dias restantes</p>
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
