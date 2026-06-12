@@ -19,13 +19,15 @@ import {
   MdBuild,
   MdAccessTime,
   MdGpsFixed,
-  MdClose,
   MdArrowForward,
+  MdMoreVert,
 } from "react-icons/md";
 import { ChangeTimeModal } from "@/components/student/ChangeTimeModal";
+import { PomodoroStrip } from "@/components/student/PomodoroStrip";
 import { ContinuityCard } from "@/components/student/ContinuityCard";
 import { FocusModal } from "@/components/student/FocusModal";
 import { MoveTaskModal } from "@/components/student/MoveTaskModal";
+import { EditDurationModal } from "@/components/student/EditDurationModal";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -216,10 +218,21 @@ export default function TodayPage() {
     null,
   );
   const [moveTaskItem, setMoveTaskItem] = useState<PlanItem | null>(null);
+  const [openMenuItemId, setOpenMenuItemId] = useState<string | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(
+    null,
+  );
+  const [editDurationItem, setEditDurationItem] = useState<PlanItem | null>(
+    null,
+  );
   const [focusDayPieceId, setFocusDayPieceId] = useState<string | null>(null);
-  const [focusDayExerciseId, setFocusDayExerciseId] = useState<string | null>(null);
+  const [focusDayExerciseId, setFocusDayExerciseId] = useState<string | null>(
+    null,
+  );
   const [focusWeekPieceId, setFocusWeekPieceId] = useState<string | null>(null);
-  const [focusWeekExerciseId, setFocusWeekExerciseId] = useState<string | null>(null);
+  const [focusWeekExerciseId, setFocusWeekExerciseId] = useState<string | null>(
+    null,
+  );
 
   const [pendingAction, setPendingAction] = useState<{
     type: "skip" | "focus" | "move";
@@ -231,10 +244,6 @@ export default function TodayPage() {
   const weekStart = useMemo(() => formatWeekStart(monday), [monday]);
   const viewDate = new Date(monday);
   viewDate.setDate(viewDate.getDate() + (viewDay === 0 ? 6 : viewDay - 1));
-  const displayDate = viewDate.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
   const dayNum = String(viewDate.getDate()).padStart(2, "0");
   const monthLabel = viewDate
     .toLocaleDateString("pt-BR", { month: "long" })
@@ -243,6 +252,7 @@ export default function TodayPage() {
   useEffect(() => {
     if (profile) fetchDayPlan();
   }, [profile, viewDay]);
+
 
   // Re-fetcha ao voltar para a aba ou navegar de volta — também cobre plano gerado em outra tela
   useEffect(() => {
@@ -317,8 +327,8 @@ export default function TodayPage() {
         .from("students")
         .select(
           "teacher_id, pomodoro_work, pomodoro_break, pomodoro_cycles, " +
-          "focus_day_piece_id, focus_day_exercise_id, focus_day_date, " +
-          "focus_week_piece_id, focus_week_exercise_id, focus_week_start",
+            "focus_day_piece_id, focus_day_exercise_id, focus_day_date, " +
+            "focus_week_piece_id, focus_week_exercise_id, focus_week_start",
         )
         .eq("id", sid)
         .single();
@@ -508,6 +518,84 @@ export default function TodayPage() {
     toast.success("Pulada! Tempo redistribuído.");
   }
 
+  async function handleDeleteItem(item: PlanItem) {
+    await supabase.from("plan_items").delete().eq("id", item.id);
+    setItems((prev) => prev.filter((i) => i.id !== item.id));
+    toast.success("Tarefa removida.");
+  }
+
+  async function handleEditDurationThis(item: PlanItem, minutes: number) {
+    await supabase
+      .from("plan_items")
+      .update({ duration_minutes: minutes })
+      .eq("id", item.id);
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === item.id ? { ...i, duration_minutes: minutes } : i,
+      ),
+    );
+    setEditDurationItem(null);
+    toast.success("Tempo atualizado.");
+  }
+
+  async function handleEditDurationAll(item: PlanItem, minutes: number) {
+    const diff = minutes - (item.duration_minutes ?? 0);
+    await supabase
+      .from("plan_items")
+      .update({ duration_minutes: minutes })
+      .eq("id", item.id);
+    const others = items.filter(
+      (i) =>
+        i.id !== item.id &&
+        i.day_of_week === viewDay &&
+        !i.is_done &&
+        (i.duration_minutes ?? 0) > 0,
+    );
+    const othersTotal = others.reduce(
+      (s, i) => s + (i.duration_minutes ?? 0),
+      0,
+    );
+    if (others.length > 0 && othersTotal > 0) {
+      await Promise.all(
+        others.map((o) => {
+          const reduction = Math.round(
+            (diff * (o.duration_minutes ?? 0)) / othersTotal,
+          );
+          const newDur = Math.max(5, (o.duration_minutes ?? 0) - reduction);
+          return supabase
+            .from("plan_items")
+            .update({ duration_minutes: newDur })
+            .eq("id", o.id);
+        }),
+      );
+      setItems((prev) =>
+        prev.map((i) => {
+          if (i.id === item.id) return { ...i, duration_minutes: minutes };
+          const o = others.find((o) => o.id === i.id);
+          if (!o) return i;
+          const reduction = Math.round(
+            (diff * (o.duration_minutes ?? 0)) / othersTotal,
+          );
+          return {
+            ...i,
+            duration_minutes: Math.max(
+              5,
+              (i.duration_minutes ?? 0) - reduction,
+            ),
+          };
+        }),
+      );
+    } else {
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === item.id ? { ...i, duration_minutes: minutes } : i,
+        ),
+      );
+    }
+    setEditDurationItem(null);
+    toast.success("Tempo atualizado e redistribuído.");
+  }
+
   async function handleMoveTask(item: PlanItem, newDow: number) {
     await supabase
       .from("plan_items")
@@ -579,11 +667,14 @@ export default function TodayPage() {
       // Persiste foco do dia no banco
       if (studentId) {
         const todayStr = new Date().toISOString().slice(0, 10);
-        await supabase.from("students").update({
-          focus_day_piece_id: pieceId,
-          focus_day_exercise_id: exerciseId,
-          focus_day_date: todayStr,
-        } as Record<string, unknown>).eq("id", studentId);
+        await supabase
+          .from("students")
+          .update({
+            focus_day_piece_id: pieceId,
+            focus_day_exercise_id: exerciseId,
+            focus_day_date: todayStr,
+          } as Record<string, unknown>)
+          .eq("id", studentId);
         setFocusDayPieceId(pieceId);
         setFocusDayExerciseId(exerciseId);
         await fetchItems(studentId);
@@ -664,11 +755,14 @@ export default function TodayPage() {
 
       // Persiste foco da semana no banco
       if (studentId) {
-        await supabase.from("students").update({
-          focus_week_piece_id: pieceId,
-          focus_week_exercise_id: exerciseId,
-          focus_week_start: weekStart,
-        } as Record<string, unknown>).eq("id", studentId);
+        await supabase
+          .from("students")
+          .update({
+            focus_week_piece_id: pieceId,
+            focus_week_exercise_id: exerciseId,
+            focus_week_start: weekStart,
+          } as Record<string, unknown>)
+          .eq("id", studentId);
         setFocusWeekPieceId(pieceId);
         setFocusWeekExerciseId(exerciseId);
       }
@@ -914,23 +1008,15 @@ export default function TodayPage() {
     0,
   );
 
-  // Minutos estudados: segundos reais de session_items + itens concluídos manualmente + sessões livres
+  const workMin = pomodoroConfig?.work ?? 25;
+  const totalPoms = Math.ceil(totalMinutes / workMin);
   const studiedSecsTotal = items.reduce((s, i) => {
-    if (i.is_done && i.completed_manually)
-      return s + (i.duration_minutes ?? 0) * 60;
+    if (i.is_done && i.completed_manually) return s + (i.duration_minutes ?? 0) * 60;
     return s + (studiedSecs[i.id] ?? 0);
   }, 0);
-  const studiedMinutes =
-    Math.floor(studiedSecsTotal / 60) +
-    freeSessions.reduce((s, f) => s + f.minutes, 0);
-
-  const denominator = totalMinutes > 0 ? totalMinutes : studiedMinutes;
-  const pct =
-    denominator > 0
-      ? Math.min(100, Math.round((studiedMinutes / denominator) * 100))
-      : 0;
-
-  const total = visibleItems.length + freeSessions.length;
+  const studiedPoms =
+    (Math.floor(studiedSecsTotal / 60) + freeSessions.reduce((s, f) => s + f.minutes, 0)) /
+    workMin;
 
   if (loading) {
     return (
@@ -965,7 +1051,7 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Header — linha única: < 🕐 [data] 🎯 > */}
+      {/* Header — < [pomodoros + data] > */}
       <div
         id="onboarding-today-nav"
         className="flex items-center mb-6 mt-4 gap-1"
@@ -977,39 +1063,14 @@ export default function TodayPage() {
           <MdChevronLeft size={36} />
         </button>
 
-        <button
-          onClick={() => setShowChangeTime(true)}
-          className="shrink-0 p-1 text-gray-300 hover:text-[#1E3A5F] transition cursor-pointer"
-          title="Ajustar tempo disponível"
-        >
-          <MdAccessTime size={36} />
-        </button>
-
-        <div className="flex-1 flex justify-center items-center gap-3">
-          <div className="shrink-0 text-right">
-            <p className="text-7xl font-black text-[#1E3A5F] leading-none">
-              {dayNum}
-            </p>
-          </div>
+        {/* Data — centralizado */}
+        <div className="flex-1 flex items-center justify-center gap-3">
+          <p className="text-7xl font-black text-[#1E3A5F] leading-none">{dayNum}</p>
           <div>
-            <h1 className="text-4xl font-normal text-[#1E3A5F] leading-none">
-              {getDayExtendedLabel(viewDay)}
-            </h1>
+            <h1 className="text-4xl font-normal text-[#1E3A5F] leading-none">{getDayExtendedLabel(viewDay)}</h1>
             <p className="text-sm text-gray-400 mt-1 mx-0.5">{monthLabel}</p>
           </div>
         </div>
-
-        <button
-          onClick={() => {
-            setFocusPrePieceId(null);
-            setFocusPreExerciseId(null);
-            setShowFocusModal(true);
-          }}
-          className="shrink-0 p-1 text-gray-300 hover:text-[#1E3A5F] transition cursor-pointer"
-          title="Dar um foco especial"
-        >
-          <MdGpsFixed size={36} />
-        </button>
 
         <button
           onClick={() => setViewDay((d) => (d + 1) % 7)}
@@ -1018,35 +1079,6 @@ export default function TodayPage() {
           <MdChevronRight size={36} />
         </button>
       </div>
-
-      {/* Progresso do dia */}
-      {total > 0 && (
-        <div className="w-full mb-5 px-4">
-          <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 bg-green-500"
-              style={{ width: `${pct}%` }}
-            />
-            {/* Texto cinza escuro — visível sobre o fundo cinza */}
-            <div className="absolute inset-0 flex items-center px-2.5">
-              <span className="text-[9px] font-bold text-gray-400 leading-none whitespace-nowrap">
-                {studiedMinutes} / {totalMinutes}
-              </span>
-            </div>
-            {/* Texto branco — clipado à largura da barra verde, só aparece quando barra > 0 */}
-            {pct > 0 && (
-              <div
-                className="absolute inset-y-0 left-0 overflow-hidden transition-all duration-500 flex items-center px-2.5"
-                style={{ width: `${pct}%` }}
-              >
-                <span className="text-[9px] font-bold text-white leading-none whitespace-nowrap">
-                  {studiedMinutes} / {totalMinutes}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Lista de itens */}
       {visibleItems.length === 0 && freeSessions.length === 0 ? (
@@ -1194,7 +1226,10 @@ export default function TodayPage() {
                         e.stopPropagation();
                         const alreadySecs = studiedSecs[item.id] ?? 0;
                         const totalSecs = (item.duration_minutes ?? 0) * 60;
-                        const remainSecs = Math.max(60, totalSecs - alreadySecs);
+                        const remainSecs = Math.max(
+                          60,
+                          totalSecs - alreadySecs,
+                        );
                         navigate("/aluno/pomodoro", {
                           state: {
                             planItemId: item.id,
@@ -1251,42 +1286,58 @@ export default function TodayPage() {
                   </div>
 
                   {/* Ações rápidas — só para itens não concluídos */}
-                  {!item.is_done && (() => {
-                    const isFocusDay =
-                      (item.piece_id && item.piece_id === focusDayPieceId) ||
-                      (item.exercise_id && item.exercise_id === focusDayExerciseId);
-                    const isFocusWeek =
-                      (item.piece_id && item.piece_id === focusWeekPieceId) ||
-                      (item.exercise_id && item.exercise_id === focusWeekExerciseId);
-                    return (
-                      <div className="flex flex-row items-center gap-2 pr-2 pl-1 shrink-0">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleActionClick("focus", item); }}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center transition hover:opacity-80"
-                          style={{
-                            background: "#D6E4F0",
-                            color: isFocusDay ? "#4A90C4" : isFocusWeek ? "#1E3A5F" : "#111",
-                          }}
-                        >
-                          <MdGpsFixed size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleActionClick("move", item); }}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-black transition hover:opacity-80"
-                          style={{ background: "#D6E4F0" }}
-                        >
-                          <MdArrowForward size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleActionClick("skip", item); }}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-black transition hover:opacity-80"
-                          style={{ background: "#D6E4F0" }}
-                        >
-                          <MdClose size={16} />
-                        </button>
-                      </div>
-                    );
-                  })()}
+                  {!item.is_done &&
+                    (() => {
+                      const isFocusDay =
+                        (item.piece_id && item.piece_id === focusDayPieceId) ||
+                        (item.exercise_id &&
+                          item.exercise_id === focusDayExerciseId);
+                      const isFocusWeek =
+                        (item.piece_id && item.piece_id === focusWeekPieceId) ||
+                        (item.exercise_id &&
+                          item.exercise_id === focusWeekExerciseId);
+                      const menuOpen = openMenuItemId === item.id;
+                      return (
+                        <div className="flex flex-row items-center gap-2 pr-2 pl-1 shrink-0">
+                          {/* Target — sem background, cor por estado de foco */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleActionClick("focus", item);
+                            }}
+                            className="w-7 h-7 flex items-center justify-center transition hover:opacity-70"
+                            style={{
+                              color: isFocusDay
+                                ? "#4A90C4"
+                                : isFocusWeek
+                                  ? "#1E3A5F"
+                                  : "#6B7280",
+                            }}
+                          >
+                            <MdGpsFixed size={18} />
+                          </button>
+                          {/* Três pontos — abre dropdown via fixed */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (menuOpen) {
+                                setOpenMenuItemId(null);
+                                setMenuAnchor(null);
+                              } else {
+                                const r = (
+                                  e.currentTarget as HTMLElement
+                                ).getBoundingClientRect();
+                                setMenuAnchor({ x: r.right, y: r.bottom });
+                                setOpenMenuItemId(item.id);
+                              }
+                            }}
+                            className="w-7 h-7 flex items-center justify-center text-[#1E3A5F] transition hover:opacity-70"
+                          >
+                            <MdMoreVert size={18} />
+                          </button>
+                        </div>
+                      );
+                    })()}
                 </div>
               </div>
             );
@@ -1391,6 +1442,84 @@ export default function TodayPage() {
           </p>
         </div>
       )}
+
+      {/* Dropdown do menu de três pontos — renderizado fora do card (fixed) */}
+      {openMenuItemId &&
+        menuAnchor &&
+        (() => {
+          const menuItem = visibleItems.find((i) => i.id === openMenuItemId);
+          if (!menuItem) return null;
+          return (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => {
+                  setOpenMenuItemId(null);
+                  setMenuAnchor(null);
+                }}
+              />
+              <div
+                className="fixed z-50 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-44"
+                style={{
+                  top: menuAnchor.y + 4,
+                  right: window.innerWidth - menuAnchor.x,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => {
+                    setOpenMenuItemId(null);
+                    setMenuAnchor(null);
+                    handleActionClick("move", menuItem);
+                  }}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA] transition"
+                >
+                  <MdArrowForward size={16} color="#4A90C4" />
+                  Mover tarefa
+                </button>
+                <button
+                  onClick={() => {
+                    setOpenMenuItemId(null);
+                    setMenuAnchor(null);
+                    setEditDurationItem(menuItem);
+                  }}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA] transition"
+                >
+                  <MdAccessTime size={16} color="#4A90C4" />
+                  Editar tempo
+                </button>
+                <button
+                  onClick={() => {
+                    setOpenMenuItemId(null);
+                    setMenuAnchor(null);
+                    handleDeleteItem(menuItem);
+                  }}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition"
+                >
+                  <MdDeleteOutline size={16} />
+                  Deletar tarefa
+                </button>
+              </div>
+            </>
+          );
+        })()}
+
+      {/* Modal de editar tempo */}
+      {editDurationItem &&
+        (() => {
+          const { title } = itemDisplay(editDurationItem);
+          return (
+            <EditDurationModal
+              currentMinutes={editDurationItem.duration_minutes ?? 0}
+              itemTitle={title}
+              onClose={() => setEditDurationItem(null)}
+              onSaveThis={(min) =>
+                handleEditDurationThis(editDurationItem, min)
+              }
+              onSaveAll={(min) => handleEditDurationAll(editDurationItem, min)}
+            />
+          );
+        })()}
 
       {/* Modal de alterar tempo */}
       {showChangeTime && (
@@ -1572,6 +1701,8 @@ export default function TodayPage() {
           </div>
         </div>
       )}
+
+      <PomodoroStrip totalPoms={totalPoms} studiedPoms={studiedPoms} />
     </StudentLayout>
   );
 }
