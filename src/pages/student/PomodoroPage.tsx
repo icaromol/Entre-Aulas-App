@@ -32,7 +32,7 @@ function autoPreset(durationMinutes: number): CyclePreset {
   if (durationMinutes <= 15) {
     return {
       key: "auto",
-      name: "Automático",
+      name: "Início rápido",
       workMinutes: Math.max(5, durationMinutes),
       breakMinutes: 3,
       totalCycles: 1,
@@ -41,7 +41,7 @@ function autoPreset(durationMinutes: number): CyclePreset {
   if (durationMinutes <= 30) {
     return {
       key: "auto",
-      name: "Automático",
+      name: "Início rápido",
       workMinutes: durationMinutes,
       breakMinutes: 5,
       totalCycles: 1,
@@ -50,7 +50,7 @@ function autoPreset(durationMinutes: number): CyclePreset {
   if (durationMinutes <= 50) {
     return {
       key: "auto",
-      name: "Automático",
+      name: "Início rápido",
       workMinutes: Math.round(durationMinutes / 2),
       breakMinutes: 5,
       totalCycles: 2,
@@ -59,7 +59,7 @@ function autoPreset(durationMinutes: number): CyclePreset {
   if (durationMinutes <= 80) {
     return {
       key: "auto",
-      name: "Automático",
+      name: "Início rápido",
       workMinutes: Math.round(durationMinutes / 3),
       breakMinutes: 5,
       totalCycles: 3,

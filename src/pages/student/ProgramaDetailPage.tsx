@@ -248,11 +248,13 @@ export default function StudentProgramaDetailPage() {
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold text-[#1E3A5F] truncate">{programa.title}</h1>
-          <p className="text-xs text-gray-400">
-            {programa.status === 'archived'
-              ? 'Arquivado'
-              : PROGRAM_TYPES[programa.type]?.label ?? programa.type}
-          </p>
+          {(programa.status === 'archived' || programa.type !== 'regular') && (
+            <p className="text-xs text-gray-400">
+              {programa.status === 'archived'
+                ? 'Arquivado'
+                : PROGRAM_TYPES[programa.type]?.label ?? programa.type}
+            </p>
+          )}
         </div>
         <Link to={`/aluno/repertorio/programas/${programId}/editar`} className="text-gray-400 hover:text-[#4A90C4] transition shrink-0">
           <MdEdit size={20} />

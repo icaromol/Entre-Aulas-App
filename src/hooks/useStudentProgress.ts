@@ -141,7 +141,7 @@ export function useStudentProgress(opts?: { studentId?: string }): { progress: S
         .from('pieces')
         .select('id, title, composer, completion_pct, status')
         .eq('student_id', sid)
-        .neq('status', 'archived')
+        .in('status', ['in_progress', 'paused', 'future'])
         .lt('completion_pct', 100)
         .order('completion_pct', { ascending: false }),
 

@@ -8,9 +8,9 @@ import {
 import type { IconType } from 'react-icons'
 
 // Triângulo sólido — não existe no MD, SVG inline
-function TriangleFilled({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+function TriangleFilled({ size = 16, color = 'currentColor', className }: { size?: number; color?: string; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} className={className}>
       <polygon points="12,3 22,21 2,21" />
     </svg>
   )

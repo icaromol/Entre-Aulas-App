@@ -14,8 +14,8 @@ import {
   MdPlayArrow,
   MdDeleteOutline,
   MdSelfImprovement,
+  MdRoute,
   MdFlashOn,
-  MdKeyboardDoubleArrowLeft,
   MdBuild,
   MdAccessTime,
   MdGpsFixed,
@@ -26,6 +26,8 @@ import {
   MdCheckCircle,
   MdSwapHoriz,
   MdCallSplit,
+  MdTimer,
+  MdScale,
 } from "react-icons/md";
 import { ChangeTimeModal } from "@/components/student/ChangeTimeModal";
 import { PomodoroStrip } from "@/components/student/PomodoroStrip";
@@ -82,7 +84,9 @@ function SwapPieceModal({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 pb-8 px-4">
       <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl flex flex-col max-h-[70vh]">
         <div className="px-5 pt-5 pb-3 shrink-0">
-          <p className="text-base font-bold text-gray-800 mb-1">Trocar tarefa</p>
+          <p className="text-base font-bold text-gray-800 mb-1">
+            Trocar tarefa
+          </p>
           <p className="text-xs text-gray-400 mb-4">
             Substituindo{" "}
             <span className="font-medium text-gray-600">{itemTitle}</span>
@@ -105,7 +109,9 @@ function SwapPieceModal({
         <div className="overflow-y-auto flex-1 px-2 pb-3">
           {tab === "pieces" ? (
             pieces.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-6">Nenhuma peça ativa.</p>
+              <p className="text-xs text-gray-400 text-center py-6">
+                Nenhuma peça ativa.
+              </p>
             ) : (
               pieces.map((piece) => (
                 <button
@@ -113,26 +119,36 @@ function SwapPieceModal({
                   onClick={() => onSelect({ kind: "piece", piece })}
                   className="flex flex-col w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F5F7FA] transition"
                 >
-                  <span className="text-sm font-medium text-gray-800">{piece.title}</span>
-                  {piece.composer && <span className="text-xs text-gray-400">{piece.composer}</span>}
+                  <span className="text-sm font-medium text-gray-800">
+                    {piece.title}
+                  </span>
+                  {piece.composer && (
+                    <span className="text-xs text-gray-400">
+                      {piece.composer}
+                    </span>
+                  )}
                 </button>
               ))
             )
+          ) : exercises.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-6">
+              Nenhum exercício ativo.
+            </p>
           ) : (
-            exercises.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-6">Nenhum exercício ativo.</p>
-            ) : (
-              exercises.map((ex) => (
-                <button
-                  key={ex.id}
-                  onClick={() => onSelect({ kind: "exercise", exercise: ex })}
-                  className="flex flex-col w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F5F7FA] transition"
-                >
-                  <span className="text-sm font-medium text-gray-800">{ex.title}</span>
-                  <span className="text-xs text-gray-400 capitalize">{ex.category}</span>
-                </button>
-              ))
-            )
+            exercises.map((ex) => (
+              <button
+                key={ex.id}
+                onClick={() => onSelect({ kind: "exercise", exercise: ex })}
+                className="flex flex-col w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F5F7FA] transition"
+              >
+                <span className="text-sm font-medium text-gray-800">
+                  {ex.title}
+                </span>
+                <span className="text-xs text-gray-400 capitalize">
+                  {ex.category}
+                </span>
+              </button>
+            ))
           )}
         </div>
         <div className="px-5 pb-5 pt-2 shrink-0">
@@ -149,20 +165,16 @@ function SwapPieceModal({
 }
 
 function itemDisplay(item: PlanItem): { title: string; subtitle: string } {
+  const progLabel =
+    item.programa?.type === "regular" ? "" : (item.programa?.title ?? "");
   if (item.is_maintenance) {
-    return {
-      title: item.piece?.title ?? "—",
-      subtitle: item.programa?.title ?? "",
-    };
+    return { title: item.piece?.title ?? "—", subtitle: progLabel };
   }
   if (item.exercise_id && item.exercise) {
-    return {
-      title: item.exercise.title,
-      subtitle: item.programa?.title ?? "—",
-    };
+    return { title: item.exercise.title, subtitle: progLabel };
   }
   if (item.piece_id && item.piece) {
-    return { title: item.piece.title, subtitle: item.programa?.title ?? "—" };
+    return { title: item.piece.title, subtitle: progLabel };
   }
   return { title: "—", subtitle: "" };
 }
@@ -303,7 +315,9 @@ export default function TodayPage() {
   } | null>(null);
   const [planGenerating, setPlanGenerating] = useState(false);
   const [showChangeTime, setShowChangeTime] = useState(false);
-  const [deleteConfirmItem, setDeleteConfirmItem] = useState<PlanItem | null>(null);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<PlanItem | null>(
+    null,
+  );
   const [essentialMode, setEssentialMode] = useState(false);
   const [showContinuityModal, setShowContinuityModal] = useState(false);
   const [showFocusModal, setShowFocusModal] = useState(false);
@@ -542,6 +556,31 @@ export default function TodayPage() {
     }
   }
 
+  async function handleEqualizeTime() {
+    const undone = items.filter((i) => i.day_of_week === viewDay && !i.is_done);
+    if (undone.length === 0) return;
+    const doneMin = items
+      .filter((i) => i.day_of_week === viewDay && i.is_done)
+      .reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
+    const available = Math.max(0, totalMinutes - doneMin);
+    const perTask = Math.max(5, Math.floor(available / undone.length));
+    const updated = items.map((i) =>
+      undone.find((u) => u.id === i.id)
+        ? { ...i, duration_minutes: perTask }
+        : i,
+    );
+    setItems(updated);
+    await Promise.all(
+      undone.map((i) =>
+        supabase
+          .from("plan_items")
+          .update({ duration_minutes: perTask })
+          .eq("id", i.id),
+      ),
+    );
+    toast.success("Tempo distribuído igualmente");
+  }
+
   const ACTION_SKIP_KEY = "estudamus_action_skip_confirmed";
   const ACTION_FOCUS_KEY = "estudamus_action_focus_confirmed";
   const ACTION_MOVE_KEY = "estudamus_action_move_confirmed";
@@ -624,13 +663,20 @@ export default function TodayPage() {
     if (redistribute) {
       const freedMinutes = item.duration_minutes ?? 0;
       const others = items.filter(
-        (i) => i.id !== item.id && i.day_of_week === viewDay && !i.is_done && (i.duration_minutes ?? 0) > 0,
+        (i) =>
+          i.id !== item.id &&
+          i.day_of_week === viewDay &&
+          !i.is_done &&
+          (i.duration_minutes ?? 0) > 0,
       );
       if (others.length > 0 && freedMinutes > 0) {
         const bonus = Math.round(freedMinutes / others.length);
         await Promise.all(
           others.map((o) =>
-            supabase.from("plan_items").update({ duration_minutes: (o.duration_minutes ?? 0) + bonus }).eq("id", o.id),
+            supabase
+              .from("plan_items")
+              .update({ duration_minutes: (o.duration_minutes ?? 0) + bonus })
+              .eq("id", o.id),
           ),
         );
         setItems((prev) =>
@@ -638,7 +684,9 @@ export default function TodayPage() {
             .filter((i) => i.id !== item.id)
             .map((i) => {
               const o = others.find((o) => o.id === i.id);
-              return o ? { ...i, duration_minutes: (i.duration_minutes ?? 0) + bonus } : i;
+              return o
+                ? { ...i, duration_minutes: (i.duration_minutes ?? 0) + bonus }
+                : i;
             }),
         );
         toast.success("Tarefa removida e tempo redistribuído.");
@@ -746,7 +794,13 @@ export default function TodayPage() {
       setItems((prev) =>
         prev.map((i) =>
           i.id === item.id
-            ? { ...i, piece_id: piece.id, exercise_id: null, piece: { title: piece.title, composer: piece.composer }, exercise: null }
+            ? {
+                ...i,
+                piece_id: piece.id,
+                exercise_id: null,
+                piece: { title: piece.title, composer: piece.composer },
+                exercise: null,
+              }
             : i,
         ),
       );
@@ -760,7 +814,16 @@ export default function TodayPage() {
       setItems((prev) =>
         prev.map((i) =>
           i.id === item.id
-            ? { ...i, exercise_id: exercise.id, piece_id: null, exercise: { title: exercise.title, category: exercise.category }, piece: null }
+            ? {
+                ...i,
+                exercise_id: exercise.id,
+                piece_id: null,
+                exercise: {
+                  title: exercise.title,
+                  category: exercise.category,
+                },
+                piece: null,
+              }
             : i,
         ),
       );
@@ -786,13 +849,18 @@ export default function TodayPage() {
 
     // posição base: após o item atual
     const basePosition = item.position;
-    const after = items.filter((i) => i.day_of_week === viewDay && i.position > basePosition);
+    const after = items.filter(
+      (i) => i.day_of_week === viewDay && i.position > basePosition,
+    );
 
     // shift items after to make room
     if (after.length > 0) {
       await Promise.all(
         after.map((i) =>
-          supabase.from("plan_items").update({ position: i.position + blocks.length - 1 }).eq("id", i.id),
+          supabase
+            .from("plan_items")
+            .update({ position: i.position + blocks.length - 1 })
+            .eq("id", i.id),
         ),
       );
     }
@@ -813,9 +881,7 @@ export default function TodayPage() {
       is_maintenance: item.is_maintenance,
     }));
 
-    const { data: inserted } = await supabase
-      .from("plan_items")
-      .insert(newRows)
+    const { data: inserted } = await supabase.from("plan_items").insert(newRows)
       .select(`id, plan_id, day_of_week, piece_id, exercise_id, program_id,
         duration_minutes, position, is_done, done_at, is_maintenance, completed_manually, moved_from_dow, group_id,
         piece:pieces(title, composer), exercise:exercises(title, category), programa:programas(title, type)`);
@@ -1239,9 +1305,12 @@ export default function TodayPage() {
   }
 
   // Itens com duration_minutes=0 foram descartados pela Sessão Essencial — ocultá-los (salvo se já concluídos)
-  const visibleItems = items.filter(
-    (i) => i.duration_minutes !== 0 || i.is_done,
-  );
+  const visibleItems = [
+    ...items.filter((i) => i.duration_minutes !== 0 || i.is_done),
+  ].sort((a, b) => {
+    if (a.is_done !== b.is_done) return a.is_done ? 1 : -1;
+    return (b.duration_minutes ?? 0) - (a.duration_minutes ?? 0);
+  });
 
   const isPastDay = (() => {
     const order = [1, 2, 3, 4, 5, 6, 0];
@@ -1302,7 +1371,11 @@ export default function TodayPage() {
     if (_gi.group_id) {
       if (!_seenGroups.has(_gi.group_id)) {
         _seenGroups.add(_gi.group_id);
-        renderUnits.push({ kind: "group", groupId: _gi.group_id, items: _groupMap.get(_gi.group_id)! });
+        renderUnits.push({
+          kind: "group",
+          groupId: _gi.group_id,
+          items: _groupMap.get(_gi.group_id)!,
+        });
       }
     } else {
       renderUnits.push({ kind: "single", item: _gi });
@@ -1385,7 +1458,7 @@ export default function TodayPage() {
           ) : isPastDay ? (
             <>
               <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
-                <MdKeyboardDoubleArrowLeft size={24} color="white" />
+                <MdRoute size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-700">
                 Este dia já passou
@@ -1420,101 +1493,168 @@ export default function TodayPage() {
             </div>
           )}
           {renderUnits.map((unit) => {
-              if (unit.kind === "group") {
-                const { groupId, items: gItems } = unit;
-                const allDone = gItems.every((i) => i.is_done);
-                const totalDur = gItems.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
-                const totalStudied = gItems.reduce((s, i) => s + (studiedSecs[i.id] ?? 0), 0);
-                const groupPct = totalDur > 0 ? Math.min(1, totalStudied / (totalDur * 60)) : allDone ? 1 : 0;
+            if (unit.kind === "group") {
+              const { groupId, items: gItems } = unit;
+              const allDone = gItems.every((i) => i.is_done);
+              const totalDur = gItems.reduce(
+                (s, i) => s + (i.duration_minutes ?? 0),
+                0,
+              );
+              const totalStudied = gItems.reduce(
+                (s, i) => s + (studiedSecs[i.id] ?? 0),
+                0,
+              );
+              const groupPct =
+                totalDur > 0
+                  ? Math.min(1, totalStudied / (totalDur * 60))
+                  : allDone
+                    ? 1
+                    : 0;
 
-                if (allDone) {
-                  return (
-                    <div key={groupId} className="group flex flex-col rounded-xl border border-[#B8D4E8] bg-[#D6E4F0] pl-3 pr-4 py-1.5 gap-1">
-                      {gItems.map((gi) => {
-                        const { title: gt, subtitle: gs } = itemDisplay(gi);
-                        return (
-                          <div key={gi.id} className="flex items-center gap-2">
-                            <div className="w-5 h-5 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
-                              <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3.5}><path d="M5 13l4 4L19 7" /></svg>
-                            </div>
-                            <p className="text-xs text-gray-400 truncate flex-1 min-w-0">
-                              <span className="font-medium text-gray-500">{gt}</span>
-                              {gs ? ` · ${gs}` : ""}
-                              {gi.duration_minutes ? ` · ${gi.duration_minutes} min` : ""}
-                            </p>
-                            {gi.completed_manually && (
-                              <span className="cursor-default select-none shrink-0 text-gray-900"
-                                onMouseEnter={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setManualTooltip({ x: r.left + r.width / 2, y: r.top }); }}
-                                onMouseLeave={() => setManualTooltip(null)}
-                              ><MdTouchApp size={18} /></span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                }
-
+              if (allDone) {
                 return (
-                  <div key={groupId} className="relative rounded-2xl border border-gray-200 bg-[#F6F6F6] overflow-hidden">
-                    {/* Barra de progresso */}
-                    <div
-                      className={`absolute inset-y-0 left-0 bg-[#D6E4F0] transition-all duration-500 rounded-l-2xl ${groupPct >= 0.95 ? "rounded-r-2xl" : ""}`}
-                      style={{ width: `${groupPct * 100}%` }}
-                    />
-                    <div className="relative z-10 flex items-stretch">
-                      {/* Play — inicia todos os itens não concluídos */}
-                      <button
-                        onClick={() => {
-                          const firstPending = gItems.find((i) => !i.is_done);
-                          if (!firstPending) return;
-                          const { title: ft, subtitle: fs } = itemDisplay(firstPending);
-                          navigate("/aluno/pomodoro", {
-                            state: {
-                              planItemId: firstPending.id,
-                              title: fs ? `${ft} — ${fs}` : ft,
-                              durationMinutes: totalDur,
-                              studentId,
-                            },
-                          });
-                        }}
-                        className="shrink-0 flex items-center justify-center px-4 bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
-                      >
-                        <MdPlayArrow size={28} />
-                      </button>
-                      {/* Sub-itens */}
-                      <div className="flex-1 min-w-0 py-2 pl-3 pr-2 space-y-0.5">
-                        {gItems.map((gi) => {
-                          const { title: gt, subtitle: gs } = itemDisplay(gi);
-                          return (
-                            <div key={gi.id} className="flex items-center gap-1.5 min-w-0">
-                              {gi.is_done ? (
-                                <div className="w-3.5 h-3.5 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
-                                  <svg width="7" height="7" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3.5}><path d="M5 13l4 4L19 7" /></svg>
-                                </div>
-                              ) : (
-                                <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 shrink-0" />
-                              )}
-                              <p className={`text-xs truncate ${gi.is_done ? "text-gray-400 line-through" : "text-gray-700 font-medium"}`}>
-                                {gt}{gs ? <span className="font-normal text-gray-400"> · {gs}</span> : null}
-                                <span className="font-normal text-gray-400"> · {gi.duration_minutes} min</span>
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {/* Total */}
-                      <div className="flex items-center pr-3 shrink-0">
-                        <span className="text-xs text-gray-400">{totalDur} min</span>
-                      </div>
-                    </div>
+                  <div
+                    key={groupId}
+                    className="group flex flex-col rounded-xl border border-[#B8D4E8] bg-[#D6E4F0] pl-3 pr-4 py-1.5 gap-1"
+                  >
+                    {gItems.map((gi) => {
+                      const { title: gt, subtitle: gs } = itemDisplay(gi);
+                      return (
+                        <div key={gi.id} className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                            <svg
+                              width="10"
+                              height="10"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="white"
+                              strokeWidth={3.5}
+                            >
+                              <path d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <p className="text-xs text-gray-400 truncate flex-1 min-w-0">
+                            <span className="font-medium text-gray-500">
+                              {gt}
+                            </span>
+                            {gs ? ` · ${gs}` : ""}
+                            {gi.duration_minutes
+                              ? ` · ${gi.duration_minutes} min`
+                              : ""}
+                          </p>
+                          {gi.completed_manually && (
+                            <span
+                              className="cursor-default select-none shrink-0 text-gray-900"
+                              onMouseEnter={(e) => {
+                                const r = (
+                                  e.currentTarget as HTMLElement
+                                ).getBoundingClientRect();
+                                setManualTooltip({
+                                  x: r.left + r.width / 2,
+                                  y: r.top,
+                                });
+                              }}
+                              onMouseLeave={() => setManualTooltip(null)}
+                            >
+                              <MdTouchApp size={18} />
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               }
 
-              // ── item solto (lógica original) ──
-              const { item } = unit;
-              const { title, subtitle } = itemDisplay(item);
+              return (
+                <div
+                  key={groupId}
+                  className="relative rounded-2xl border border-gray-200 bg-[#F6F6F6] overflow-hidden"
+                >
+                  {/* Barra de progresso */}
+                  <div
+                    className={`absolute inset-y-0 left-0 bg-[#D6E4F0] transition-all duration-500 rounded-l-2xl ${groupPct >= 0.95 ? "rounded-r-2xl" : ""}`}
+                    style={{ width: `${groupPct * 100}%` }}
+                  />
+                  <div className="relative z-10 flex items-stretch">
+                    {/* Play — inicia todos os itens não concluídos */}
+                    <button
+                      onClick={() => {
+                        const firstPending = gItems.find((i) => !i.is_done);
+                        if (!firstPending) return;
+                        const { title: ft, subtitle: fs } =
+                          itemDisplay(firstPending);
+                        navigate("/aluno/pomodoro", {
+                          state: {
+                            planItemId: firstPending.id,
+                            title: fs ? `${ft} — ${fs}` : ft,
+                            durationMinutes: totalDur,
+                            studentId,
+                          },
+                        });
+                      }}
+                      className="shrink-0 flex items-center justify-center px-4 bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
+                    >
+                      <MdPlayArrow size={28} />
+                    </button>
+                    {/* Sub-itens */}
+                    <div className="flex-1 min-w-0 py-2 pl-3 pr-2 space-y-0.5">
+                      {gItems.map((gi) => {
+                        const { title: gt, subtitle: gs } = itemDisplay(gi);
+                        return (
+                          <div
+                            key={gi.id}
+                            className="flex items-center gap-1.5 min-w-0"
+                          >
+                            {gi.is_done ? (
+                              <div className="w-3.5 h-3.5 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                                <svg
+                                  width="7"
+                                  height="7"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="white"
+                                  strokeWidth={3.5}
+                                >
+                                  <path d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            ) : (
+                              <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 shrink-0" />
+                            )}
+                            <p
+                              className={`text-xs truncate ${gi.is_done ? "text-gray-400 line-through" : "text-gray-700 font-medium"}`}
+                            >
+                              {gt}
+                              {gs ? (
+                                <span className="font-normal text-gray-400">
+                                  {" "}
+                                  · {gs}
+                                </span>
+                              ) : null}
+                              <span className="font-normal text-gray-400">
+                                {" "}
+                                · {gi.duration_minutes} min
+                              </span>
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Total */}
+                    <div className="flex items-center pr-3 shrink-0">
+                      <span className="text-xs text-gray-400">
+                        {totalDur} min
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // ── item solto (lógica original) ──
+            const { item } = unit;
+            const { title, subtitle } = itemDisplay(item);
 
             const itemPct = item.duration_minutes
               ? Math.min(
@@ -1553,7 +1693,10 @@ export default function TodayPage() {
                     {parts.length > 0 && ` · ${parts.join(" · ")}`}
                   </p>
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteItem(item); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteItem(item);
+                    }}
                     className="opacity-0 group-hover:opacity-100 transition shrink-0 text-red-400 hover:text-red-600 w-7 h-7 flex items-center justify-center"
                   >
                     <MdDeleteOutline size={18} />
@@ -1562,7 +1705,9 @@ export default function TodayPage() {
                     <span
                       className="cursor-default select-none shrink-0 text-gray-900"
                       onMouseEnter={(e) => {
-                        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                        const r = (
+                          e.currentTarget as HTMLElement
+                        ).getBoundingClientRect();
                         setManualTooltip({ x: r.left + r.width / 2, y: r.top });
                       }}
                       onMouseLeave={() => setManualTooltip(null)}
@@ -1691,7 +1836,9 @@ export default function TodayPage() {
                                 setOpenMenuItemId(null);
                                 setMenuAnchor(null);
                               } else {
-                                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                const r = (
+                                  e.currentTarget as HTMLElement
+                                ).getBoundingClientRect();
                                 setMenuAnchor({ x: r.right, y: r.bottom });
                                 setOpenMenuItemId(item.id);
                               }
@@ -1708,7 +1855,9 @@ export default function TodayPage() {
                                 handleActionClick("focus", item);
                               }}
                               className="w-7 h-7 flex items-center justify-center transition hover:opacity-70"
-                              style={{ color: isFocusDay ? "#4A90C4" : "#1E3A5F" }}
+                              style={{
+                                color: isFocusDay ? "#4A90C4" : "#1E3A5F",
+                              }}
                             >
                               <MdGpsFixed size={18} />
                             </button>
@@ -1717,29 +1866,40 @@ export default function TodayPage() {
                             <span
                               className="shrink-0 cursor-default flex items-center justify-center w-5"
                               onMouseEnter={(e) => {
-                                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                setMaintenanceTooltip({ x: r.left + r.width / 2, y: r.top });
+                                const r = (
+                                  e.currentTarget as HTMLElement
+                                ).getBoundingClientRect();
+                                setMaintenanceTooltip({
+                                  x: r.left + r.width / 2,
+                                  y: r.top,
+                                });
                               }}
                               onMouseLeave={() => setMaintenanceTooltip(null)}
                             >
                               <MdBuild size={14} color="#111827" />
                             </span>
                           )}
-                          {!item.is_maintenance && item.moved_from_dow != null && (
-                            <span
-                              className="shrink-0 cursor-default flex items-center justify-center w-5"
-                              onMouseEnter={(e) => {
-                                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                setMovedTooltip({ x: r.left + r.width / 2, y: r.top });
-                              }}
-                              onMouseLeave={() => setMovedTooltip(null)}
-                            >
-                              <MdForward size={14} color="#111827" />
-                            </span>
-                          )}
+                          {!item.is_maintenance &&
+                            item.moved_from_dow != null && (
+                              <span
+                                className="shrink-0 cursor-default flex items-center justify-center w-5"
+                                onMouseEnter={(e) => {
+                                  const r = (
+                                    e.currentTarget as HTMLElement
+                                  ).getBoundingClientRect();
+                                  setMovedTooltip({
+                                    x: r.left + r.width / 2,
+                                    y: r.top,
+                                  });
+                                }}
+                                onMouseLeave={() => setMovedTooltip(null)}
+                              >
+                                <MdForward size={14} color="#111827" />
+                              </span>
+                            )}
                         </div>
                       );
-                    })}
+                    })()}
                 </div>
               </div>
             );
@@ -1765,7 +1925,7 @@ export default function TodayPage() {
               </div>
               <p className="text-xs text-gray-400 truncate min-w-0 flex-1">
                 <span className="font-medium text-gray-500">{sess.label}</span>
-                {` · Sessão livre · ${sess.minutes} min`}
+                {` · ${sess.minutes} min`}
               </p>
               <button
                 onClick={() => deleteSession(sess.id)}
@@ -1780,33 +1940,49 @@ export default function TodayPage() {
 
       {/* Banner de início rápido */}
       {isToday && (
-        <button
-          onClick={() =>
-            navigate("/aluno/pomodoro", {
-              state: {
-                title: "Sessão de hoje",
-                durationMinutes: totalMinutes || pomodoroConfig?.work || 25,
-                studentId,
-                autoStart: true,
-                pomodoroConfig: pomodoroConfig ?? undefined,
-              },
-            })
-          }
-          id="onboarding-today-start-btn"
-          className="mt-5 w-full bg-[#1E3A5F] rounded-2xl px-5 py-5 flex items-center justify-center gap-4 hover:bg-[#1E3A5F]/90 transition cursor-pointer"
-        >
-          <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-            <MdPlayArrow size={28} className="text-white ml-1" />
-          </div>
-          <div className="text-left">
-            <p className="text-base font-bold text-white">Início rápido</p>
-            <p className="text-xs text-white/60 mt-0.5">
-              {pomodoroConfig
-                ? `${pomodoroConfig.work} min · ${pomodoroConfig.break} min pausa`
-                : "25 min · 5 min pausa"}
-            </p>
-          </div>
-        </button>
+        <div className="mt-5 bg-[#1E3A5F] rounded-2xl flex items-center gap-3 p-3">
+          <button
+            onClick={() => setShowChangeTime(true)}
+            className="rounded-xl bg-[#D6E4F0] flex items-center justify-center shrink-0 hover:bg-[#c4d9ec] transition"
+            style={{ width: 56, height: 56 }}
+          >
+            <MdTimer size={24} className="text-[#1E3A5F]" />
+          </button>
+          <button
+            onClick={() =>
+              navigate("/aluno/pomodoro", {
+                state: {
+                  title: "Sessão de hoje",
+                  durationMinutes: totalMinutes || pomodoroConfig?.work || 25,
+                  studentId,
+                  autoStart: true,
+                  pomodoroConfig: pomodoroConfig ?? undefined,
+                },
+              })
+            }
+            id="onboarding-today-start-btn"
+            className="flex-1 rounded-xl px-4 py-3 flex items-center justify-center gap-3 hover:bg-white/5 transition cursor-pointer"
+          >
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+              <MdPlayArrow size={24} className="text-white ml-0.5" />
+            </div>
+            <div className="text-left">
+              <p className="text-base font-bold text-white">Início rápido</p>
+              <p className="text-xs text-white/60 mt-0.5">
+                {pomodoroConfig
+                  ? `${pomodoroConfig.work} : ${pomodoroConfig.break} min`
+                  : "25 : 5 min"}
+              </p>
+            </div>
+          </button>
+          <button
+            onClick={handleEqualizeTime}
+            className="rounded-xl bg-[#D6E4F0] flex items-center justify-center shrink-0 hover:bg-[#c4d9ec] transition"
+            style={{ width: 56, height: 56 }}
+          >
+            <MdScale size={24} className="text-[#1E3A5F]" />
+          </button>
+        </div>
       )}
 
       {isToday && (
@@ -1855,7 +2031,10 @@ export default function TodayPage() {
           }}
         >
           <p className="font-semibold mb-0.5">Tarefa de manutenção</p>
-          <p style={{ color: "rgba(255,255,255,0.75)" }} className="leading-snug">
+          <p
+            style={{ color: "rgba(255,255,255,0.75)" }}
+            className="leading-snug"
+          >
             Revisão de peça já concluída para manter o nível.
           </p>
         </div>
@@ -1872,7 +2051,10 @@ export default function TodayPage() {
           }}
         >
           <p className="font-semibold mb-0.5">Tarefa movida</p>
-          <p style={{ color: "rgba(255,255,255,0.75)" }} className="leading-snug">
+          <p
+            style={{ color: "rgba(255,255,255,0.75)" }}
+            className="leading-snug"
+          >
             Esta tarefa foi transferida de outro dia.
           </p>
         </div>
@@ -2056,7 +2238,8 @@ export default function TodayPage() {
               ?
             </p>
             <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-              Você quer distribuir o tempo dessa tarefa nas outras tarefas do seu dia?
+              Você quer distribuir o tempo dessa tarefa nas outras tarefas do
+              seu dia?
             </p>
             <div className="flex gap-3 mb-3">
               <button
