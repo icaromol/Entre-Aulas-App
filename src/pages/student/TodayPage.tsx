@@ -1079,7 +1079,7 @@ export default function TodayPage() {
       .from("pieces")
       .select("id, title, composer")
       .eq("student_id", sid)
-      .in("status", ["in_progress", "future"])
+      .neq("status", "future")
       .order("title");
     setActivePieces((piecesData ?? []) as ActivePiece[]);
 
@@ -1367,6 +1367,12 @@ export default function TodayPage() {
                     <span className="font-medium text-gray-500">{title}</span>
                     {parts.length > 0 && ` · ${parts.join(" · ")}`}
                   </p>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteItem(item); }}
+                    className="opacity-0 group-hover:opacity-100 transition shrink-0 text-red-400 hover:text-red-600 w-7 h-7 flex items-center justify-center"
+                  >
+                    <MdDeleteOutline size={18} />
+                  </button>
                   {item.completed_manually && (
                     <span
                       className="cursor-default select-none shrink-0 text-gray-900"
@@ -1379,12 +1385,6 @@ export default function TodayPage() {
                       <MdTouchApp size={18} />
                     </span>
                   )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteItem(item); }}
-                    className="opacity-0 group-hover:opacity-100 transition shrink-0 text-red-400 hover:text-red-600 w-7 h-7 flex items-center justify-center"
-                  >
-                    <MdDeleteOutline size={18} />
-                  </button>
                 </div>
               );
             }
