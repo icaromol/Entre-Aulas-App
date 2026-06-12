@@ -236,7 +236,7 @@ export default function StudentsPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <a href={buildWhatsAppLink()} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#1ebe5d] text-white text-sm font-medium transition">
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white text-sm font-medium transition">
                 <FaWhatsapp size={17} />WhatsApp
               </a>
               <a href={buildMailtoLink()}
@@ -258,7 +258,7 @@ export default function StudentsPage() {
               <MdClose size={20} />
             </button>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[#f4d1ae] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#f5f5f5] flex items-center justify-center shrink-0">
                 <MdPersonSearch size={22} className="text-[#153b50]" />
               </div>
               <div>
@@ -343,7 +343,7 @@ export default function StudentsPage() {
               <div className="grid gap-2">
                 {pending.map(student => (
                   <div key={student.id}
-                    className="bg-[#f4d1ae]/40 border border-[#b2f0fb]/30 rounded-2xl px-5 py-4 flex items-center gap-4">
+                    className="bg-[#f5f5f5]/40 border border-[#b2f0fb]/30 rounded-2xl px-5 py-4 flex items-center gap-4">
                     <div className="shrink-0 rounded-full overflow-hidden">
                       <Avatar size={40} name={`${student.first_name} ${student.last_name}`} variant="beam" colors={AVATAR_COLORS} />
                     </div>
@@ -420,7 +420,7 @@ export default function StudentsPage() {
                       {menuOpenId === student.id && (
                         <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-48 z-20">
                           <button onClick={() => { setMenuOpenId(null); navigate(`/professor/alunos/${student.id}/planejamento`) }}
-                            className="w-full px-4 py-2.5 text-left text-sm font-medium text-[#153b50] hover:bg-[#f4d1ae] transition">
+                            className="w-full px-4 py-2.5 text-left text-sm font-medium text-[#153b50] hover:bg-[#f5f5f5] transition">
                             Novo planejamento
                           </button>
                           <div className="border-t border-gray-100 my-1" />

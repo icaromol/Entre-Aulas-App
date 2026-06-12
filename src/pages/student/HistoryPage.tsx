@@ -168,7 +168,7 @@ export default function HistoryPage() {
 
       {/* Destaque semanal */}
       {thisWeekSeconds > 0 && (
-        <div className="bg-[#f4d1ae] rounded-2xl p-4 mb-5 flex items-center gap-4">
+        <div className="bg-[#f5f5f5] rounded-2xl p-4 mb-5 flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-[#153b50] flex items-center justify-center shrink-0">
             <MdAccessTime size={22} color="white" />
           </div>
@@ -242,7 +242,7 @@ export default function HistoryPage() {
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {sessionXp != null && (
-                              <span className="flex items-center gap-0.5 text-xs font-semibold text-[#b2f0fb] bg-[#f4d1ae] px-1.5 py-0.5 rounded-full">
+                              <span className="flex items-center gap-0.5 text-xs font-semibold text-[#b2f0fb] bg-[#f5f5f5] px-1.5 py-0.5 rounded-full">
                                 <MdStar size={11} />
                                 +{sessionXp} XP
                               </span>
@@ -258,7 +258,7 @@ export default function HistoryPage() {
                         {allLabels.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {allLabels.map((label, i) => (
-                              <span key={i} className="text-[11px] bg-[#f4d1ae] text-[#153b50] px-2 py-0.5 rounded-lg font-medium">
+                              <span key={i} className="text-[11px] bg-[#f5f5f5] text-[#153b50] px-2 py-0.5 rounded-lg font-medium">
                                 {label}
                               </span>
                             ))}

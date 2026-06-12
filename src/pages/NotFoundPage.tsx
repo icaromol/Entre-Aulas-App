@@ -5,8 +5,8 @@ export default function NotFoundPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-[#F8F6F5] flex flex-col items-center justify-center px-6 text-center">
-      <div className="w-20 h-20 rounded-2xl bg-[#f4d1ae] flex items-center justify-center mb-6">
+    <div className="min-h-screen bg-[#f5f5f5] flex flex-col items-center justify-center px-6 text-center">
+      <div className="w-20 h-20 rounded-2xl bg-[#f5f5f5] flex items-center justify-center mb-6">
         <MdMusicOff size={40} className="text-[#153b50]" />
       </div>
 

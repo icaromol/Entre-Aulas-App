@@ -97,7 +97,7 @@ export function FocusModal({
         <div className="px-5 pb-6 space-y-4">
           {/* Visual antes → depois */}
           <div className="flex items-center gap-2">
-            <div className="flex-1 bg-[#F8F6F5] rounded-xl p-3">
+            <div className="flex-1 bg-[#f5f5f5] rounded-xl p-3">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Antes</p>
               <div className="space-y-1.5">
                 {[["Peça A", 25], ["Peça B", 25]].map(([label, min]) => (
@@ -113,7 +113,7 @@ export function FocusModal({
 
             <div className="text-[#b2f0fb] text-lg font-bold shrink-0">→</div>
 
-            <div className="flex-1 bg-[#F8F6F5] rounded-xl p-3">
+            <div className="flex-1 bg-[#f5f5f5] rounded-xl p-3">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Com foco</p>
               <div className="space-y-1.5">
                 {[["Peça A ⭐", 35, true], ["Peça B", 15, false]].map(([label, min, focus]) => (
@@ -145,8 +145,8 @@ export function FocusModal({
                       onClick={() => setSelectedKey(active ? null : opt.key)}
                       className={`flex items-center gap-3 w-full rounded-xl border-2 px-4 py-3 transition text-left ${
                         active
-                          ? "border-[#153b50] bg-[#f4d1ae]"
-                          : "border-gray-100 bg-[#F8F6F5] hover:border-[#b2f0fb]"
+                          ? "border-[#153b50] bg-[#f5f5f5]"
+                          : "border-gray-100 bg-[#f5f5f5] hover:border-[#b2f0fb]"
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${active ? "bg-[#153b50]" : "bg-[#b2f0fb]/30"}`}>
@@ -167,7 +167,7 @@ export function FocusModal({
 
           {/* Item pré-selecionado destacado */}
           {hasPreSelection && preSelected && (
-            <div className="flex items-center gap-3 rounded-xl border-2 border-[#153b50] bg-[#f4d1ae] px-4 py-3">
+            <div className="flex items-center gap-3 rounded-xl border-2 border-[#153b50] bg-[#f5f5f5] px-4 py-3">
               <div className="w-8 h-8 rounded-full bg-[#153b50] flex items-center justify-center shrink-0">
                 {preSelected.type === "piece"
                   ? <MdMusicNote size={16} color="white" />
@@ -187,7 +187,7 @@ export function FocusModal({
             <button
               onClick={() => handleApply("day")}
               disabled={!selectedOption}
-              className="flex-1 flex flex-col items-center gap-1 rounded-xl border-2 border-[#f4d1ae] bg-[#F8F6F5] px-3 py-3 hover:border-[#153b50] hover:bg-[#f4d1ae] transition disabled:opacity-40 disabled:pointer-events-none"
+              className="flex-1 flex flex-col items-center gap-1 rounded-xl border-2 border-[#f5f5f5] bg-[#f5f5f5] px-3 py-3 hover:border-[#153b50] hover:bg-[#f5f5f5] transition disabled:opacity-40 disabled:pointer-events-none"
             >
               <div className="w-8 h-8 rounded-full bg-[#153b50] flex items-center justify-center">
                 <MdGpsFixed size={16} color="white" />
@@ -198,7 +198,7 @@ export function FocusModal({
             <button
               onClick={() => handleApply("week")}
               disabled={!selectedOption}
-              className="flex-1 flex flex-col items-center gap-1 rounded-xl border-2 border-[#f4d1ae] bg-[#F8F6F5] px-3 py-3 hover:border-[#b2f0fb] hover:bg-[#f4d1ae] transition disabled:opacity-40 disabled:pointer-events-none"
+              className="flex-1 flex flex-col items-center gap-1 rounded-xl border-2 border-[#f5f5f5] bg-[#f5f5f5] px-3 py-3 hover:border-[#b2f0fb] hover:bg-[#f5f5f5] transition disabled:opacity-40 disabled:pointer-events-none"
             >
               <div className="w-8 h-8 rounded-full bg-[#b2f0fb] flex items-center justify-center">
                 <MdCalendarToday size={16} color="white" />

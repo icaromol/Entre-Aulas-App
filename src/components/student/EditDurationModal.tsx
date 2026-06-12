@@ -45,7 +45,7 @@ export function EditDurationModal({
               max={240}
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              className="w-24 text-center text-2xl font-bold text-[#153b50] border-2 border-[#f4d1ae] rounded-xl py-2 focus:outline-none focus:border-[#b2f0fb]"
+              className="w-24 text-center text-2xl font-bold text-[#153b50] border-2 border-[#f5f5f5] rounded-xl py-2 focus:outline-none focus:border-[#b2f0fb]"
             />
             <span className="text-sm text-gray-400">minutos</span>
           </div>

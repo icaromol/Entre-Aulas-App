@@ -1328,7 +1328,7 @@ export default function PomodoroPage() {
           <div
             className={`text-xs font-semibold mb-3 px-3 py-1 rounded-full ${
               isWork
-                ? "bg-[#f4d1ae] text-[#153b50]"
+                ? "bg-[#f5f5f5] text-[#153b50]"
                 : "bg-green-100 text-green-600"
             }`}
           >
@@ -1867,7 +1867,7 @@ export default function PomodoroPage() {
                   fontSize: "11px",
                   fontWeight: 600,
                   marginBottom: "12px",
-                  color: isWork ? "#f4d1ae" : "#4ADE80",
+                  color: isWork ? "#f5f5f5" : "#4ADE80",
                   letterSpacing: "0.05em",
                 }}
               >
@@ -1914,25 +1914,25 @@ export default function PomodoroPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700">Foco (min)</span>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setCustomWork(w => Math.max(5, w - 5))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">−</button>
+                    <button onClick={() => setCustomWork(w => Math.max(5, w - 5))} className="w-8 h-8 rounded-full bg-[#f5f5f5] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f5f5f5] transition">−</button>
                     <span className="w-8 text-center font-semibold text-[#153b50]">{customWork}</span>
-                    <button onClick={() => setCustomWork(w => Math.min(90, w + 5))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">+</button>
+                    <button onClick={() => setCustomWork(w => Math.min(90, w + 5))} className="w-8 h-8 rounded-full bg-[#f5f5f5] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f5f5f5] transition">+</button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700">Pausa (min)</span>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setCustomBreak(b => Math.max(1, b - 1))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">−</button>
+                    <button onClick={() => setCustomBreak(b => Math.max(1, b - 1))} className="w-8 h-8 rounded-full bg-[#f5f5f5] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f5f5f5] transition">−</button>
                     <span className="w-8 text-center font-semibold text-[#153b50]">{customBreak}</span>
-                    <button onClick={() => setCustomBreak(b => Math.min(30, b + 1))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">+</button>
+                    <button onClick={() => setCustomBreak(b => Math.min(30, b + 1))} className="w-8 h-8 rounded-full bg-[#f5f5f5] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f5f5f5] transition">+</button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700">Ciclos</span>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setCustomCycles(n => Math.max(1, n - 1))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">−</button>
+                    <button onClick={() => setCustomCycles(n => Math.max(1, n - 1))} className="w-8 h-8 rounded-full bg-[#f5f5f5] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f5f5f5] transition">−</button>
                     <span className="w-8 text-center font-semibold text-[#153b50]">{customCycles}</span>
-                    <button onClick={() => setCustomCycles(n => Math.min(8, n + 1))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">+</button>
+                    <button onClick={() => setCustomCycles(n => Math.min(8, n + 1))} className="w-8 h-8 rounded-full bg-[#f5f5f5] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f5f5f5] transition">+</button>
                   </div>
                 </div>
               </div>
@@ -1960,7 +1960,7 @@ export default function PomodoroPage() {
   return (
     <StudentLayout>
       <div className="flex flex-col items-center pt-6 pb-8">
-        <div className="w-16 h-16 rounded-full bg-[#f4d1ae] flex items-center justify-center mb-3">
+        <div className="w-16 h-16 rounded-full bg-[#f5f5f5] flex items-center justify-center mb-3">
           <MdEmojiEvents size={36} color="#153b50" />
         </div>
         <h1 className="text-xl font-bold text-[#153b50]">Sessão encerrada!</h1>

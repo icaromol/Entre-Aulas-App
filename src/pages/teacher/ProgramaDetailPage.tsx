@@ -324,7 +324,7 @@ export default function ProgramaDetailPage() {
 
       {/* Repertório */}
       {programa.type === 'regular' ? (
-        <div className="bg-[#f4d1ae]/40 rounded-2xl border border-[#f4d1ae] p-5 mb-5 text-center">
+        <div className="bg-[#f5f5f5]/40 rounded-2xl border border-[#f5f5f5] p-5 mb-5 text-center">
           <MdMusicNote size={24} className="mx-auto text-[#b2f0fb] mb-2" />
           <p className="text-sm font-semibold text-[#153b50]">Repertório completo</p>
           <p className="text-xs text-gray-500 mt-1">

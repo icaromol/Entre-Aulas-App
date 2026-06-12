@@ -259,7 +259,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                     >
                       <MdEmojiEvents
                         size={18}
-                        className="text-[#2d2b2b] shrink-0"
+                        className="text-[#292929] shrink-0"
                       />
                       <span className="text-sm font-medium text-gray-700">
                         Minha Jornada
@@ -269,7 +269,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                       onClick={openEdit}
                       className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left"
                     >
-                      <MdEdit size={18} className="text-[#2d2b2b] shrink-0" />
+                      <MdEdit size={18} className="text-[#292929] shrink-0" />
                       <span className="text-sm font-medium text-gray-700 flex-1">
                         Editar perfil
                       </span>
@@ -284,7 +284,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                     >
                       <MdSwapHoriz
                         size={18}
-                        className="text-[#2d2b2b] shrink-0"
+                        className="text-[#292929] shrink-0"
                       />
                       <span className="text-sm font-medium text-gray-700">
                         Trocar para a área de estudante

@@ -72,7 +72,7 @@ export default function ModeSelectPage() {
             onClick={handleTeacher}
             className="flex flex-col items-center gap-3 p-6 bg-white rounded-2xl border-2 border-gray-100 hover:border-[#153b50] hover:shadow-md transition group"
           >
-            <div className="w-14 h-14 rounded-2xl bg-[#f4d1ae] flex items-center justify-center group-hover:bg-[#153b50] transition">
+            <div className="w-14 h-14 rounded-2xl bg-[#f5f5f5] flex items-center justify-center group-hover:bg-[#153b50] transition">
               <MdSchool size={28} className="text-[#153b50] group-hover:text-white transition" />
             </div>
             <div className="text-center">
@@ -87,7 +87,7 @@ export default function ModeSelectPage() {
               onClick={handleStudent}
               className="flex flex-col items-center gap-3 p-6 bg-white rounded-2xl border-2 border-gray-100 hover:border-[#b2f0fb] hover:shadow-md transition group"
             >
-              <div className="w-14 h-14 rounded-2xl bg-[#f4d1ae] flex items-center justify-center group-hover:bg-[#b2f0fb] transition">
+              <div className="w-14 h-14 rounded-2xl bg-[#f5f5f5] flex items-center justify-center group-hover:bg-[#b2f0fb] transition">
                 <MdMusicNote size={28} className="text-[#153b50] group-hover:text-white transition" />
               </div>
               <div className="text-center">
@@ -101,7 +101,7 @@ export default function ModeSelectPage() {
               disabled={activating}
               className="flex flex-col items-center gap-3 p-6 bg-white rounded-2xl border-2 border-gray-100 hover:border-[#b2f0fb] hover:shadow-md transition group disabled:opacity-50"
             >
-              <div className="w-14 h-14 rounded-2xl bg-[#f4d1ae] flex items-center justify-center group-hover:bg-[#b2f0fb] transition">
+              <div className="w-14 h-14 rounded-2xl bg-[#f5f5f5] flex items-center justify-center group-hover:bg-[#b2f0fb] transition">
                 <MdMusicNote size={28} className="text-[#153b50] group-hover:text-white transition" />
               </div>
               <div className="text-center">
@@ -116,7 +116,7 @@ export default function ModeSelectPage() {
 
         {/* Hint de troca de modo */}
         <div id="mode-select-switch-hint" className="flex items-center gap-2.5 mt-6 px-4 py-3 bg-white rounded-2xl border border-gray-100">
-          <div className="w-7 h-7 rounded-full bg-[#f4d1ae] flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 rounded-full bg-[#f5f5f5] flex items-center justify-center shrink-0">
             <MdSwapHoriz size={16} className="text-[#153b50]" />
           </div>
           <p className="text-xs text-gray-400 leading-snug">

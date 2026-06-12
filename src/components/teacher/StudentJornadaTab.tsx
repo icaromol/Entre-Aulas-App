@@ -220,7 +220,7 @@ export function StudentJornadaTab({ studentId }: Props) {
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#f4d1ae] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-full bg-[#f5f5f5] flex items-center justify-center shrink-0">
             <MdEmojiEvents size={20} className="text-[#153b50]" />
           </div>
           <div className="min-w-0">
@@ -252,7 +252,7 @@ export function StudentJornadaTab({ studentId }: Props) {
               <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={4} tick={{ fontSize: 9, fill: '#9CA3AF' }} />
               <YAxis hide />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Area dataKey="xp" type="monotone" stroke="var(--color-xp)" fill="#f4d1ae" strokeWidth={2} dot={false} />
+              <Area dataKey="xp" type="monotone" stroke="var(--color-xp)" fill="#f5f5f5" strokeWidth={2} dot={false} />
             </AreaChart>
           </ChartContainer>
           {xpChartData.length > 0 && xpChartData[xpChartData.length - 1].xp > 0 && (
@@ -382,7 +382,7 @@ export function StudentJornadaTab({ studentId }: Props) {
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {s.xp > 0 && (
-                    <span className="flex items-center gap-0.5 text-xs font-semibold text-[#b2f0fb] bg-[#f4d1ae] px-1.5 py-0.5 rounded-full">
+                    <span className="flex items-center gap-0.5 text-xs font-semibold text-[#b2f0fb] bg-[#f5f5f5] px-1.5 py-0.5 rounded-full">
                       <MdStar size={11} />
                       +{s.xp} XP
                     </span>

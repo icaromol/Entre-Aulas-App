@@ -180,7 +180,7 @@ export default function StatsPage() {
               dataKey="xp"
               type="monotone"
               stroke="var(--color-xp)"
-              fill="#f4d1ae"
+              fill="#f5f5f5"
               strokeWidth={2}
               dot={false}
             />
@@ -191,7 +191,7 @@ export default function StatsPage() {
       {/* Link histórico */}
       <button
         onClick={() => navigate('/aluno/historico')}
-        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-gray-200 text-sm font-medium text-[#b2f0fb] hover:bg-[#f4d1ae]/40 transition"
+        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-gray-200 text-sm font-medium text-[#b2f0fb] hover:bg-[#f5f5f5]/40 transition"
       >
         <MdHistory size={18} />
         Ver histórico de sessões

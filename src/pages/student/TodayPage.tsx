@@ -88,16 +88,16 @@ function SwapPieceModal({
             Substituindo{" "}
             <span className="font-medium text-gray-600">{itemTitle}</span>
           </p>
-          <div className="flex gap-1 bg-[#F8F6F5] rounded-xl p-1">
+          <div className="flex gap-1 bg-[#f5f5f5] rounded-xl p-1">
             <button
               onClick={() => setTab("pieces")}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${tab === "pieces" ? "bg-white text-[#0099FF] shadow-sm" : "text-gray-400"}`}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${tab === "pieces" ? "bg-white text-[#0993ae] shadow-sm" : "text-gray-400"}`}
             >
               Peças
             </button>
             <button
               onClick={() => setTab("exercises")}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${tab === "exercises" ? "bg-white text-[#0099FF] shadow-sm" : "text-gray-400"}`}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${tab === "exercises" ? "bg-white text-[#0993ae] shadow-sm" : "text-gray-400"}`}
             >
               Exercícios
             </button>
@@ -114,7 +114,7 @@ function SwapPieceModal({
                 <button
                   key={piece.id}
                   onClick={() => onSelect({ kind: "piece", piece })}
-                  className="flex flex-col w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F8F6F5] transition"
+                  className="flex flex-col w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#f5f5f5] transition"
                 >
                   <span className="text-sm font-medium text-gray-800">
                     {piece.title}
@@ -136,7 +136,7 @@ function SwapPieceModal({
               <button
                 key={ex.id}
                 onClick={() => onSelect({ kind: "exercise", exercise: ex })}
-                className="flex flex-col w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F8F6F5] transition"
+                className="flex flex-col w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#f5f5f5] transition"
               >
                 <span className="text-sm font-medium text-gray-800">
                   {ex.title}
@@ -151,7 +151,7 @@ function SwapPieceModal({
         <div className="px-5 pb-5 pt-2 shrink-0">
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-[#F8F6F5] transition"
+            className="w-full py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-[#f5f5f5] transition"
           >
             Cancelar
           </button>
@@ -1304,7 +1304,7 @@ export default function TodayPage() {
 
       {/* Banner de geração de plano */}
       {planGenerating && (
-        <div className="flex items-center gap-3 bg-[#0099FF] text-white text-sm font-medium px-4 py-3 rounded-2xl mb-4">
+        <div className="flex items-center gap-3 bg-[#0993ae] text-white text-sm font-medium px-4 py-3 rounded-2xl mb-4">
           <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin shrink-0" />
           Gerando plano de estudos…
         </div>
@@ -1317,18 +1317,18 @@ export default function TodayPage() {
       >
         <button
           onClick={() => setViewDay((d) => (d + 6) % 7)}
-          className="shrink-0 p-1 rounded-xl hover:bg-gray-100 transition cursor-pointer text-gray-300 hover:text-[#0099FF]"
+          className="shrink-0 p-1 rounded-xl hover:bg-gray-100 transition cursor-pointer text-gray-300 hover:text-[#0993ae]"
         >
           <MdChevronLeft size={36} />
         </button>
 
         {/* Data — centralizado */}
         <div className="flex-1 flex items-center justify-center gap-3">
-          <p className="text-7xl font-black text-[#0099FF] leading-none">
+          <p className="text-7xl font-black text-[#0993ae] leading-none">
             {dayNum}
           </p>
           <div>
-            <h1 className="text-4xl font-normal text-[#0099FF] leading-none">
+            <h1 className="text-4xl font-normal text-[#0993ae] leading-none">
               {getDayExtendedLabel(viewDay)}
             </h1>
             <p className="text-sm text-gray-400 mt-1 mx-0.5">{monthLabel}</p>
@@ -1337,7 +1337,7 @@ export default function TodayPage() {
 
         <button
           onClick={() => setViewDay((d) => (d + 1) % 7)}
-          className="shrink-0 p-1 rounded-xl hover:bg-gray-100 transition cursor-pointer text-gray-300 hover:text-[#0099FF]"
+          className="shrink-0 p-1 rounded-xl hover:bg-gray-100 transition cursor-pointer text-gray-300 hover:text-[#0993ae]"
         >
           <MdChevronRight size={36} />
         </button>
@@ -1348,7 +1348,7 @@ export default function TodayPage() {
         <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
           {hasAnyPlan === false ? (
             <>
-              <div className="w-12 h-12 rounded-full bg-[#0099FF] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#0993ae] flex items-center justify-center mx-auto mb-3">
                 <MdSelfImprovement size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-700">
@@ -1362,7 +1362,7 @@ export default function TodayPage() {
               {!(hasTeacher && profile?.role === "student") && (
                 <button
                   onClick={() => navigate("/aluno/planejamento")}
-                  className="mt-4 px-5 py-2 rounded-xl bg-[#81CBFF]/20 text-white text-xs font-semibold hover:bg-[#0099FF]/90 transition"
+                  className="mt-4 px-5 py-2 rounded-xl bg-[#b2f0fb]/20 text-white text-xs font-semibold hover:bg-[#0993ae]/90 transition"
                 >
                   Criar plano
                 </button>
@@ -1370,7 +1370,7 @@ export default function TodayPage() {
             </>
           ) : isPastDay ? (
             <>
-              <div className="w-12 h-12 rounded-full bg-[#0099FF] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#0993ae] flex items-center justify-center mx-auto mb-3">
                 <MdRoute size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-700">
@@ -1384,7 +1384,7 @@ export default function TodayPage() {
             </>
           ) : (
             <>
-              <div className="w-12 h-12 rounded-full bg-[#0099FF] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#0993ae] flex items-center justify-center mx-auto mb-3">
                 <MdSelfImprovement size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-700">Dia livre!</p>
@@ -1428,13 +1428,13 @@ export default function TodayPage() {
                 return (
                   <div
                     key={groupId}
-                    className="group flex flex-col rounded-xl bg-[#81CBFF]/20 pl-3 pr-4 py-1.5 gap-1"
+                    className="group flex flex-col rounded-xl bg-[#b2f0fb]/20 pl-3 pr-4 py-1.5 gap-1"
                   >
                     {gItems.map((gi) => {
                       const { title: gt, subtitle: gs } = itemDisplay(gi);
                       return (
                         <div key={gi.id} className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-[#0099FF] flex items-center justify-center shrink-0">
+                          <div className="w-5 h-5 rounded-full bg-[#0993ae] flex items-center justify-center shrink-0">
                             <svg
                               width="10"
                               height="10"
@@ -1482,11 +1482,11 @@ export default function TodayPage() {
               return (
                 <div
                   key={groupId}
-                  className="relative rounded-2xl bg-[#F8F6F5] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+                  className="relative rounded-2xl bg-[#f5f5f5] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
                 >
                   {/* Barra de progresso */}
                   <div
-                    className={`absolute inset-y-0 left-0 bg-[#00DC7D] transition-all duration-500 rounded-l-2xl ${groupPct >= 0.95 ? "rounded-r-2xl" : ""}`}
+                    className={`absolute inset-y-0 left-0 bg-[#b2f0fb] transition-all duration-500 rounded-l-2xl ${groupPct >= 0.95 ? "rounded-r-2xl" : ""}`}
                     style={{ width: `${groupPct * 100}%` }}
                   />
                   <div className="relative z-10 flex items-stretch">
@@ -1506,7 +1506,7 @@ export default function TodayPage() {
                           },
                         });
                       }}
-                      className="shrink-0 flex items-center justify-center px-4 bg-[#0099FF] hover:bg-[#1BB1FF] text-white transition transition"
+                      className="shrink-0 flex items-center justify-center px-4 bg-[#0993ae] hover:bg-[#297aa3] text-white transition transition"
                     >
                       <MdPlayArrow size={28} />
                     </button>
@@ -1520,7 +1520,7 @@ export default function TodayPage() {
                             className="flex items-center gap-1.5 min-w-0"
                           >
                             {gi.is_done ? (
-                              <div className="w-3.5 h-3.5 rounded-full bg-[#0099FF] flex items-center justify-center shrink-0">
+                              <div className="w-3.5 h-3.5 rounded-full bg-[#0993ae] flex items-center justify-center shrink-0">
                                 <svg
                                   width="7"
                                   height="7"
@@ -1587,9 +1587,9 @@ export default function TodayPage() {
               return (
                 <div
                   key={item.id}
-                  className="group flex items-center gap-2 rounded-xl bg-[#81CBFF]/20 pl-3 pr-4 py-1.5"
+                  className="group flex items-center gap-2 rounded-xl bg-[#b2f0fb]/20 pl-3 pr-4 py-1.5"
                 >
-                  <div className="w-5 h-5 rounded-full bg-[#0099FF] flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-[#0993ae] flex items-center justify-center shrink-0">
                     <svg
                       width="10"
                       height="10"
@@ -1610,9 +1610,9 @@ export default function TodayPage() {
                       e.stopPropagation();
                       handleDeleteItem(item);
                     }}
-                    className="opacity-0 group-hover:opacity-100 transition shrink-0 text-[#FF5A53] hover:text-[#FF7262] w-7 h-7 flex items-center justify-center"
+                    className="opacity-0 group-hover:opacity-100 transition shrink-0 text-[#ff4c3e] hover:text-[#ff4c3e] w-7 h-7 flex items-center justify-center"
                   >
-                    <MdDelete size={18} className="text-[#FF5A53]" />
+                    <MdDelete size={18} className="text-[#ff4c3e]" />
                   </button>
                   {item.completed_manually && (
                     <span
@@ -1641,12 +1641,12 @@ export default function TodayPage() {
             return (
               <div
                 key={item.id}
-                className={`group relative rounded-2xl bg-[#F8F6F5] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition ${cardHref ? "cursor-pointer" : ""}`}
+                className={`group relative rounded-2xl bg-[#f5f5f5] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition ${cardHref ? "cursor-pointer" : ""}`}
                 onClick={() => cardHref && navigate(cardHref)}
               >
                 {/* Barra de progresso de fundo */}
                 <div
-                  className={`absolute inset-y-0 left-0 bg-[#00DC7D] transition-all duration-500 rounded-l-2xl ${itemPct >= 0.95 ? "rounded-r-2xl" : ""}`}
+                  className={`absolute inset-y-0 left-0 bg-[#b2f0fb] transition-all duration-500 rounded-l-2xl ${itemPct >= 0.95 ? "rounded-r-2xl" : ""}`}
                   style={{ width: `${itemPct * 100}%` }}
                 />
                 <div className="relative z-10 flex items-stretch">
@@ -1670,7 +1670,7 @@ export default function TodayPage() {
                           },
                         });
                       }}
-                      className="shrink-0 flex items-center justify-center px-4 bg-[#0099FF] hover:bg-[#1BB1FF] text-white transition transition"
+                      className="shrink-0 flex items-center justify-center px-4 bg-[#0993ae] hover:bg-[#297aa3] text-white transition transition"
                     >
                       <MdPlayArrow size={28} />
                     </button>
@@ -1756,7 +1756,7 @@ export default function TodayPage() {
                                 setOpenMenuItemId(item.id);
                               }
                             }}
-                            className={`w-7 h-7 flex items-center justify-center text-gray-400 transition hover:text-[#0099FF] ${menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                            className={`w-7 h-7 flex items-center justify-center text-gray-400 transition hover:text-[#0993ae] ${menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                           >
                             <MdMoreVert size={18} />
                           </button>
@@ -1769,7 +1769,7 @@ export default function TodayPage() {
                               }}
                               className="w-7 h-7 flex items-center justify-center transition hover:opacity-70"
                               style={{
-                                color: isFocusDay ? "#b2f0fb" : "#0099FF",
+                                color: isFocusDay ? "#b2f0fb" : "#0993ae",
                               }}
                             >
                               <MdGpsFixed size={18} />
@@ -1789,7 +1789,7 @@ export default function TodayPage() {
                               }}
                               onMouseLeave={() => setMaintenanceTooltip(null)}
                             >
-                              <MdBuild size={14} color="#111827" />
+                              <MdBuild size={14} color="#292929" />
                             </span>
                           )}
                           {!item.is_maintenance &&
@@ -1807,7 +1807,7 @@ export default function TodayPage() {
                                 }}
                                 onMouseLeave={() => setMovedTooltip(null)}
                               >
-                                <MdForward size={14} color="#111827" />
+                                <MdForward size={14} color="#292929" />
                               </span>
                             )}
                         </div>
@@ -1822,9 +1822,9 @@ export default function TodayPage() {
           {freeSessions.map((sess) => (
             <div
               key={sess.id}
-              className="group flex items-center gap-2 rounded-xl bg-[#81CBFF]/20 pl-3 pr-4 py-1.5"
+              className="group flex items-center gap-2 rounded-xl bg-[#b2f0fb]/20 pl-3 pr-4 py-1.5"
             >
-              <div className="w-5 h-5 rounded-full bg-[#0099FF] flex items-center justify-center shrink-0">
+              <div className="w-5 h-5 rounded-full bg-[#0993ae] flex items-center justify-center shrink-0">
                 <svg
                   width="10"
                   height="10"
@@ -1842,9 +1842,9 @@ export default function TodayPage() {
               </p>
               <button
                 onClick={() => deleteSession(sess.id)}
-                className="opacity-0 group-hover:opacity-100 transition shrink-0 text-[#FF5A53] hover:text-[#FF7262] w-7 h-7 flex items-center justify-center"
+                className="opacity-0 group-hover:opacity-100 transition shrink-0 text-[#ff4c3e] hover:text-[#ff4c3e] w-7 h-7 flex items-center justify-center"
               >
-                <MdDelete size={18} className="text-[#FF5A53]" />
+                <MdDelete size={18} className="text-[#ff4c3e]" />
               </button>
             </div>
           ))}
@@ -1853,13 +1853,13 @@ export default function TodayPage() {
 
       {/* Banner de início rápido */}
       {isToday && (
-        <div className="mt-8 bg-[#0099FF] rounded-2xl flex items-center gap-3 p-3">
+        <div className="mt-8 bg-[#0993ae] rounded-2xl flex items-center gap-3 p-3">
           <button
             onClick={() => { setChangeTimeMinutes(totalMinutes || 60); setShowChangeTime(true); }}
-            className="group rounded-xl bg-[#F8F6F5] flex items-center justify-center shrink-0 hover:bg-[#81CBFF] transition"
+            className="group rounded-xl bg-[#f5f5f5] flex items-center justify-center shrink-0 hover:bg-[#b2f0fb] transition"
             style={{ width: 56, height: 56 }}
           >
-            <MdTimer size={24} className="text-[#0099FF] group-hover:text-[#F8F6F5] transition" />
+            <MdTimer size={24} className="text-[#0993ae] group-hover:text-[#f5f5f5] transition" />
           </button>
           <button
             onClick={() =>
@@ -1874,9 +1874,9 @@ export default function TodayPage() {
               })
             }
             id="onboarding-today-start-btn"
-            className="flex-1 rounded-xl px-4 py-3 flex items-center justify-center gap-3 hover:bg-[#81CBFF]/20 transition cursor-pointer"
+            className="flex-1 rounded-xl px-4 py-3 flex items-center justify-center gap-3 hover:bg-[#b2f0fb]/20 transition cursor-pointer"
           >
-            <div className="w-10 h-10 rounded-full bg-[#81CBFF]/20 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-full bg-[#b2f0fb]/20 flex items-center justify-center shrink-0">
               <MdPlayArrow size={24} className="text-white ml-0.5" />
             </div>
             <div className="text-left">
@@ -1890,10 +1890,10 @@ export default function TodayPage() {
           </button>
           <button
             onClick={() => setShowRebalanceConfirm(true)}
-            className="group rounded-xl bg-[#F8F6F5] flex items-center justify-center shrink-0 hover:bg-[#81CBFF] transition"
+            className="group rounded-xl bg-[#f5f5f5] flex items-center justify-center shrink-0 hover:bg-[#b2f0fb] transition"
             style={{ width: 56, height: 56 }}
           >
-            <MdScale size={24} className="text-[#0099FF] group-hover:text-[#F8F6F5] transition" />
+            <MdScale size={24} className="text-[#0993ae] group-hover:text-[#f5f5f5] transition" />
           </button>
         </div>
       )}
@@ -1903,7 +1903,7 @@ export default function TodayPage() {
         <div
           className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
           style={{
-            backgroundColor: "#0099FF",
+            backgroundColor: "#0993ae",
             top: manualTooltip.y - 8,
             left: Math.min(manualTooltip.x, window.innerWidth - 96),
             transform: "translate(-50%, -100%)",
@@ -1923,7 +1923,7 @@ export default function TodayPage() {
         <div
           className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
           style={{
-            backgroundColor: "#0099FF",
+            backgroundColor: "#0993ae",
             top: maintenanceTooltip.y - 8,
             left: Math.min(maintenanceTooltip.x, window.innerWidth - 96),
             transform: "translate(-50%, -100%)",
@@ -1943,7 +1943,7 @@ export default function TodayPage() {
         <div
           className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
           style={{
-            backgroundColor: "#0099FF",
+            backgroundColor: "#0993ae",
             top: movedTooltip.y - 8,
             left: Math.min(movedTooltip.x, window.innerWidth - 96),
             transform: "translate(-50%, -100%)",
@@ -1988,9 +1988,9 @@ export default function TodayPage() {
                     setMenuAnchor(null);
                     setSwapItem(menuItem);
                   }}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5] transition"
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f5f5f5] transition"
                 >
-                  <MdSwapHoriz size={16} className="text-[#2d2b2b]" />
+                  <MdSwapHoriz size={16} className="text-[#292929]" />
                   Trocar tarefa
                 </button>
                 <button
@@ -1999,9 +1999,9 @@ export default function TodayPage() {
                     setMenuAnchor(null);
                     handleActionClick("move", menuItem);
                   }}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5] transition"
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f5f5f5] transition"
                 >
-                  <MdArrowForward size={16} className="text-[#2d2b2b]" />
+                  <MdArrowForward size={16} className="text-[#292929]" />
                   Mover tarefa
                 </button>
                 <button
@@ -2010,9 +2010,9 @@ export default function TodayPage() {
                     setMenuAnchor(null);
                     setEditDurationItem(menuItem);
                   }}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5] transition"
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f5f5f5] transition"
                 >
-                  <MdAccessTime size={16} className="text-[#2d2b2b]" />
+                  <MdAccessTime size={16} className="text-[#292929]" />
                   Editar tempo
                 </button>
                 <hr className="border-gray-100 my-1" />
@@ -2027,9 +2027,9 @@ export default function TodayPage() {
                         setPendingItem(menuItem);
                       }
                     }}
-                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5] transition"
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f5f5f5] transition"
                   >
-                    <MdCheckCircle size={16} className="text-[#2d2b2b]" />
+                    <MdCheckCircle size={16} className="text-[#292929]" />
                     Concluir
                   </button>
                 )}
@@ -2039,9 +2039,9 @@ export default function TodayPage() {
                     setMenuAnchor(null);
                     setUngroupConfirmItem(menuItem);
                   }}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5] transition"
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f5f5f5] transition"
                 >
-                  <MdCallSplit size={16} className="text-[#2d2b2b]" />
+                  <MdCallSplit size={16} className="text-[#292929]" />
                   Desagrupar
                 </button>
                 <hr className="border-gray-100 my-1" />
@@ -2051,9 +2051,9 @@ export default function TodayPage() {
                     setMenuAnchor(null);
                     handleDeleteItem(menuItem);
                   }}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#FF5A53] hover:bg-red-50 transition"
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#ff4c3e] hover:bg-red-50 transition"
                 >
-                  <MdDelete size={16} className="text-[#FF5A53]" />
+                  <MdDelete size={16} className="text-[#ff4c3e]" />
                   Deletar tarefa
                 </button>
               </div>
@@ -2126,7 +2126,7 @@ export default function TodayPage() {
           >
             <p className="text-base font-bold text-gray-800 mb-2">
               Remover{" "}
-              <span className="text-[#0099FF]">
+              <span className="text-[#0993ae]">
                 {itemDisplay(deleteConfirmItem).title}
               </span>
               ?
@@ -2138,20 +2138,20 @@ export default function TodayPage() {
             <div className="flex gap-3 mb-3">
               <button
                 onClick={() => setDeleteConfirmItem(null)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-[#F8F6F5] transition"
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-[#f5f5f5] transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => executeDelete(deleteConfirmItem, false)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-[#F8F6F5] transition"
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-[#f5f5f5] transition"
               >
                 Não
               </button>
             </div>
             <button
               onClick={() => executeDelete(deleteConfirmItem, true)}
-              className="w-full py-2.5 rounded-xl bg-[#81CBFF]/20 text-sm text-white font-semibold hover:bg-[#0099FF]/90 transition"
+              className="w-full py-2.5 rounded-xl bg-[#b2f0fb]/20 text-sm text-white font-semibold hover:bg-[#0993ae]/90 transition"
             >
               Sim, redistribuir
             </button>
@@ -2188,7 +2188,7 @@ export default function TodayPage() {
               <div
                 className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
                   pendingAction.dontShowAgain
-                    ? "bg-[#0099FF] border-[#0099FF]"
+                    ? "bg-[#0993ae] border-[#0993ae]"
                     : "border-gray-300 group-hover:border-[#b2f0fb]"
                 }`}
               >
@@ -2230,7 +2230,7 @@ export default function TodayPage() {
                   setPendingAction(null);
                   executeAction(type, item);
                 }}
-                className="flex-1 py-3 rounded-xl bg-[#81CBFF]/20 text-white text-sm font-semibold hover:bg-[#0099FF]/90 transition"
+                className="flex-1 py-3 rounded-xl bg-[#b2f0fb]/20 text-white text-sm font-semibold hover:bg-[#0993ae]/90 transition"
               >
                 Continuar
               </button>
@@ -2245,7 +2245,7 @@ export default function TodayPage() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <p className="text-base font-bold text-gray-800 mb-2">
               Concluir{" "}
-              <span className="text-[#0099FF]">
+              <span className="text-[#0993ae]">
                 {pendingItem.exercise?.title ??
                   pendingItem.piece?.title ??
                   "item"}
@@ -2268,7 +2268,7 @@ export default function TodayPage() {
               <div
                 className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
                   skipConfirm
-                    ? "bg-[#0099FF] border-[#0099FF]"
+                    ? "bg-[#0993ae] border-[#0993ae]"
                     : "border-gray-300 group-hover:border-[#b2f0fb]"
                 }`}
               >
@@ -2302,7 +2302,7 @@ export default function TodayPage() {
                   toggleDone(pendingItem, true);
                   setPendingItem(null);
                 }}
-                className="flex-1 py-3 rounded-xl bg-[#81CBFF]/20 text-white text-sm font-semibold hover:bg-[#0099FF]/90 transition"
+                className="flex-1 py-3 rounded-xl bg-[#b2f0fb]/20 text-white text-sm font-semibold hover:bg-[#0993ae]/90 transition"
               >
                 Sim, concluir
               </button>
@@ -2315,7 +2315,7 @@ export default function TodayPage() {
       {ungroupConfirmItem && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4">
           <div className="bg-white rounded-t-2xl w-full max-w-sm pb-8 pt-5 px-6">
-            <h2 className="text-base font-bold text-[#0099FF] mb-1">Desagrupar tarefa</h2>
+            <h2 className="text-base font-bold text-[#0993ae] mb-1">Desagrupar tarefa</h2>
             <p className="text-xs text-gray-400 mb-4">
               A tarefa será dividida em blocos do tamanho do seu pomodoro ({pomodoroConfig?.work ?? 25} min).
             </p>
@@ -2329,20 +2329,20 @@ export default function TodayPage() {
               while (rem > 0) { exBlocks.push(Math.min(blockMin, rem)); rem -= blockMin; }
               return (
                 <div className="flex items-center gap-2 mb-6">
-                  <div className="flex-1 bg-[#F8F6F5] rounded-xl p-3">
+                  <div className="flex-1 bg-[#f5f5f5] rounded-xl p-3">
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Antes</p>
-                    <div className="h-7 rounded-lg bg-[#83e07b]/30 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-[#0099FF]">{exampleTotal} min</span>
+                    <div className="h-7 rounded-lg bg-[#b2f0fb]/30 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-[#0993ae]">{exampleTotal} min</span>
                     </div>
                   </div>
 
                   <div className="text-[#b2f0fb] text-lg font-bold shrink-0">→</div>
 
-                  <div className="flex-1 bg-[#F8F6F5] rounded-xl p-3">
+                  <div className="flex-1 bg-[#f5f5f5] rounded-xl p-3">
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Depois</p>
                     <div className="space-y-1">
                       {exBlocks.map((b, i) => (
-                        <div key={i} className="h-5 rounded-md bg-[#0099FF]/50 flex items-center justify-center">
+                        <div key={i} className="h-5 rounded-md bg-[#0993ae]/50 flex items-center justify-center">
                           <span className="text-[10px] font-semibold text-white">{b} min</span>
                         </div>
                       ))}
@@ -2354,7 +2354,7 @@ export default function TodayPage() {
 
             <div className="flex gap-3">
               <button onClick={() => setUngroupConfirmItem(null)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#b2f0fb] transition">Cancelar</button>
-              <button onClick={() => { handleUngroup(ungroupConfirmItem); setUngroupConfirmItem(null); }} className="flex-1 py-3 rounded-xl bg-[#81CBFF]/20 text-white text-sm font-semibold hover:bg-[#0099FF]/90 transition">Desagrupar</button>
+              <button onClick={() => { handleUngroup(ungroupConfirmItem); setUngroupConfirmItem(null); }} className="flex-1 py-3 rounded-xl bg-[#b2f0fb]/20 text-white text-sm font-semibold hover:bg-[#0993ae]/90 transition">Desagrupar</button>
             </div>
           </div>
         </div>
@@ -2364,7 +2364,7 @@ export default function TodayPage() {
       {showChangeTime && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4">
           <div className="bg-white rounded-t-2xl w-full max-w-sm pb-8 pt-5 px-6">
-            <h2 className="text-base font-bold text-[#0099FF] mb-1">Tempo disponível hoje</h2>
+            <h2 className="text-base font-bold text-[#0993ae] mb-1">Tempo disponível hoje</h2>
             <p className="text-xs text-gray-400 mb-5">As tarefas pendentes serão redistribuídas igualmente.</p>
             <div className="flex items-center gap-4 mb-6">
               <input
@@ -2374,13 +2374,13 @@ export default function TodayPage() {
                 step={5}
                 value={changeTimeMinutes}
                 onChange={(e) => setChangeTimeMinutes(Number(e.target.value))}
-                className="flex-1 accent-[#0099FF]"
+                className="flex-1 accent-[#0993ae]"
               />
-              <span className="text-lg font-bold text-[#0099FF] w-16 text-right">{changeTimeMinutes} min</span>
+              <span className="text-lg font-bold text-[#0993ae] w-16 text-right">{changeTimeMinutes} min</span>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setShowChangeTime(false)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#b2f0fb] transition">Cancelar</button>
-              <button onClick={handleChangeTimeConfirm} className="flex-1 py-3 rounded-xl bg-[#81CBFF]/20 text-white text-sm font-semibold hover:bg-[#0099FF]/90 transition">Aplicar</button>
+              <button onClick={handleChangeTimeConfirm} className="flex-1 py-3 rounded-xl bg-[#b2f0fb]/20 text-white text-sm font-semibold hover:bg-[#0993ae]/90 transition">Aplicar</button>
             </div>
           </div>
         </div>
@@ -2390,17 +2390,17 @@ export default function TodayPage() {
       {showRebalanceConfirm && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4">
           <div className="bg-white rounded-t-2xl w-full max-w-sm pb-8 pt-5 px-6">
-            <h2 className="text-base font-bold text-[#0099FF] mb-1">Rebalancear dia</h2>
+            <h2 className="text-base font-bold text-[#0993ae] mb-1">Rebalancear dia</h2>
             <p className="text-xs text-gray-400 mb-4">O tempo restante é dividido igualmente entre as tarefas pendentes.</p>
 
             {/* Exemplo visual antes → depois */}
             <div className="flex items-center gap-2 mb-6">
               {/* Antes */}
-              <div className="flex-1 bg-[#F8F6F5] rounded-xl p-3 space-y-1.5">
+              <div className="flex-1 bg-[#f5f5f5] rounded-xl p-3 space-y-1.5">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Antes</p>
                 {[20, 35, 10].map((min, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <div className="h-2 rounded-full bg-[#83e07b]/30" style={{ width: `${(min / 35) * 100}%`, minWidth: 8 }} />
+                    <div className="h-2 rounded-full bg-[#b2f0fb]/30" style={{ width: `${(min / 35) * 100}%`, minWidth: 8 }} />
                     <span className="text-[10px] text-gray-400 shrink-0">{min}m</span>
                   </div>
                 ))}
@@ -2410,11 +2410,11 @@ export default function TodayPage() {
               <div className="text-[#b2f0fb] text-lg font-bold shrink-0">→</div>
 
               {/* Depois */}
-              <div className="flex-1 bg-[#F8F6F5] rounded-xl p-3 space-y-1.5">
+              <div className="flex-1 bg-[#f5f5f5] rounded-xl p-3 space-y-1.5">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Depois</p>
                 {[22, 22, 21].map((min, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <div className="h-2 rounded-full bg-[#0099FF]/50" style={{ width: `${(min / 35) * 100}%`, minWidth: 8 }} />
+                    <div className="h-2 rounded-full bg-[#0993ae]/50" style={{ width: `${(min / 35) * 100}%`, minWidth: 8 }} />
                     <span className="text-[10px] text-gray-400 shrink-0">{min}m</span>
                   </div>
                 ))}
@@ -2423,7 +2423,7 @@ export default function TodayPage() {
 
             <div className="flex gap-3">
               <button onClick={() => setShowRebalanceConfirm(false)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#b2f0fb] transition">Cancelar</button>
-              <button onClick={() => { setShowRebalanceConfirm(false); handleEqualizeTime(); }} className="flex-1 py-3 rounded-xl bg-[#81CBFF]/20 text-white text-sm font-semibold hover:bg-[#0099FF]/90 transition">Rebalancear</button>
+              <button onClick={() => { setShowRebalanceConfirm(false); handleEqualizeTime(); }} className="flex-1 py-3 rounded-xl bg-[#b2f0fb]/20 text-white text-sm font-semibold hover:bg-[#0993ae]/90 transition">Rebalancear</button>
             </div>
           </div>
         </div>

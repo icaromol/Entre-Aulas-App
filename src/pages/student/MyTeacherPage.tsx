@@ -126,7 +126,7 @@ export default function MyTeacherPage() {
       {connState === 'none' && (
         <div className="bg-white rounded-2xl border border-gray-100 p-8">
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-[#f4d1ae] flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-[#f5f5f5] flex items-center justify-center mb-4">
               <MdSchool size={32} className="text-[#153b50]" />
             </div>
             <h2 className="text-base font-bold text-[#153b50] mb-1">Nenhum professor vinculado</h2>
@@ -161,7 +161,7 @@ export default function MyTeacherPage() {
       {/* Solicitação pendente */}
       {connState === 'pending' && (
         <div className="bg-white rounded-2xl border border-gray-100 p-8 flex flex-col items-center text-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-[#f4d1ae] flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-[#f5f5f5] flex items-center justify-center">
             <MdSchool size={32} className="text-[#b2f0fb]" />
           </div>
           <div>

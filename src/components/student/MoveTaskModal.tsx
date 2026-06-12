@@ -69,7 +69,7 @@ export function MoveTaskModal({ item, todayDow, onClose, onMove }: Props) {
               <button
                 key={dow}
                 onClick={() => onMove(item, dow)}
-                className="flex items-center w-full rounded-xl border border-gray-100 bg-[#F8F6F5] px-4 py-3.5 hover:border-[#b2f0fb] hover:bg-[#f4d1ae] transition text-left"
+                className="flex items-center w-full rounded-xl border border-gray-100 bg-[#f5f5f5] px-4 py-3.5 hover:border-[#b2f0fb] hover:bg-[#f5f5f5] transition text-left"
               >
                 <p className="text-sm font-semibold text-[#153b50]">{label}</p>
               </button>

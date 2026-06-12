@@ -58,7 +58,7 @@ function shortDate(isoDate: string): string {
 function taskCardClass(task: PlannedTask) {
   if (task.isMaintenance)             return 'bg-gray-100 hover:bg-gray-200/70'
   if (task.sourceType === 'exercise') return 'bg-rose-50 hover:bg-rose-100/80'
-  return 'bg-[#f4d1ae]/60 hover:bg-[#f4d1ae]'
+  return 'bg-[#f5f5f5]/60 hover:bg-[#f5f5f5]'
 }
 
 function taskTitle(task: PlannedTask) {
@@ -486,7 +486,7 @@ export default function PlanejamentoPage() {
 
         {programs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#f4d1ae] flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#f5f5f5] flex items-center justify-center">
               <MdAutoAwesome size={28} className="text-[#153b50]" />
             </div>
             <div>
@@ -506,7 +506,7 @@ export default function PlanejamentoPage() {
           <div className="space-y-5">
 
             {/* Nível do aluno detectado */}
-            <div className="bg-[#f4d1ae]/50 border border-[#b2f0fb]/20 rounded-2xl px-5 py-3 flex items-center gap-3">
+            <div className="bg-[#f5f5f5]/50 border border-[#b2f0fb]/20 rounded-2xl px-5 py-3 flex items-center gap-3">
               <div>
                 <p className="text-xs font-semibold text-[#153b50]">Ciclo pomodoro · {levelLabel[studentLevel]}</p>
                 <p className="text-xs text-[#153b50]/60 mt-0.5">
@@ -530,7 +530,7 @@ export default function PlanejamentoPage() {
                 {programs.map(prog => {
                   const sel = selectedIds.has(prog.id)
                   return (
-                    <div key={prog.id} className={`rounded-xl border transition ${sel ? 'border-[#b2f0fb] bg-[#f4d1ae]/30' : 'border-gray-100 bg-gray-50'}`}>
+                    <div key={prog.id} className={`rounded-xl border transition ${sel ? 'border-[#b2f0fb] bg-[#f5f5f5]/30' : 'border-gray-100 bg-gray-50'}`}>
                       <div className="flex items-center gap-3 p-3">
                         <button onClick={() => toggleProgram(prog.id)} className="text-[#b2f0fb] shrink-0">
                           {sel ? <MdCheckBox size={20} /> : <MdCheckBoxOutlineBlank size={20} className="text-gray-300" />}
@@ -659,7 +659,7 @@ export default function PlanejamentoPage() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 bg-[#f4d1ae]/50 rounded-xl px-3 py-2 mb-4">
+      <div className="flex items-center gap-2 bg-[#f5f5f5]/50 rounded-xl px-3 py-2 mb-4">
         <span className="text-xs text-[#153b50]/70">Slots de <span className="font-bold text-[#153b50]">{pomodoroWork} min</span> por tarefa · {levelLabel[studentLevel]}</span>
       </div>
 
@@ -781,7 +781,7 @@ export default function PlanejamentoPage() {
               </button>
               <button
                 onClick={() => doSave('merge')}
-                className="w-full py-3 rounded-xl border border-[#b2f0fb] text-[#153b50] text-sm font-semibold hover:bg-[#f4d1ae] transition text-left px-4"
+                className="w-full py-3 rounded-xl border border-[#b2f0fb] text-[#153b50] text-sm font-semibold hover:bg-[#f5f5f5] transition text-left px-4"
               >
                 <span className="block font-semibold">Adicionar</span>
                 <span className="block text-xs text-gray-400 mt-0.5">Mantém os itens existentes e adiciona os novos</span>

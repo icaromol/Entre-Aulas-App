@@ -1,6 +1,6 @@
 import confetti from 'canvas-confetti'
 
-const COLORS = ['#153b50', '#b2f0fb', '#f4d1ae', '#FFFFFF']
+const COLORS = ['#153b50', '#b2f0fb', '#f5f5f5', '#FFFFFF']
 
 export function fireBasic() {
   confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 }, colors: COLORS })

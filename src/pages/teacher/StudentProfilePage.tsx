@@ -839,7 +839,7 @@ export default function StudentProfilePage() {
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${hasPlan ? "bg-[#f4d1ae]" : "bg-white/15"}`}
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${hasPlan ? "bg-[#f5f5f5]" : "bg-white/15"}`}
                   >
                     <MdCalendarMonth
                       size={18}
@@ -921,7 +921,7 @@ export default function StudentProfilePage() {
                                 ? "bg-gray-100 hover:bg-gray-100/70"
                                 : task.exercise_id
                                   ? "bg-rose-50 hover:bg-rose-100/80"
-                                  : "bg-[#f4d1ae]/60 hover:bg-[#f4d1ae]";
+                                  : "bg-[#f5f5f5]/60 hover:bg-[#f5f5f5]";
                               return (
                                 <button
                                   key={task.id}
@@ -1125,7 +1125,7 @@ export default function StudentProfilePage() {
                             piece.status === "paused"
                               ? "#D1D5DB"
                               : piece.status === "completed"
-                                ? "#22c55e"
+                                ? "#0993ae"
                                 : "#b2f0fb"
                           }
                           strokeWidth="3"

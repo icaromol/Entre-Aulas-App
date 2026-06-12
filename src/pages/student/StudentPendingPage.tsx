@@ -78,7 +78,7 @@ export default function StudentPendingPage() {
 
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <div className="flex flex-col items-center gap-3 text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-[#f4d1ae] flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#f5f5f5] flex items-center justify-center">
             <MdSchool size={28} color="#153b50" />
           </div>
           <div>

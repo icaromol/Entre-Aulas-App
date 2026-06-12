@@ -108,7 +108,7 @@ function OnboardingModal({ onClose }: { onClose: () => void }) {
         {/* Conteúdo */}
         <div className="px-6 pb-2">
           <div className="flex justify-center mb-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#f4d1ae] flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-[#f5f5f5] flex items-center justify-center">
               <Icon size={28} className="text-[#153b50]" />
             </div>
           </div>
@@ -119,7 +119,7 @@ function OnboardingModal({ onClose }: { onClose: () => void }) {
           {extra && (
             <div className="mt-4 space-y-2">
               {extra.map(item => (
-                <div key={item.label} className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-[#F8F6F5]">
+                <div key={item.label} className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-[#f5f5f5]">
                   <span className="text-xs text-gray-600">{item.label}</span>
                   <span className="text-xs font-bold text-[#b2f0fb]">{item.xp}</span>
                 </div>
@@ -284,7 +284,7 @@ export default function JourneyPage() {
 
         <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
           <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-            nextEvent ? 'bg-[#f4d1ae]' : 'bg-gray-100'
+            nextEvent ? 'bg-[#f5f5f5]' : 'bg-gray-100'
           }`}>
             <MdStar size={20} className={nextEvent ? 'text-[#153b50]' : 'text-gray-300'} />
           </div>
@@ -387,7 +387,7 @@ export default function JourneyPage() {
               {!m.completed && (
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden ml-6" style={{ width: 'calc(100% - 1.5rem)' }}>
                   <div
-                    className="h-full bg-[#f4d1ae] rounded-full"
+                    className="h-full bg-[#f5f5f5] rounded-full"
                     style={{ width: `${Math.round(m.progress * 100)}%` }}
                   />
                 </div>
@@ -436,7 +436,7 @@ export default function JourneyPage() {
                 key={a.key}
                 className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border transition ${
                   unlocked
-                    ? 'bg-[#f4d1ae]/40 border-[#f4d1ae] text-[#153b50]'
+                    ? 'bg-[#f5f5f5]/40 border-[#f5f5f5] text-[#153b50]'
                     : 'bg-gray-50 border-gray-100 text-gray-300'
                 }`}
               >

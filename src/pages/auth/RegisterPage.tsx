@@ -267,7 +267,7 @@ export default function RegisterPage() {
                     }
                     className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${
                       selected
-                        ? "border-[#153b50] bg-[#f4d1ae]"
+                        ? "border-[#153b50] bg-[#f5f5f5]"
                         : "border-gray-200 bg-white hover:border-[#b2f0fb]"
                     }`}
                   >
