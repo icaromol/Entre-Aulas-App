@@ -43,3 +43,6 @@ lerna-debug.log*
 
 # Documentação interna — não vai pro repositório
 docs/
+
+# Arquivos arquivados localmente
+_archived/

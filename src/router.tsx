@@ -62,7 +62,7 @@ function AppRoutes() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* Públicas */}
+{/* Públicas */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<RegisterPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />

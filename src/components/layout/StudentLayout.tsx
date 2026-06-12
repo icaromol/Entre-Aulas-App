@@ -20,7 +20,6 @@ import {
 } from "react-icons/md";
 import { OnboardingController } from "@/components/onboarding/OnboardingController";
 import { AvailabilityEditor } from "@/components/ui/AvailabilityEditor";
-import { TomatoBlob } from "@/components/ui/TomatoBlob";
 
 const AVATAR_COLORS = ["#1E3A5F", "#4A90C4", "#D6E4F0", "#F5F7FA", "#FFFFFF"];
 
@@ -371,8 +370,9 @@ export function StudentLayout({
             className="absolute left-0 right-0 flex justify-center pointer-events-none scale-[0.85] sm:scale-100"
             style={{ bottom: "calc(56px - 374px * 0.50)", zIndex: 2 }}
           >
-            {/* SVG relógio */}
-            <svg
+            {/* Ticks — SVG estático */}
+            <img
+              src="/clock-ticks.svg"
               width={600}
               height={600}
               style={{
@@ -380,80 +380,40 @@ export function StudentLayout({
                 left: "50%",
                 transform: "translateX(-50%)",
                 bottom: 0,
-                zIndex: 1,
+                zIndex: 3,
+                pointerEvents: "none",
               }}
-              overflow="visible"
-            >
-              {(() => {
-                const cx = 300;
-                const cy = 440;
-                const innerMajor = 251;
-                const outerMajor = 275;
-                const innerMinor = 260;
-                const outerMinor = 268;
-                const progress =
-                  totalMinutes > 0
-                    ? Math.min(studiedMinutes / totalMinutes, 1)
-                    : 0;
+            />
 
-                const startDeg = 180;
-                const endDeg = 180 - progress * 180;
-                const startRad = (startDeg * Math.PI) / 180;
-                const endRad = (endDeg * Math.PI) / 180;
-                const largeArc = progress > 0.5 ? 1 : 0;
-
-                const mid = (innerMajor + outerMajor) / 2;
-                const half = (outerMajor - innerMajor) * 0.25;
-                const fillOuter = mid + half;
-                const fillInner = mid - half;
-                const ox1 = cx + fillOuter * Math.cos(startRad);
-                const oy1 = cy - fillOuter * Math.sin(startRad);
-                const ox2 = cx + fillOuter * Math.cos(endRad);
-                const oy2 = cy - fillOuter * Math.sin(endRad);
-                const ix1 = cx + fillInner * Math.cos(endRad);
-                const iy1 = cy - fillInner * Math.sin(endRad);
-                const ix2 = cx + fillInner * Math.cos(startRad);
-                const iy2 = cy - fillInner * Math.sin(startRad);
-                const fillPath = [
-                  `M ${ox1} ${oy1}`,
-                  `A ${fillOuter} ${fillOuter} 0 ${largeArc} 1 ${ox2} ${oy2}`,
-                  `L ${ix1} ${iy1}`,
-                  `A ${fillInner} ${fillInner} 0 ${largeArc} 0 ${ix2} ${iy2}`,
-                  `Z`,
-                ].join(" ");
-
-                return (
-                  <>
-                    {progress > 0 && <path d={fillPath} fill="#ff4c3e" />}
-                    {Array.from({ length: 61 }).map((_, i) => {
-                      const angleDeg = 180 - i * 3;
-                      const angleRad = (angleDeg * Math.PI) / 180;
-                      const isMajor = i % 5 === 0;
-                      const inner = isMajor ? innerMajor : innerMinor;
-                      const outer = isMajor ? outerMajor : outerMinor;
-                      const x1 = cx + inner * Math.cos(angleRad);
-                      const y1 = cy - inner * Math.sin(angleRad);
-                      const x2 = cx + outer * Math.cos(angleRad);
-                      const y2 = cy - outer * Math.sin(angleRad);
-                      return (
-                        <line
-                          key={i}
-                          x1={x1}
-                          y1={y1}
-                          x2={x2}
-                          y2={y2}
-                          stroke="#2d2b2b"
-                          strokeWidth={isMajor ? 2 : 1}
-                          strokeOpacity={isMajor ? 0.55 : 0.28}
-                          strokeLinecap="round"
-                        />
-                      );
-                    })}
-                  </>
-                );
-              })()}
-            </svg>
-            <TomatoBlob size="md" />
+            {/* Arco de progresso — só o fill dinâmico */}
+            {(() => {
+              const cx = 300, cy = 440;
+              const innerMajor = 251, outerMajor = 275;
+              const progress = totalMinutes > 0 ? Math.min(studiedMinutes / totalMinutes, 1) : 0;
+              if (progress <= 0) return null;
+              const startRad = Math.PI;
+              const endRad = Math.PI - progress * Math.PI;
+              const largeArc = progress > 0.5 ? 1 : 0;
+              const mid = (innerMajor + outerMajor) / 2;
+              const half = (outerMajor - innerMajor) * 0.25;
+              const fo = mid + half, fi = mid - half;
+              const ox1 = cx + fo * Math.cos(startRad), oy1 = cy - fo * Math.sin(startRad);
+              const ox2 = cx + fo * Math.cos(endRad),   oy2 = cy - fo * Math.sin(endRad);
+              const ix1 = cx + fi * Math.cos(endRad),   iy1 = cy - fi * Math.sin(endRad);
+              const ix2 = cx + fi * Math.cos(startRad), iy2 = cy - fi * Math.sin(startRad);
+              const d = `M ${ox1} ${oy1} A ${fo} ${fo} 0 ${largeArc} 1 ${ox2} ${oy2} L ${ix1} ${iy1} A ${fi} ${fi} 0 ${largeArc} 0 ${ix2} ${iy2} Z`;
+              return (
+                <svg width={600} height={600} style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: 0, zIndex: 2, pointerEvents: "none" }} overflow="visible">
+                  <path d={d} fill="#ff4c3e" />
+                </svg>
+              );
+            })()}
+            <img
+              src="/tomato-animation-estudamus.webp"
+              width={374}
+              height={374}
+              style={{ display: "block" }}
+            />
           </div>
 
           {/* Nav bar — na base do bottom */}

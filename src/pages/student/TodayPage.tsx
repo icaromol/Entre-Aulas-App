@@ -29,8 +29,6 @@ import {
   MdTimer,
   MdScale,
 } from "react-icons/md";
-import { ChangeTimeModal } from "@/components/student/ChangeTimeModal";
-import { PomodoroStrip } from "@/components/student/PomodoroStrip";
 import { ContinuityCard } from "@/components/student/ContinuityCard";
 import { FocusModal } from "@/components/student/FocusModal";
 import { MoveTaskModal } from "@/components/student/MoveTaskModal";
@@ -192,72 +190,6 @@ const ATTRIBUTE_LABEL: Partial<Record<XpAttribute, string>> = {
 
 // Redistribui duration_minutes dos itens não concluídos para caber em newTotalMinutes.
 // Itens concluídos nunca são alterados.
-function redistributeDayItems(
-  items: PlanItem[],
-  newTotalMinutes: number,
-): PlanItem[] {
-  const doneItems = items.filter((i) => i.is_done);
-  const undoneItems = [...items.filter((i) => !i.is_done)].sort(
-    (a, b) => a.position - b.position,
-  );
-
-  const doneMinutes = doneItems.reduce(
-    (s, i) => s + (i.duration_minutes ?? 0),
-    0,
-  );
-  const available = Math.max(0, newTotalMinutes - doneMinutes);
-
-  if (available < 5 || undoneItems.length === 0) return items;
-
-  // Sessão Essencial: ≤ 20 min disponíveis — mantém itens de maior prioridade até esgatar budget
-  if (available <= 20) {
-    let remaining = available;
-    const updated = undoneItems.map((item) => {
-      if (remaining >= 5) {
-        const dur = Math.min(item.duration_minutes ?? 5, remaining);
-        remaining -= dur;
-        return { ...item, duration_minutes: dur };
-      }
-      return { ...item, duration_minutes: 0 };
-    });
-    return [...doneItems, ...updated];
-  }
-
-  // Redistribuição proporcional
-  const currentTotal = undoneItems.reduce(
-    (s, i) => s + (i.duration_minutes ?? 0),
-    0,
-  );
-
-  if (currentTotal <= 0) {
-    const perItem = Math.max(5, Math.round(available / undoneItems.length));
-    return [
-      ...doneItems,
-      ...undoneItems.map((i) => ({ ...i, duration_minutes: perItem })),
-    ];
-  }
-
-  const ratio = available / currentTotal;
-  const scaled = undoneItems.map((i) => ({
-    ...i,
-    duration_minutes: Math.max(
-      5,
-      Math.round((i.duration_minutes ?? 0) * ratio),
-    ),
-  }));
-
-  // Ajusta diferença de arredondamento no item de maior prioridade
-  const scaledTotal = scaled.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
-  const diff = available - scaledTotal;
-  if (diff !== 0) {
-    scaled[0] = {
-      ...scaled[0],
-      duration_minutes: Math.max(5, (scaled[0].duration_minutes ?? 0) + diff),
-    };
-  }
-
-  return [...doneItems, ...scaled];
-}
 
 export default function TodayPage() {
   const { profile } = useAuth();
@@ -313,7 +245,6 @@ export default function TodayPage() {
     y: number;
   } | null>(null);
   const [planGenerating, setPlanGenerating] = useState(false);
-  const [showChangeTime, setShowChangeTime] = useState(false);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<PlanItem | null>(
     null,
   );
@@ -525,33 +456,6 @@ export default function TodayPage() {
     if (isFirstTime) {
       localStorage.setItem(EXPLAINED_KEY, "1");
       setShowContinuityModal(true);
-    }
-  }
-
-  async function handleChangeTime(newMinutes: number) {
-    const redistributed = redistributeDayItems(items, newMinutes);
-    const isEssential = redistributed.some(
-      (i) => !i.is_done && i.duration_minutes === 0,
-    );
-
-    setItems(redistributed);
-    setEssentialMode(isEssential);
-    setShowChangeTime(false);
-
-    const undone = redistributed.filter((i) => !i.is_done);
-    await Promise.all(
-      undone.map((i) =>
-        supabase
-          .from("plan_items")
-          .update({ duration_minutes: i.duration_minutes })
-          .eq("id", i.id),
-      ),
-    );
-
-    if (isEssential) {
-      toast.success("Sessão Essencial ativada — foco no que mais importa");
-    } else {
-      toast.success(`Plano adaptado para ${newMinutes} min`);
     }
   }
 
@@ -1323,17 +1227,14 @@ export default function TodayPage() {
     0,
   );
 
-  const workMin = pomodoroConfig?.work ?? 25;
-  const totalPoms = Math.ceil(totalMinutes / workMin);
   const studiedSecsTotal = items.reduce((s, i) => {
     if (i.is_done && i.completed_manually)
       return s + (i.duration_minutes ?? 0) * 60;
     return s + (studiedSecs[i.id] ?? 0);
   }, 0);
-  const studiedPoms =
-    (Math.floor(studiedSecsTotal / 60) +
-      freeSessions.reduce((s, f) => s + f.minutes, 0)) /
-    workMin;
+  const studiedMinutes =
+    Math.floor(studiedSecsTotal / 60) +
+    freeSessions.reduce((s, f) => s + f.minutes, 0);
 
   if (loading) {
     return (
@@ -1382,7 +1283,7 @@ export default function TodayPage() {
   }
 
   return (
-    <StudentLayout>
+    <StudentLayout studiedMinutes={studiedMinutes} totalMinutes={totalMinutes}>
       {/* Modal de continuidade — primeira vez que o plano é auto-reorganizado */}
       {showContinuityModal && (
         <ContinuityCard onDismiss={() => setShowContinuityModal(false)} />
@@ -1940,13 +1841,12 @@ export default function TodayPage() {
       {/* Banner de início rápido */}
       {isToday && (
         <div className="mt-5 bg-[#1E3A5F] rounded-2xl flex items-center gap-3 p-3">
-          <button
-            onClick={() => setShowChangeTime(true)}
-            className="rounded-xl bg-[#D6E4F0] flex items-center justify-center shrink-0 hover:bg-[#c4d9ec] transition"
+          <div
+            className="rounded-xl bg-[#D6E4F0] flex items-center justify-center shrink-0"
             style={{ width: 56, height: 56 }}
           >
             <MdTimer size={24} className="text-[#1E3A5F]" />
-          </button>
+          </div>
           <button
             onClick={() =>
               navigate("/aluno/pomodoro", {
@@ -1983,7 +1883,6 @@ export default function TodayPage() {
           </button>
         </div>
       )}
-
 
       {/* Tooltip conclusão manual — fora do card para evitar herança de opacidade */}
       {manualTooltip && (
@@ -2171,15 +2070,6 @@ export default function TodayPage() {
             />
           );
         })()}
-
-      {/* Modal de alterar tempo */}
-      {showChangeTime && (
-        <ChangeTimeModal
-          onClose={() => setShowChangeTime(false)}
-          currentMinutes={totalMinutes}
-          onConfirm={handleChangeTime}
-        />
-      )}
 
       {/* Modal de foco */}
       {showFocusModal && (
@@ -2398,11 +2288,6 @@ export default function TodayPage() {
         </div>
       )}
 
-      <PomodoroStrip
-        totalPoms={totalPoms}
-        studiedPoms={studiedPoms}
-        onConfig={() => setShowChangeTime(true)}
-      />
     </StudentLayout>
   );
 }
