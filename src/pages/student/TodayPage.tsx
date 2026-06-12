@@ -20,7 +20,11 @@ import {
   MdAccessTime,
   MdGpsFixed,
   MdArrowForward,
+  MdForward,
   MdMoreVert,
+  MdTouchApp,
+  MdCheckCircle,
+  MdSwapHoriz,
 } from "react-icons/md";
 import { ChangeTimeModal } from "@/components/student/ChangeTimeModal";
 import { PomodoroStrip } from "@/components/student/PomodoroStrip";
@@ -53,33 +57,113 @@ import {
   getTodayDayOfWeek,
 } from "@/lib/weekUtils";
 
-function itemDisplay(item: PlanItem): {
-  title: string;
-  subtitle: string;
-  maintenanceIcon: boolean;
-} {
+type ActivePiece = { id: string; title: string; composer: string | null };
+type ActiveExercise = { id: string; title: string; category: string };
+type SwapTarget =
+  | { kind: "piece"; piece: ActivePiece }
+  | { kind: "exercise"; exercise: ActiveExercise };
+
+function SwapPieceModal({
+  itemTitle,
+  pieces,
+  exercises,
+  onSelect,
+  onClose,
+}: {
+  itemTitle: string;
+  pieces: ActivePiece[];
+  exercises: ActiveExercise[];
+  onSelect: (target: SwapTarget) => void;
+  onClose: () => void;
+}) {
+  const [tab, setTab] = useState<"pieces" | "exercises">("pieces");
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 pb-8 px-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl flex flex-col max-h-[70vh]">
+        <div className="px-5 pt-5 pb-3 shrink-0">
+          <p className="text-base font-bold text-gray-800 mb-1">Trocar tarefa</p>
+          <p className="text-xs text-gray-400 mb-4">
+            Substituindo{" "}
+            <span className="font-medium text-gray-600">{itemTitle}</span>
+          </p>
+          <div className="flex gap-1 bg-[#F5F7FA] rounded-xl p-1">
+            <button
+              onClick={() => setTab("pieces")}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${tab === "pieces" ? "bg-white text-[#1E3A5F] shadow-sm" : "text-gray-400"}`}
+            >
+              Peças
+            </button>
+            <button
+              onClick={() => setTab("exercises")}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${tab === "exercises" ? "bg-white text-[#1E3A5F] shadow-sm" : "text-gray-400"}`}
+            >
+              Exercícios
+            </button>
+          </div>
+        </div>
+        <div className="overflow-y-auto flex-1 px-2 pb-3">
+          {tab === "pieces" ? (
+            pieces.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-6">Nenhuma peça ativa.</p>
+            ) : (
+              pieces.map((piece) => (
+                <button
+                  key={piece.id}
+                  onClick={() => onSelect({ kind: "piece", piece })}
+                  className="flex flex-col w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F5F7FA] transition"
+                >
+                  <span className="text-sm font-medium text-gray-800">{piece.title}</span>
+                  {piece.composer && <span className="text-xs text-gray-400">{piece.composer}</span>}
+                </button>
+              ))
+            )
+          ) : (
+            exercises.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-6">Nenhum exercício ativo.</p>
+            ) : (
+              exercises.map((ex) => (
+                <button
+                  key={ex.id}
+                  onClick={() => onSelect({ kind: "exercise", exercise: ex })}
+                  className="flex flex-col w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F5F7FA] transition"
+                >
+                  <span className="text-sm font-medium text-gray-800">{ex.title}</span>
+                  <span className="text-xs text-gray-400 capitalize">{ex.category}</span>
+                </button>
+              ))
+            )
+          )}
+        </div>
+        <div className="px-5 pb-5 pt-2 shrink-0">
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-[#F5F7FA] transition"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function itemDisplay(item: PlanItem): { title: string; subtitle: string } {
   if (item.is_maintenance) {
     return {
       title: item.piece?.title ?? "—",
       subtitle: item.programa?.title ?? "",
-      maintenanceIcon: true,
     };
   }
   if (item.exercise_id && item.exercise) {
     return {
       title: item.exercise.title,
       subtitle: item.programa?.title ?? "—",
-      maintenanceIcon: false,
     };
   }
   if (item.piece_id && item.piece) {
-    return {
-      title: item.piece.title,
-      subtitle: item.programa?.title ?? "—",
-      maintenanceIcon: false,
-    };
+    return { title: item.piece.title, subtitle: item.programa?.title ?? "—" };
   }
-  return { title: "—", subtitle: "", maintenanceIcon: false };
+  return { title: "—", subtitle: "" };
 }
 
 const ATTRIBUTE_LABEL: Partial<Record<XpAttribute, string>> = {
@@ -208,8 +292,17 @@ export default function TodayPage() {
     x: number;
     y: number;
   } | null>(null);
+  const [maintenanceTooltip, setMaintenanceTooltip] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [movedTooltip, setMovedTooltip] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [planGenerating, setPlanGenerating] = useState(false);
   const [showChangeTime, setShowChangeTime] = useState(false);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<PlanItem | null>(null);
   const [essentialMode, setEssentialMode] = useState(false);
   const [showContinuityModal, setShowContinuityModal] = useState(false);
   const [showFocusModal, setShowFocusModal] = useState(false);
@@ -218,6 +311,9 @@ export default function TodayPage() {
     null,
   );
   const [moveTaskItem, setMoveTaskItem] = useState<PlanItem | null>(null);
+  const [swapItem, setSwapItem] = useState<PlanItem | null>(null);
+  const [activePieces, setActivePieces] = useState<ActivePiece[]>([]);
+  const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>([]);
   const [openMenuItemId, setOpenMenuItemId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(
     null,
@@ -252,7 +348,6 @@ export default function TodayPage() {
   useEffect(() => {
     if (profile) fetchDayPlan();
   }, [profile, viewDay]);
-
 
   // Re-fetcha ao voltar para a aba ou navegar de volta — também cobre plano gerado em outra tela
   useEffect(() => {
@@ -518,10 +613,44 @@ export default function TodayPage() {
     toast.success("Pulada! Tempo redistribuído.");
   }
 
-  async function handleDeleteItem(item: PlanItem) {
+  function handleDeleteItem(item: PlanItem) {
+    setDeleteConfirmItem(item);
+  }
+
+  async function executeDelete(item: PlanItem, redistribute: boolean) {
     await supabase.from("plan_items").delete().eq("id", item.id);
-    setItems((prev) => prev.filter((i) => i.id !== item.id));
-    toast.success("Tarefa removida.");
+
+    if (redistribute) {
+      const freedMinutes = item.duration_minutes ?? 0;
+      const others = items.filter(
+        (i) => i.id !== item.id && i.day_of_week === viewDay && !i.is_done && (i.duration_minutes ?? 0) > 0,
+      );
+      if (others.length > 0 && freedMinutes > 0) {
+        const bonus = Math.round(freedMinutes / others.length);
+        await Promise.all(
+          others.map((o) =>
+            supabase.from("plan_items").update({ duration_minutes: (o.duration_minutes ?? 0) + bonus }).eq("id", o.id),
+          ),
+        );
+        setItems((prev) =>
+          prev
+            .filter((i) => i.id !== item.id)
+            .map((i) => {
+              const o = others.find((o) => o.id === i.id);
+              return o ? { ...i, duration_minutes: (i.duration_minutes ?? 0) + bonus } : i;
+            }),
+        );
+        toast.success("Tarefa removida e tempo redistribuído.");
+      } else {
+        setItems((prev) => prev.filter((i) => i.id !== item.id));
+        toast.success("Tarefa removida.");
+      }
+    } else {
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
+      toast.success("Tarefa removida.");
+    }
+
+    setDeleteConfirmItem(null);
   }
 
   async function handleEditDurationThis(item: PlanItem, minutes: number) {
@@ -604,6 +733,39 @@ export default function TodayPage() {
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     setMoveTaskItem(null);
     toast.success(`Tarefa movida para ${getDayExtendedLabel(newDow)}.`);
+  }
+
+  async function handleSwap(item: PlanItem, target: SwapTarget) {
+    if (target.kind === "piece") {
+      const { piece } = target;
+      await supabase
+        .from("plan_items")
+        .update({ piece_id: piece.id, exercise_id: null })
+        .eq("id", item.id);
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === item.id
+            ? { ...i, piece_id: piece.id, exercise_id: null, piece: { title: piece.title, composer: piece.composer }, exercise: null }
+            : i,
+        ),
+      );
+      toast.success(`Tarefa trocada para "${piece.title}".`);
+    } else {
+      const { exercise } = target;
+      await supabase
+        .from("plan_items")
+        .update({ exercise_id: exercise.id, piece_id: null })
+        .eq("id", item.id);
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === item.id
+            ? { ...i, exercise_id: exercise.id, piece_id: null, exercise: { title: exercise.title, category: exercise.category }, piece: null }
+            : i,
+        ),
+      );
+      toast.success(`Tarefa trocada para "${exercise.title}".`);
+    }
+    setSwapItem(null);
   }
 
   async function handleApplyFocus(
@@ -911,6 +1073,24 @@ export default function TodayPage() {
       }
     }
     setFreeSessions(free);
+
+    // Peças ativas do aluno (para modal de troca)
+    const { data: piecesData } = await supabase
+      .from("pieces")
+      .select("id, title, composer")
+      .eq("student_id", sid)
+      .in("status", ["in_progress", "future"])
+      .order("title");
+    setActivePieces((piecesData ?? []) as ActivePiece[]);
+
+    const { data: exercisesData } = await supabase
+      .from("exercises")
+      .select("id, title, category")
+      .eq("student_id", sid)
+      .eq("status", "active")
+      .order("title");
+    setActiveExercises((exercisesData ?? []) as ActiveExercise[]);
+
     setLoading(false);
     lastFetchAt.current = Date.now();
   }
@@ -1011,11 +1191,13 @@ export default function TodayPage() {
   const workMin = pomodoroConfig?.work ?? 25;
   const totalPoms = Math.ceil(totalMinutes / workMin);
   const studiedSecsTotal = items.reduce((s, i) => {
-    if (i.is_done && i.completed_manually) return s + (i.duration_minutes ?? 0) * 60;
+    if (i.is_done && i.completed_manually)
+      return s + (i.duration_minutes ?? 0) * 60;
     return s + (studiedSecs[i.id] ?? 0);
   }, 0);
   const studiedPoms =
-    (Math.floor(studiedSecsTotal / 60) + freeSessions.reduce((s, f) => s + f.minutes, 0)) /
+    (Math.floor(studiedSecsTotal / 60) +
+      freeSessions.reduce((s, f) => s + f.minutes, 0)) /
     workMin;
 
   if (loading) {
@@ -1065,9 +1247,13 @@ export default function TodayPage() {
 
         {/* Data — centralizado */}
         <div className="flex-1 flex items-center justify-center gap-3">
-          <p className="text-7xl font-black text-[#1E3A5F] leading-none">{dayNum}</p>
+          <p className="text-7xl font-black text-[#1E3A5F] leading-none">
+            {dayNum}
+          </p>
           <div>
-            <h1 className="text-4xl font-normal text-[#1E3A5F] leading-none">{getDayExtendedLabel(viewDay)}</h1>
+            <h1 className="text-4xl font-normal text-[#1E3A5F] leading-none">
+              {getDayExtendedLabel(viewDay)}
+            </h1>
             <p className="text-sm text-gray-400 mt-1 mx-0.5">{monthLabel}</p>
           </div>
         </div>
@@ -1143,7 +1329,7 @@ export default function TodayPage() {
             </div>
           )}
           {visibleItems.map((item) => {
-            const { title, subtitle, maintenanceIcon } = itemDisplay(item);
+            const { title, subtitle } = itemDisplay(item);
 
             const itemPct = item.duration_minutes
               ? Math.min(
@@ -1156,23 +1342,19 @@ export default function TodayPage() {
 
             // Card compacto para itens concluídos
             if (item.is_done) {
-              const doneLabel = item.completed_manually
-                ? "Manual"
-                : "Automático";
               const parts = [
-                doneLabel,
                 subtitle,
                 item.duration_minutes ? `${item.duration_minutes} min` : null,
               ].filter(Boolean);
               return (
                 <div
                   key={item.id}
-                  className="flex items-center gap-2 rounded-xl border border-gray-100 bg-[#F6F6F6] px-3 py-1.5 opacity-60"
+                  className="group flex items-center gap-2 rounded-xl border border-[#B8D4E8] bg-[#D6E4F0] pl-3 pr-4 py-1.5"
                 >
-                  <div className="w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
                     <svg
-                      width="8"
-                      height="8"
+                      width="10"
+                      height="10"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="white"
@@ -1181,10 +1363,28 @@ export default function TodayPage() {
                       <path d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <p className="text-xs text-gray-400 truncate">
+                  <p className="text-xs text-gray-400 truncate flex-1 min-w-0">
                     <span className="font-medium text-gray-500">{title}</span>
                     {parts.length > 0 && ` · ${parts.join(" · ")}`}
                   </p>
+                  {item.completed_manually && (
+                    <span
+                      className="cursor-default select-none shrink-0 text-gray-900"
+                      onMouseEnter={(e) => {
+                        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                        setManualTooltip({ x: r.left + r.width / 2, y: r.top });
+                      }}
+                      onMouseLeave={() => setManualTooltip(null)}
+                    >
+                      <MdTouchApp size={18} />
+                    </span>
+                  )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteItem(item); }}
+                    className="opacity-0 group-hover:opacity-100 transition shrink-0 text-red-400 hover:text-red-600 w-7 h-7 flex items-center justify-center"
+                  >
+                    <MdDeleteOutline size={18} />
+                  </button>
                 </div>
               );
             }
@@ -1198,7 +1398,7 @@ export default function TodayPage() {
             return (
               <div
                 key={item.id}
-                className={`relative rounded-2xl border border-gray-200 bg-[#F6F6F6] overflow-hidden transition ${cardHref ? "cursor-pointer" : ""}`}
+                className={`group relative rounded-2xl border border-gray-200 bg-[#F6F6F6] overflow-hidden transition ${cardHref ? "cursor-pointer" : ""}`}
                 onClick={() => cardHref && navigate(cardHref)}
               >
                 {/* Barra de progresso de fundo */}
@@ -1206,18 +1406,6 @@ export default function TodayPage() {
                   className={`absolute inset-y-0 left-0 bg-[#D6E4F0] transition-all duration-500 rounded-l-2xl ${itemPct >= 0.95 ? "rounded-r-2xl" : ""}`}
                   style={{ width: `${itemPct * 100}%` }}
                 />
-                {/* Ícone de manutenção — watermark centralizado */}
-                {maintenanceIcon && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <MdBuild className="h-3/5 w-auto opacity-[0.12] text-gray-500" />
-                  </div>
-                )}
-                {/* Ícone de movido — watermark centralizado */}
-                {!maintenanceIcon && item.moved_from_dow != null && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <MdArrowForward className="h-3/5 w-auto opacity-[0.12] text-gray-500" />
-                  </div>
-                )}
                 <div className="relative z-10 flex items-stretch">
                   {/* Botão iniciar — esquerda */}
                   {!item.is_done && (
@@ -1254,10 +1442,10 @@ export default function TodayPage() {
 
                       {item.completed_manually && (
                         <span
-                          className="text-[#1E3A5F] font-bold text-sm leading-none cursor-default select-none shrink-0"
+                          className="cursor-default select-none shrink-0 text-gray-900"
                           onMouseEnter={(e) => {
                             const r = (
-                              e.target as HTMLElement
+                              e.currentTarget as HTMLElement
                             ).getBoundingClientRect();
                             setManualTooltip({
                               x: r.left + r.width / 2,
@@ -1266,7 +1454,7 @@ export default function TodayPage() {
                           }}
                           onMouseLeave={() => setManualTooltip(null)}
                         >
-                          *
+                          <MdTouchApp size={18} />
                         </span>
                       )}
                     </div>
@@ -1298,25 +1486,19 @@ export default function TodayPage() {
                           item.exercise_id === focusWeekExerciseId);
                       const menuOpen = openMenuItemId === item.id;
                       return (
-                        <div className="flex flex-row items-center gap-2 pr-2 pl-1 shrink-0">
-                          {/* Target — sem background, cor por estado de foco */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleActionClick("focus", item);
-                            }}
-                            className="w-7 h-7 flex items-center justify-center transition hover:opacity-70"
-                            style={{
-                              color: isFocusDay
-                                ? "#4A90C4"
-                                : isFocusWeek
-                                  ? "#1E3A5F"
-                                  : "#6B7280",
-                            }}
-                          >
-                            <MdGpsFixed size={18} />
-                          </button>
-                          {/* Três pontos — abre dropdown via fixed */}
+                        <div className="flex flex-row items-center gap-1 pr-4 pl-1 shrink-0">
+                          {/* On hover: target (quando não é foco) + menu três pontos */}
+                          {!(isFocusDay || isFocusWeek) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleActionClick("focus", item);
+                              }}
+                              className="w-7 h-7 flex items-center justify-center transition opacity-0 group-hover:opacity-100 hover:opacity-70 text-gray-400"
+                            >
+                              <MdGpsFixed size={18} />
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1324,17 +1506,52 @@ export default function TodayPage() {
                                 setOpenMenuItemId(null);
                                 setMenuAnchor(null);
                               } else {
-                                const r = (
-                                  e.currentTarget as HTMLElement
-                                ).getBoundingClientRect();
+                                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
                                 setMenuAnchor({ x: r.right, y: r.bottom });
                                 setOpenMenuItemId(item.id);
                               }
                             }}
-                            className="w-7 h-7 flex items-center justify-center text-[#1E3A5F] transition hover:opacity-70"
+                            className={`w-7 h-7 flex items-center justify-center text-gray-400 transition hover:text-[#1E3A5F] ${menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                           >
                             <MdMoreVert size={18} />
                           </button>
+                          {/* Sempre visíveis: target se foco ativo + indicadores de estado */}
+                          {(isFocusDay || isFocusWeek) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleActionClick("focus", item);
+                              }}
+                              className="w-7 h-7 flex items-center justify-center transition hover:opacity-70"
+                              style={{ color: isFocusDay ? "#4A90C4" : "#1E3A5F" }}
+                            >
+                              <MdGpsFixed size={18} />
+                            </button>
+                          )}
+                          {item.is_maintenance && (
+                            <span
+                              className="shrink-0 cursor-default flex items-center justify-center w-5"
+                              onMouseEnter={(e) => {
+                                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                setMaintenanceTooltip({ x: r.left + r.width / 2, y: r.top });
+                              }}
+                              onMouseLeave={() => setMaintenanceTooltip(null)}
+                            >
+                              <MdBuild size={14} color="#111827" />
+                            </span>
+                          )}
+                          {!item.is_maintenance && item.moved_from_dow != null && (
+                            <span
+                              className="shrink-0 cursor-default flex items-center justify-center w-5"
+                              onMouseEnter={(e) => {
+                                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                setMovedTooltip({ x: r.left + r.width / 2, y: r.top });
+                              }}
+                              onMouseLeave={() => setMovedTooltip(null)}
+                            >
+                              <MdForward size={14} color="#111827" />
+                            </span>
+                          )}
                         </div>
                       );
                     })()}
@@ -1347,13 +1564,12 @@ export default function TodayPage() {
           {freeSessions.map((sess) => (
             <div
               key={sess.id}
-              className="group flex items-center gap-2 rounded-xl border border-gray-100 px-3 py-1.5 opacity-60 hover:opacity-100 transition"
-              style={{ background: "#D6E4F0" }}
+              className="group flex items-center gap-2 rounded-xl border border-[#B8D4E8] bg-[#D6E4F0] pl-3 pr-4 py-1.5"
             >
-              <div className="w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+              <div className="w-5 h-5 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
                 <svg
-                  width="8"
-                  height="8"
+                  width="10"
+                  height="10"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="white"
@@ -1368,9 +1584,9 @@ export default function TodayPage() {
               </p>
               <button
                 onClick={() => deleteSession(sess.id)}
-                className="shrink-0 opacity-0 group-hover:opacity-100 transition p-1 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-400"
+                className="opacity-0 group-hover:opacity-100 transition shrink-0 text-red-400 hover:text-red-600 w-7 h-7 flex items-center justify-center"
               >
-                <MdDeleteOutline size={16} />
+                <MdDeleteOutline size={18} />
               </button>
             </div>
           ))}
@@ -1429,7 +1645,7 @@ export default function TodayPage() {
           style={{
             backgroundColor: "#1E3A5F",
             top: manualTooltip.y - 8,
-            left: manualTooltip.x,
+            left: Math.min(manualTooltip.x, window.innerWidth - 96),
             transform: "translate(-50%, -100%)",
           }}
         >
@@ -1439,6 +1655,40 @@ export default function TodayPage() {
             className="leading-snug"
           >
             Não conta XP, badges nem missões.
+          </p>
+        </div>
+      )}
+
+      {maintenanceTooltip && (
+        <div
+          className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
+          style={{
+            backgroundColor: "#1E3A5F",
+            top: maintenanceTooltip.y - 8,
+            left: Math.min(maintenanceTooltip.x, window.innerWidth - 96),
+            transform: "translate(-50%, -100%)",
+          }}
+        >
+          <p className="font-semibold mb-0.5">Tarefa de manutenção</p>
+          <p style={{ color: "rgba(255,255,255,0.75)" }} className="leading-snug">
+            Revisão de peça já concluída para manter o nível.
+          </p>
+        </div>
+      )}
+
+      {movedTooltip && (
+        <div
+          className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
+          style={{
+            backgroundColor: "#1E3A5F",
+            top: movedTooltip.y - 8,
+            left: Math.min(movedTooltip.x, window.innerWidth - 96),
+            transform: "translate(-50%, -100%)",
+          }}
+        >
+          <p className="font-semibold mb-0.5">Tarefa movida</p>
+          <p style={{ color: "rgba(255,255,255,0.75)" }} className="leading-snug">
+            Esta tarefa foi transferida de outro dia.
           </p>
         </div>
       )}
@@ -1470,6 +1720,17 @@ export default function TodayPage() {
                   onClick={() => {
                     setOpenMenuItemId(null);
                     setMenuAnchor(null);
+                    setSwapItem(menuItem);
+                  }}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA] transition"
+                >
+                  <MdSwapHoriz size={16} color="#4A90C4" />
+                  Trocar tarefa
+                </button>
+                <button
+                  onClick={() => {
+                    setOpenMenuItemId(null);
+                    setMenuAnchor(null);
                     handleActionClick("move", menuItem);
                   }}
                   className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA] transition"
@@ -1488,6 +1749,19 @@ export default function TodayPage() {
                   <MdAccessTime size={16} color="#4A90C4" />
                   Editar tempo
                 </button>
+                {!menuItem.is_done && (
+                  <button
+                    onClick={() => {
+                      setOpenMenuItemId(null);
+                      setMenuAnchor(null);
+                      toggleDone(menuItem, true);
+                    }}
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA] transition"
+                  >
+                    <MdCheckCircle size={16} color="#4A90C4" />
+                    Concluir
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setOpenMenuItemId(null);
@@ -1503,6 +1777,17 @@ export default function TodayPage() {
             </>
           );
         })()}
+
+      {/* Modal de trocar tarefa */}
+      {swapItem && (
+        <SwapPieceModal
+          itemTitle={itemDisplay(swapItem).title}
+          pieces={activePieces}
+          exercises={activeExercises}
+          onSelect={(target) => handleSwap(swapItem, target)}
+          onClose={() => setSwapItem(null)}
+        />
+      )}
 
       {/* Modal de editar tempo */}
       {editDurationItem &&
@@ -1553,6 +1838,50 @@ export default function TodayPage() {
           onClose={() => setMoveTaskItem(null)}
           onMove={handleMoveTask}
         />
+      )}
+
+      {/* Modal de confirmação de delete */}
+      {deleteConfirmItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 pb-8 px-4"
+          onClick={() => setDeleteConfirmItem(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-base font-bold text-gray-800 mb-2">
+              Remover{" "}
+              <span className="text-[#1E3A5F]">
+                {itemDisplay(deleteConfirmItem).title}
+              </span>
+              ?
+            </p>
+            <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+              Você quer distribuir o tempo dessa tarefa nas outras tarefas do seu dia?
+            </p>
+            <div className="flex gap-3 mb-3">
+              <button
+                onClick={() => setDeleteConfirmItem(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-[#F5F7FA] transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => executeDelete(deleteConfirmItem, false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-[#F5F7FA] transition"
+              >
+                Não
+              </button>
+            </div>
+            <button
+              onClick={() => executeDelete(deleteConfirmItem, true)}
+              className="w-full py-2.5 rounded-xl bg-[#1E3A5F] text-sm text-white font-semibold hover:bg-[#1E3A5F]/90 transition"
+            >
+              Sim, redistribuir
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Modal de confirmação de ação rápida */}
@@ -1702,7 +2031,11 @@ export default function TodayPage() {
         </div>
       )}
 
-      <PomodoroStrip totalPoms={totalPoms} studiedPoms={studiedPoms} onConfig={() => setShowChangeTime(true)} />
+      <PomodoroStrip
+        totalPoms={totalPoms}
+        studiedPoms={studiedPoms}
+        onConfig={() => setShowChangeTime(true)}
+      />
     </StudentLayout>
   );
 }

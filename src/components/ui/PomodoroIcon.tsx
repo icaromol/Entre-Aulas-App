@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 
 interface Props {
   fill: number; // 0 = empty, 0..1 = partial, 1 = complete
@@ -12,9 +12,16 @@ const TRANSFORM = "translate(-0.13 -1.63)";
 
 export function PomodoroIcon({ fill, size = 28 }: Props) {
   const [hovered, setHovered] = useState(false);
-  const id = `pom-${Math.random().toString(36).slice(2, 7)}`;
+  const rawId = useId();
+  const id = `pom-${rawId.replace(/:/g, "")}`;
 
   const showColor = hovered || fill >= 1;
+
+  // After transform(-0.13, -1.63), path data occupies viewBox coords:
+  //   x: [0.13-0.13, 12.5-0.13] = [0, 12.37]
+  //   y: [1.63-1.63, 13.31-1.63] = [0, 11.68]
+  // Clip rect must be in this post-transform (viewBox) coordinate space.
+  const clipW = 12.37 * fill;
 
   return (
     <svg
@@ -28,27 +35,23 @@ export function PomodoroIcon({ fill, size = 28 }: Props) {
     >
       <defs>
         <clipPath id={id}>
-          <rect x="-0.13" y="-1.63" width={12.37 * fill} height="13.31" />
+          <rect x="0" y="0" width={clipW} height="11.68" />
         </clipPath>
       </defs>
 
       {showColor ? (
-        /* Colorido — hover ou completo */
         <>
           <path d={PATH_LEAF} fill="#74c044" transform={TRANSFORM} />
           <path d={PATH_BODY} fill="#f15a23" transform={TRANSFORM} />
         </>
       ) : (
-        /* Preto com preenchimento parcial da esquerda pra direita */
         <>
-          {/* Base vazia */}
           <path d={PATH_LEAF} fill="#D1D5DB" transform={TRANSFORM} />
           <path d={PATH_BODY} fill="#D1D5DB" transform={TRANSFORM} />
-          {/* Fill parcial */}
           {fill > 0 && (
             <>
-              <path d={PATH_LEAF} fill="#0A0B0C" transform={TRANSFORM} clipPath={`url(#${id})`} />
-              <path d={PATH_BODY} fill="#0A0B0C" transform={TRANSFORM} clipPath={`url(#${id})`} />
+              <path d={PATH_LEAF} fill="#4A90C4" transform={TRANSFORM} clipPath={`url(#${id})`} />
+              <path d={PATH_BODY} fill="#4A90C4" transform={TRANSFORM} clipPath={`url(#${id})`} />
             </>
           )}
         </>
