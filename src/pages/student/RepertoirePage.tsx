@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Avatar from "boring-avatars";
-import { MdAdd, MdMusicNote, MdFitnessCenter } from "react-icons/md";
+import { MdAdd, MdMusicNote, MdFitnessCenter, MdSettings, MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -85,6 +85,13 @@ export default function RepertoirePage() {
   } | null>(null);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<{ type: "status"; value: string; label: string } | { type: "delete"; label: string } | null>(null);
+  const [confirmBulkAction, setConfirmBulkAction] = useState<"delete" | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   function requestPieceToggle(piece: Piece, checked: boolean) {
     const context =
       piece.status === "completed" ? "piece_maintenance" : "piece_active";
@@ -167,8 +174,82 @@ export default function RepertoirePage() {
   }
 
   function switchTab(tab: TabKey) {
+    exitSelectionMode();
     setActiveTab(tab);
     setSearchParams({ tab });
+  }
+
+  function exitSelectionMode() {
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+    setShowStatusMenu(false);
+    setSelectedAction(null);
+    setConfirmBulkAction(null);
+  }
+
+  function toggleSelectionMode() {
+    if (isSelectionMode) {
+      exitSelectionMode();
+    } else {
+      setIsSelectionMode(true);
+      setSelectedIds(new Set());
+    }
+  }
+
+  function toggleItemSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleBulkStatusChange(newStatus: string) {
+    if (selectedIds.size === 0 || !studentId) return;
+    setShowStatusMenu(false);
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const table = activeTab === "pieces" ? "pieces" : "exercises";
+    const { error } = await supabase.from(table).update({ status: newStatus }).in("id", ids);
+    if (error) {
+      toast.error("Erro ao alterar status.");
+      setBulkLoading(false);
+      return;
+    }
+    if (activeTab === "pieces") {
+      setPieces((prev) => prev.map((p) => selectedIds.has(p.id) ? { ...p, status: newStatus } : p));
+    } else {
+      setExercises((prev) => prev.map((e) => selectedIds.has(e.id) ? { ...e, status: newStatus } : e));
+    }
+    autoGeneratePlan(studentId);
+    toast.success(`Status atualizado para ${ids.length} item(ns).`);
+    setBulkLoading(false);
+    exitSelectionMode();
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0 || !studentId) return;
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const table = activeTab === "pieces" ? "pieces" : "exercises";
+    const { error } = await supabase.from(table).delete().in("id", ids);
+    if (error) {
+      toast.error("Erro ao excluir itens.");
+      setBulkLoading(false);
+      setConfirmBulkAction(null);
+      return;
+    }
+    if (activeTab === "pieces") {
+      setPieces((prev) => prev.filter((p) => !selectedIds.has(p.id)));
+    } else {
+      setExercises((prev) => prev.filter((e) => !selectedIds.has(e.id)));
+    }
+    autoGeneratePlan(studentId);
+    toast.success(`${ids.length} item(ns) excluído(s).`);
+    setBulkLoading(false);
+    setConfirmBulkAction(null);
+    exitSelectionMode();
   }
 
   function parseNames(text: string): string[] {
@@ -331,9 +412,22 @@ export default function RepertoirePage() {
 
   return (
     <StudentLayout>
-      <div className="mb-5">
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Repertório</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Seu material de estudo</p>
+      <div className="mb-5 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-[#1E3A5F]">Repertório</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Seu material de estudo</p>
+        </div>
+        <button
+          onClick={toggleSelectionMode}
+          className={`p-2 rounded-xl transition ${
+            isSelectionMode
+              ? "bg-[#4A90C4] text-white"
+              : "text-gray-400 hover:text-[#1E3A5F] hover:bg-gray-100"
+          }`}
+          aria-label="Selecionar itens"
+        >
+          <MdSettings size={20} />
+        </button>
       </div>
 
       {/* Tabs */}
@@ -361,6 +455,81 @@ export default function RepertoirePage() {
           </button>
         ))}
       </div>
+
+      {/* Selection mode: counter + action bar */}
+      {isSelectionMode && (
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-xs text-[#4A90C4] font-semibold shrink-0">
+            {selectedIds.size} {selectedIds.size === 1 ? "item selecionado" : "itens selecionados"}
+          </p>
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              {/* "Selecione" dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowStatusMenu((v) => !v)}
+                  disabled={bulkLoading}
+                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium text-gray-600 hover:border-[#4A90C4] hover:text-[#4A90C4] transition disabled:opacity-50 flex items-center gap-1.5 min-w-[120px] justify-between"
+                >
+                  <span>{selectedAction ? selectedAction.label : "Selecione"}</span>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className={`transition-transform shrink-0 ${showStatusMenu ? "rotate-180" : ""}`}>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                {showStatusMenu && (
+                  <div className="absolute right-0 top-full mt-1 bg-white rounded-xl border border-gray-100 shadow-lg z-10 min-w-[180px]">
+                    <p className="px-4 pt-3 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Alterar status</p>
+                    {activeTab === "pieces" ? (
+                      <>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "in_progress", label: "Em andamento" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Em andamento</button>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "paused", label: "Pausada" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Pausada</button>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "completed", label: "Concluída" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Concluída</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "active", label: "Em andamento" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Em andamento</button>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "inactive", label: "Pausada" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Pausada</button>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "completed", label: "Concluída" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Concluída</button>
+                      </>
+                    )}
+                    <div className="border-t border-gray-100 mt-1">
+                      <button onClick={() => { setSelectedAction({ type: "delete", label: "Excluir" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-[#F5F7FA] rounded-b-xl">Excluir</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* "Aplicar a todos" button */}
+              <button
+                onClick={() => {
+                  if (!selectedAction) return;
+                  if (selectedAction.type === "status") handleBulkStatusChange((selectedAction as { type: "status"; value: string; label: string }).value);
+                  else setConfirmBulkAction("delete");
+                }}
+                disabled={!selectedAction || bulkLoading}
+                className="px-3 py-1.5 rounded-lg bg-[#1E3A5F] text-white text-xs font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-40"
+              >
+                Aplicar ação a todos
+              </button>
+
+              <button
+                onClick={exitSelectionMode}
+                className="px-2 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 transition"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+          {selectedIds.size === 0 && (
+            <button
+              onClick={exitSelectionMode}
+              className="text-xs font-medium text-gray-400 hover:text-gray-600 transition"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Tab: Peças */}
       {activeTab === "pieces" && (
@@ -397,12 +566,26 @@ export default function RepertoirePage() {
                       ? "onboarding-repertoire-piece"
                       : undefined
                   }
-                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
+                  className={`rounded-2xl border overflow-hidden transition ${
+                    isSelectionMode && selectedIds.has(piece.id)
+                      ? "bg-[#EBF4FB] border-2 border-[#4A90C4]"
+                      : "bg-white border-gray-100"
+                  }`}
+                  onClick={isSelectionMode ? () => toggleItemSelected(piece.id) : undefined}
                 >
                   <div className="flex items-center gap-4 px-5 py-4">
+                    {isSelectionMode && (
+                      <div className="shrink-0">
+                        {selectedIds.has(piece.id)
+                          ? <MdCheckBox size={22} className="text-[#4A90C4]" />
+                          : <MdCheckBoxOutlineBlank size={22} className="text-gray-300" />
+                        }
+                      </div>
+                    )}
                     <button
-                      onClick={() =>
-                        navigate(`/aluno/repertorio/pecas/${piece.id}`)
+                      onClick={isSelectionMode
+                        ? (e) => { e.stopPropagation(); toggleItemSelected(piece.id); }
+                        : () => navigate(`/aluno/repertorio/pecas/${piece.id}`)
                       }
                       className="relative w-10 h-10 shrink-0"
                     >
@@ -452,8 +635,9 @@ export default function RepertoirePage() {
                     </button>
 
                     <button
-                      onClick={() =>
-                        navigate(`/aluno/repertorio/pecas/${piece.id}`)
+                      onClick={isSelectionMode
+                        ? (e) => { e.stopPropagation(); toggleItemSelected(piece.id); }
+                        : () => navigate(`/aluno/repertorio/pecas/${piece.id}`)
                       }
                       className="flex-1 min-w-0 text-left"
                     >
@@ -474,13 +658,17 @@ export default function RepertoirePage() {
                       onCheckedChange={(checked) =>
                         requestPieceToggle(piece, checked)
                       }
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isSelectionMode) toggleItemSelected(piece.id);
+                      }}
                       className={`shrink-0 ${piece.status === "completed" ? "data-checked:bg-green-500" : "data-checked:bg-[#1E3A5F]"}`}
                     />
 
                     <button
-                      onClick={() =>
-                        setExpandedPieceId(isExpanded ? null : piece.id)
+                      onClick={isSelectionMode
+                        ? (e) => e.stopPropagation()
+                        : () => setExpandedPieceId(isExpanded ? null : piece.id)
                       }
                       className="shrink-0 text-gray-400 hover:text-gray-600 transition p-1"
                     >
@@ -498,7 +686,7 @@ export default function RepertoirePage() {
                     </button>
                   </div>
 
-                  {isExpanded && (
+                  {isExpanded && !isSelectionMode && (
                     <div className="px-5 pb-4 border-t border-gray-100">
                       {piece.checklist_items.length === 0 ? (
                         <p className="text-xs text-gray-400 pt-3">
@@ -600,11 +788,25 @@ export default function RepertoirePage() {
             sortedExercises.map((ex) => (
               <div
                 key={ex.id}
-                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4"
+                className={`rounded-2xl border px-5 py-4 flex items-center gap-4 transition ${
+                  isSelectionMode && selectedIds.has(ex.id)
+                    ? "bg-[#EBF4FB] border-2 border-[#4A90C4]"
+                    : "bg-white border-gray-100"
+                }`}
+                onClick={isSelectionMode ? () => toggleItemSelected(ex.id) : undefined}
               >
+                {isSelectionMode && (
+                  <div className="shrink-0">
+                    {selectedIds.has(ex.id)
+                      ? <MdCheckBox size={22} className="text-[#4A90C4]" />
+                      : <MdCheckBoxOutlineBlank size={22} className="text-gray-300" />
+                    }
+                  </div>
+                )}
                 <button
-                  onClick={() =>
-                    navigate(`/aluno/repertorio/exercicios/${ex.id}`)
+                  onClick={isSelectionMode
+                    ? (e) => { e.stopPropagation(); toggleItemSelected(ex.id); }
+                    : () => navigate(`/aluno/repertorio/exercicios/${ex.id}`)
                   }
                   className="shrink-0"
                 >
@@ -622,8 +824,9 @@ export default function RepertoirePage() {
                   )}
                 </button>
                 <button
-                  onClick={() =>
-                    navigate(`/aluno/repertorio/exercicios/${ex.id}`)
+                  onClick={isSelectionMode
+                    ? (e) => { e.stopPropagation(); toggleItemSelected(ex.id); }
+                    : () => navigate(`/aluno/repertorio/exercicios/${ex.id}`)
                   }
                   className="flex-1 min-w-0 text-left"
                 >
@@ -639,12 +842,16 @@ export default function RepertoirePage() {
                   onCheckedChange={(checked) =>
                     requestExerciseToggle(ex, checked)
                   }
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isSelectionMode) toggleItemSelected(ex.id);
+                  }}
                   className="shrink-0 data-checked:bg-[#1E3A5F]"
                 />
                 <button
-                  onClick={() =>
-                    navigate(`/aluno/repertorio/exercicios/${ex.id}`)
+                  onClick={isSelectionMode
+                    ? (e) => e.stopPropagation()
+                    : () => navigate(`/aluno/repertorio/exercicios/${ex.id}`)
                   }
                   className="shrink-0 text-gray-400 hover:text-gray-600 transition p-1"
                 >
@@ -748,6 +955,44 @@ export default function RepertoirePage() {
                 className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
               >
                 Entendi, continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk delete confirmation modal */}
+      {confirmBulkAction === "delete" && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-5"
+          onClick={() => setConfirmBulkAction(null)}
+        >
+          <div
+            className="bg-white rounded-2xl py-10 px-8 w-full max-w-sm space-y-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-3">
+              <h3 className="text-xl font-bold text-[#1E3A5F]">Excluir itens</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {selectedIds.size === 1
+                  ? "1 item será excluído permanentemente."
+                  : `${selectedIds.size} itens serão excluídos permanentemente.`}{" "}
+                Essa ação não pode ser desfeita.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmBulkAction(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-500 hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkLoading}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition disabled:opacity-50"
+              >
+                {bulkLoading ? "Excluindo..." : "Excluir"}
               </button>
             </div>
           </div>
