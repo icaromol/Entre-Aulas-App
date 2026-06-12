@@ -1227,14 +1227,6 @@ export default function TodayPage() {
     0,
   );
 
-  const studiedSecsTotal = items.reduce((s, i) => {
-    if (i.is_done && i.completed_manually)
-      return s + (i.duration_minutes ?? 0) * 60;
-    return s + (studiedSecs[i.id] ?? 0);
-  }, 0);
-  const studiedMinutes =
-    Math.floor(studiedSecsTotal / 60) +
-    freeSessions.reduce((s, f) => s + f.minutes, 0);
 
   if (loading) {
     return (
@@ -1283,7 +1275,7 @@ export default function TodayPage() {
   }
 
   return (
-    <StudentLayout studiedMinutes={studiedMinutes} totalMinutes={totalMinutes}>
+    <StudentLayout>
       {/* Modal de continuidade — primeira vez que o plano é auto-reorganizado */}
       {showContinuityModal && (
         <ContinuityCard onDismiss={() => setShowContinuityModal(false)} />
