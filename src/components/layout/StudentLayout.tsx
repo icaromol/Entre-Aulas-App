@@ -15,17 +15,19 @@ import {
   MdEdit,
   MdSchool,
   MdLogout,
-  MdChevronRight,
   MdSwapHoriz,
   MdAccessTime,
 } from "react-icons/md";
 import { OnboardingController } from "@/components/onboarding/OnboardingController";
 import { AvailabilityEditor } from "@/components/ui/AvailabilityEditor";
+import { TomatoBlob } from "@/components/ui/TomatoBlob";
 
 const AVATAR_COLORS = ["#1E3A5F", "#4A90C4", "#D6E4F0", "#F5F7FA", "#FFFFFF"];
 
 interface StudentLayoutProps {
   children: React.ReactNode;
+  studiedMinutes?: number;
+  totalMinutes?: number;
 }
 
 const navItems = [
@@ -35,7 +37,11 @@ const navItems = [
   { label: "Jornada", path: "/aluno/jornada", Icon: MdStars },
 ];
 
-export function StudentLayout({ children }: StudentLayoutProps) {
+export function StudentLayout({
+  children,
+  studiedMinutes = 0,
+  totalMinutes = 0,
+}: StudentLayoutProps) {
   const { user, profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -89,8 +95,12 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   const fullName = `${displayFirst} ${displayLast}`.trim();
   const avatarUrl = profile?.avatar_url ?? user?.user_metadata?.avatar_url;
 
+  const isPlanejamento = location.pathname === "/aluno/planejamento";
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div
+      className={`bg-gray-50 ${isPlanejamento ? "h-screen flex flex-col overflow-hidden" : "min-h-screen pb-20"}`}
+    >
       <OnboardingController role="student" />
 
       {/* Overlay do menu */}
@@ -335,50 +345,186 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       )}
 
       {/* Header — só logo */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <header
+        className={`bg-white border-b border-gray-100 z-10 shrink-0 ${isPlanejamento ? "" : "sticky top-0"}`}
+      >
         <div className="px-4 h-14 flex items-center justify-center">
           <img src="/estudamus_logo.png" alt="estudamus" className="h-5" />
         </div>
       </header>
 
       {/* Conteúdo */}
-      <main className="px-4 py-5">{children}</main>
+      <main
+        className={`px-4 py-3 ${isPlanejamento ? "flex-1 overflow-y-auto pb-24" : ""}`}
+      >
+        {children}
+      </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-10">
-        <div className="flex">
-          {navItems.map(({ label, path, Icon }) => {
-            const active = location.pathname.startsWith(path);
-            return (
-              <Link
-                key={path}
-                to={path}
+      {isPlanejamento ? (
+        /* ── PLANEJAMENTO: bottom é flex item shrink-0, sem fixed ── */
+        <div
+          className="shrink-0 relative"
+          style={{ height: "calc(374px * 0.50 + 110px)", overflow: "visible" }}
+        >
+          {/* Tomate + relógio — metade inferior entra no nav (bottom negativo) */}
+          <div
+            className="absolute left-0 right-0 flex justify-center pointer-events-none scale-[0.85] sm:scale-100"
+            style={{ bottom: "calc(56px - 374px * 0.50)", zIndex: 2 }}
+          >
+            {/* SVG relógio */}
+            <svg
+              width={600}
+              height={600}
+              style={{
+                position: "absolute",
+                left: "50%",
+                transform: "translateX(-50%)",
+                bottom: 0,
+                zIndex: 1,
+              }}
+              overflow="visible"
+            >
+              {(() => {
+                const cx = 300;
+                const cy = 440;
+                const innerMajor = 251;
+                const outerMajor = 275;
+                const innerMinor = 260;
+                const outerMinor = 268;
+                const progress =
+                  totalMinutes > 0
+                    ? Math.min(studiedMinutes / totalMinutes, 1)
+                    : 0;
+
+                const startDeg = 180;
+                const endDeg = 180 - progress * 180;
+                const startRad = (startDeg * Math.PI) / 180;
+                const endRad = (endDeg * Math.PI) / 180;
+                const largeArc = progress > 0.5 ? 1 : 0;
+
+                const mid = (innerMajor + outerMajor) / 2;
+                const half = (outerMajor - innerMajor) * 0.25;
+                const fillOuter = mid + half;
+                const fillInner = mid - half;
+                const ox1 = cx + fillOuter * Math.cos(startRad);
+                const oy1 = cy - fillOuter * Math.sin(startRad);
+                const ox2 = cx + fillOuter * Math.cos(endRad);
+                const oy2 = cy - fillOuter * Math.sin(endRad);
+                const ix1 = cx + fillInner * Math.cos(endRad);
+                const iy1 = cy - fillInner * Math.sin(endRad);
+                const ix2 = cx + fillInner * Math.cos(startRad);
+                const iy2 = cy - fillInner * Math.sin(startRad);
+                const fillPath = [
+                  `M ${ox1} ${oy1}`,
+                  `A ${fillOuter} ${fillOuter} 0 ${largeArc} 1 ${ox2} ${oy2}`,
+                  `L ${ix1} ${iy1}`,
+                  `A ${fillInner} ${fillInner} 0 ${largeArc} 0 ${ix2} ${iy2}`,
+                  `Z`,
+                ].join(" ");
+
+                return (
+                  <>
+                    {progress > 0 && <path d={fillPath} fill="#ff4c3e" />}
+                    {Array.from({ length: 61 }).map((_, i) => {
+                      const angleDeg = 180 - i * 3;
+                      const angleRad = (angleDeg * Math.PI) / 180;
+                      const isMajor = i % 5 === 0;
+                      const inner = isMajor ? innerMajor : innerMinor;
+                      const outer = isMajor ? outerMajor : outerMinor;
+                      const x1 = cx + inner * Math.cos(angleRad);
+                      const y1 = cy - inner * Math.sin(angleRad);
+                      const x2 = cx + outer * Math.cos(angleRad);
+                      const y2 = cy - outer * Math.sin(angleRad);
+                      return (
+                        <line
+                          key={i}
+                          x1={x1}
+                          y1={y1}
+                          x2={x2}
+                          y2={y2}
+                          stroke="#2d2b2b"
+                          strokeWidth={isMajor ? 2 : 1}
+                          strokeOpacity={isMajor ? 0.55 : 0.28}
+                          strokeLinecap="round"
+                        />
+                      );
+                    })}
+                  </>
+                );
+              })()}
+            </svg>
+            <TomatoBlob size="md" />
+          </div>
+
+          {/* Nav bar — na base do bottom */}
+          <nav className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-10">
+            <div className="flex">
+              {navItems.map(({ label, path, Icon }) => {
+                const active = location.pathname.startsWith(path);
+                return (
+                  <Link
+                    key={path}
+                    to={path}
+                    className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
+                  >
+                    <Icon size={22} color={active ? "#1E3A5F" : "#9CA3AF"} />
+                    <span
+                      className={`text-[10px] font-medium ${active ? "text-[#1E3A5F]" : "text-gray-400"}`}
+                    >
+                      {label}
+                    </span>
+                  </Link>
+                );
+              })}
+              <button
+                onClick={() => setShowMenu(true)}
                 className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
               >
-                <Icon size={22} color={active ? "#1E3A5F" : "#9CA3AF"} />
+                <MdMenu size={22} color={showMenu ? "#1E3A5F" : "#9CA3AF"} />
                 <span
-                  className={`text-[10px] font-medium ${active ? "text-[#1E3A5F]" : "text-gray-400"}`}
+                  className={`text-[10px] font-medium ${showMenu ? "text-[#1E3A5F]" : "text-gray-400"}`}
                 >
-                  {label}
+                  Menu
                 </span>
-              </Link>
-            );
-          })}
-
-          {/* Menu sanduíche */}
-          <button
-            onClick={() => setShowMenu(true)}
-            className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
-          >
-            <MdMenu size={22} color={showMenu ? "#1E3A5F" : "#9CA3AF"} />
-            <span
-              className={`text-[10px] font-medium ${showMenu ? "text-[#1E3A5F]" : "text-gray-400"}`}
-            >
-              Menu
-            </span>
-          </button>
+              </button>
+            </div>
+          </nav>
         </div>
-      </nav>
+      ) : (
+        /* ── OUTRAS PÁGINAS: nav fixed normal ── */
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-10">
+          <div className="flex">
+            {navItems.map(({ label, path, Icon }) => {
+              const active = location.pathname.startsWith(path);
+              return (
+                <Link
+                  key={path}
+                  to={path}
+                  className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
+                >
+                  <Icon size={22} color={active ? "#1E3A5F" : "#9CA3AF"} />
+                  <span
+                    className={`text-[10px] font-medium ${active ? "text-[#1E3A5F]" : "text-gray-400"}`}
+                  >
+                    {label}
+                  </span>
+                </Link>
+              );
+            })}
+            <button
+              onClick={() => setShowMenu(true)}
+              className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
+            >
+              <MdMenu size={22} color={showMenu ? "#1E3A5F" : "#9CA3AF"} />
+              <span
+                className={`text-[10px] font-medium ${showMenu ? "text-[#1E3A5F]" : "text-gray-400"}`}
+              >
+                Menu
+              </span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }
