@@ -112,7 +112,7 @@ export default function NewExercisePage() {
         <Link to={`/professor/alunos/${studentId}?tab=repertoire`} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Novo exercício</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Novo exercício</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -127,7 +127,7 @@ export default function NewExercisePage() {
             <label className="text-xs font-medium text-gray-500">Nome do exercício</label>
             <input value={title} onChange={e => setTitle(e.target.value)} required maxLength={200}
               placeholder="Ex: Escalas maiores em todas as tonalidades"
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition" />
           </div>
 
           <div className="space-y-1">
@@ -137,8 +137,8 @@ export default function NewExercisePage() {
                 <button key={cat.value} type="button" onClick={() => setCategory(cat.value)}
                   className={`py-2 px-3 rounded-lg border text-xs font-medium transition text-left ${
                     category === cat.value
-                      ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
+                      ? 'bg-[#153b50] text-white border-[#153b50]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]'
                   }`}>
                   {cat.label}
                 </button>
@@ -150,17 +150,17 @@ export default function NewExercisePage() {
             <label className="text-xs font-medium text-gray-500">Objetivo</label>
             <textarea value={objective} onChange={e => setObjective(e.target.value)} rows={2} maxLength={500}
               placeholder="O que o aluno deve desenvolver com esse exercício..."
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition resize-none" />
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <label className="text-xs font-medium text-gray-500">Dificuldade</label>
-              <span className="text-xs font-bold text-[#1E3A5F]">{difficulty}/10</span>
+              <span className="text-xs font-bold text-[#153b50]">{difficulty}/10</span>
             </div>
             <input type="range" min={1} max={10} value={difficulty}
               onChange={e => setDifficulty(Number(e.target.value))}
-              className="w-full accent-[#1E3A5F]" />
+              className="w-full accent-[#153b50]" />
           </div>
         </div>
 
@@ -171,7 +171,7 @@ export default function NewExercisePage() {
           </h2>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} maxLength={2000}
             placeholder="Anotações sobre o exercício..."
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition resize-none" />
         </div>
 
         {/* Checklist */}
@@ -186,7 +186,7 @@ export default function NewExercisePage() {
               type="checkbox"
               checked={keepCreating}
               onChange={e => setKeepCreating(e.target.checked)}
-              className="w-4 h-4 accent-[#4A90C4] rounded"
+              className="w-4 h-4 accent-[#b2f0fb] rounded"
             />
             <span className="text-sm text-gray-500">Continuar criando</span>
           </label>
@@ -203,7 +203,7 @@ export default function NewExercisePage() {
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10"
+              className="flex-1 bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl h-10"
             >
               {loading ? 'Criando...' : keepCreating ? 'Criar e continuar' : 'Criar exercício'}
             </Button>

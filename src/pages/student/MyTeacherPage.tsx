@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 
-const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
+import { AVATAR_COLORS } from '@/lib/colors'
 
 interface TeacherInfo {
   first_name: string
@@ -110,11 +110,11 @@ export default function MyTeacherPage() {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:border-[#4A90C4] hover:text-[#1E3A5F] transition"
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:border-[#b2f0fb] hover:text-[#153b50] transition"
         >
           <MdArrowBack size={18} />
         </button>
-        <h1 className="text-lg font-bold text-[#1E3A5F]">Meu professor</h1>
+        <h1 className="text-lg font-bold text-[#153b50]">Meu professor</h1>
       </div>
 
       {/* Loading */}
@@ -126,10 +126,10 @@ export default function MyTeacherPage() {
       {connState === 'none' && (
         <div className="bg-white rounded-2xl border border-gray-100 p-8">
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-[#D6E4F0] flex items-center justify-center mb-4">
-              <MdSchool size={32} className="text-[#1E3A5F]" />
+            <div className="w-16 h-16 rounded-full bg-[#f4d1ae] flex items-center justify-center mb-4">
+              <MdSchool size={32} className="text-[#153b50]" />
             </div>
-            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Nenhum professor vinculado</h2>
+            <h2 className="text-base font-bold text-[#153b50] mb-1">Nenhum professor vinculado</h2>
             <p className="text-sm text-gray-400 leading-relaxed">
               Você está usando o estudamus de forma independente.
               Conecte-se a um professor para receber planejamentos e acompanhamento.
@@ -145,12 +145,12 @@ export default function MyTeacherPage() {
               onKeyDown={e => e.key === 'Enter' && handleRequest()}
               placeholder="professor@email.com"
               maxLength={254}
-              className="w-full px-3 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
+              className="w-full px-3 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#b2f0fb] transition"
             />
             <button
               onClick={handleRequest}
               disabled={requesting || !teacherEmail.trim() || cooldown > 0}
-              className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-40"
+              className="w-full py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition disabled:opacity-40"
             >
               {requesting ? 'Enviando...' : cooldown > 0 ? `Aguarde ${cooldown}s` : 'Solicitar conexão'}
             </button>
@@ -161,11 +161,11 @@ export default function MyTeacherPage() {
       {/* Solicitação pendente */}
       {connState === 'pending' && (
         <div className="bg-white rounded-2xl border border-gray-100 p-8 flex flex-col items-center text-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-[#D6E4F0] flex items-center justify-center">
-            <MdSchool size={32} className="text-[#4A90C4]" />
+          <div className="w-16 h-16 rounded-full bg-[#f4d1ae] flex items-center justify-center">
+            <MdSchool size={32} className="text-[#b2f0fb]" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Solicitação enviada</h2>
+            <h2 className="text-base font-bold text-[#153b50] mb-1">Solicitação enviada</h2>
             <p className="text-sm text-gray-400 leading-relaxed">
               Aguardando o professor aceitar sua solicitação de conexão.
             </p>
@@ -191,7 +191,7 @@ export default function MyTeacherPage() {
             />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#1E3A5F]">
+            <h2 className="text-lg font-bold text-[#153b50]">
               {teacher.first_name} {teacher.last_name}
             </h2>
             <p className="text-xs text-gray-400 mt-1">Professor</p>

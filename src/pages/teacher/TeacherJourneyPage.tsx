@@ -19,7 +19,7 @@ import { useTeacherProgress } from '@/hooks/useTeacherProgress'
 import { TEACHER_ACHIEVEMENT_KEYS } from '@/lib/teacherXpHelpers'
 import { fireBasic, fireSideCannons } from '@/lib/confettiEffects'
 
-const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
+import { AVATAR_COLORS } from '@/lib/colors'
 const ONBOARDING_KEY = 'estudamus_jornada_prof_intro_seen'
 
 // ─── Dados estáticos de conquistas ───────────────────────────────────────────
@@ -90,18 +90,18 @@ function OnboardingModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="px-6 pb-2">
           <div className="flex justify-center mb-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#D6E4F0] flex items-center justify-center">
-              <Icon size={28} className="text-[#1E3A5F]" />
+            <div className="w-14 h-14 rounded-2xl bg-[#f4d1ae] flex items-center justify-center">
+              <Icon size={28} className="text-[#153b50]" />
             </div>
           </div>
-          <h2 className="text-base font-bold text-[#1E3A5F] text-center mb-2">{title}</h2>
+          <h2 className="text-base font-bold text-[#153b50] text-center mb-2">{title}</h2>
           <p className="text-sm text-gray-500 text-center leading-relaxed">{body}</p>
           {extra && (
             <div className="mt-4 space-y-2">
               {extra.map(item => (
-                <div key={item.label} className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-[#F5F7FA]">
+                <div key={item.label} className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-[#F8F6F5]">
                   <span className="text-xs text-gray-600">{item.label}</span>
-                  <span className="text-xs font-bold text-[#4A90C4]">{item.xp}</span>
+                  <span className="text-xs font-bold text-[#b2f0fb]">{item.xp}</span>
                 </div>
               ))}
             </div>
@@ -110,7 +110,7 @@ function OnboardingModal({ onClose }: { onClose: () => void }) {
         <div className="px-6 pt-4 pb-6 space-y-4">
           <div className="flex justify-center gap-1.5">
             {STEPS.map((_, i) => (
-              <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-5 bg-[#1E3A5F]' : 'w-1.5 bg-gray-200'}`} />
+              <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-5 bg-[#153b50]' : 'w-1.5 bg-gray-200'}`} />
             ))}
           </div>
           <div className="flex gap-2">
@@ -119,7 +119,7 @@ function OnboardingModal({ onClose }: { onClose: () => void }) {
             </button>
             <button
               onClick={() => isLast ? onClose() : setStep(s => s + 1)}
-              className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition flex items-center justify-center gap-1.5"
             >
               {isLast ? 'Entendi!' : 'Próximo'}
               {!isLast && <MdArrowForward size={15} />}
@@ -148,8 +148,8 @@ function fmtWeek(iso: string) {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-const plansChartConfig: ChartConfig = { plans: { label: 'Planos', color: '#4A90C4' } }
-const xpChartConfig: ChartConfig = { xp: { label: 'XP', color: '#1E3A5F' } }
+const plansChartConfig: ChartConfig = { plans: { label: 'Planos', color: '#b2f0fb' } }
+const xpChartConfig: ChartConfig = { xp: { label: 'XP', color: '#153b50' } }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 
@@ -208,7 +208,7 @@ export default function TeacherJourneyPage() {
 
       {/* Título */}
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Jornada do Professor</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Jornada do Professor</h1>
         <p className="text-xs text-gray-400 mt-0.5">Acompanhe seu impacto pedagógico</p>
       </div>
 
@@ -216,11 +216,11 @@ export default function TeacherJourneyPage() {
       <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
         <div className="mb-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rank atual</p>
-          <p className="text-lg font-bold text-[#1E3A5F] mt-0.5">{rank.current.label}</p>
+          <p className="text-lg font-bold text-[#153b50] mt-0.5">{rank.current.label}</p>
         </div>
         <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2">
           <div
-            className="h-full bg-[#4A90C4] rounded-full transition-all duration-700"
+            className="h-full bg-[#b2f0fb] rounded-full transition-all duration-700"
             style={{ width: `${rank.progressPct}%` }}
           />
         </div>
@@ -233,21 +233,21 @@ export default function TeacherJourneyPage() {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#D6E4F0] flex items-center justify-center shrink-0">
-            <MdPeople size={18} className="text-[#1E3A5F]" />
+          <div className="w-9 h-9 rounded-full bg-[#f4d1ae] flex items-center justify-center shrink-0">
+            <MdPeople size={18} className="text-[#153b50]" />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-[#1E3A5F] leading-none">{classStats.activeStudents}</p>
+            <p className="text-lg font-bold text-[#153b50] leading-none">{classStats.activeStudents}</p>
             <p className="text-xs text-gray-400 mt-0.5 leading-tight">alunos ativos</p>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#D6E4F0] flex items-center justify-center shrink-0">
-            <MdCalendarToday size={18} className="text-[#1E3A5F]" />
+          <div className="w-9 h-9 rounded-full bg-[#f4d1ae] flex items-center justify-center shrink-0">
+            <MdCalendarToday size={18} className="text-[#153b50]" />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-[#1E3A5F] leading-none">{classStats.plansCreatedThisWeek}</p>
+            <p className="text-lg font-bold text-[#153b50] leading-none">{classStats.plansCreatedThisWeek}</p>
             <p className="text-xs text-gray-400 mt-0.5 leading-tight">planos esta semana</p>
           </div>
         </div>
@@ -257,17 +257,17 @@ export default function TeacherJourneyPage() {
             <MdPlayCircle size={18} className={classStats.studentsWithSessions > 0 ? 'text-green-500' : 'text-gray-300'} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-[#1E3A5F] leading-none">{classStats.studentsWithSessions}</p>
+            <p className="text-lg font-bold text-[#153b50] leading-none">{classStats.studentsWithSessions}</p>
             <p className="text-xs text-gray-400 mt-0.5 leading-tight">estudando esta semana</p>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${classStats.itemsDoneThisWeek > 0 ? 'bg-[#D6E4F0]' : 'bg-gray-100'}`}>
-            <MdCheckCircle size={18} className={classStats.itemsDoneThisWeek > 0 ? 'text-[#4A90C4]' : 'text-gray-300'} />
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${classStats.itemsDoneThisWeek > 0 ? 'bg-[#f4d1ae]' : 'bg-gray-100'}`}>
+            <MdCheckCircle size={18} className={classStats.itemsDoneThisWeek > 0 ? 'text-[#b2f0fb]' : 'text-gray-300'} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-[#1E3A5F] leading-none">{classStats.itemsDoneThisWeek}</p>
+            <p className="text-lg font-bold text-[#153b50] leading-none">{classStats.itemsDoneThisWeek}</p>
             <p className="text-xs text-gray-400 mt-0.5 leading-tight">
               {classStats.totalItemsThisWeek > 0 ? `de ${classStats.totalItemsThisWeek} itens` : 'itens concluídos'}
             </p>
@@ -284,7 +284,7 @@ export default function TeacherJourneyPage() {
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2 min-w-0">
                   {m.completed ? (
-                    <div className="w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                    <div className="w-4 h-4 rounded-full bg-[#153b50] flex items-center justify-center shrink-0">
                       <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
                         <path d="M5 13l4 4L19 7" />
                       </svg>
@@ -296,13 +296,13 @@ export default function TeacherJourneyPage() {
                     {m.label}
                   </p>
                 </div>
-                <span className={`text-xs shrink-0 ml-2 ${m.completed ? 'text-gray-300' : 'text-[#4A90C4] font-semibold'}`}>
+                <span className={`text-xs shrink-0 ml-2 ${m.completed ? 'text-gray-300' : 'text-[#b2f0fb] font-semibold'}`}>
                   +{m.xpReward} XP
                 </span>
               </div>
               {!m.completed && (
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden ml-6" style={{ width: 'calc(100% - 1.5rem)' }}>
-                  <div className="h-full bg-[#D6E4F0] rounded-full" style={{ width: `${Math.round(m.progress * 100)}%` }} />
+                  <div className="h-full bg-[#f4d1ae] rounded-full" style={{ width: `${Math.round(m.progress * 100)}%` }} />
                 </div>
               )}
             </div>
@@ -329,7 +329,7 @@ export default function TeacherJourneyPage() {
                     <span className="text-xs text-gray-400">{fmtMin(s.minutesThisWeek)}</span>
                   )}
                   {s.xpThisWeek > 0 && (
-                    <span className="text-xs font-semibold text-[#4A90C4] bg-[#D6E4F0]/50 px-1.5 py-0.5 rounded-lg">
+                    <span className="text-xs font-semibold text-[#b2f0fb] bg-[#f4d1ae]/50 px-1.5 py-0.5 rounded-lg">
                       +{s.xpThisWeek} XP
                     </span>
                   )}
@@ -353,7 +353,7 @@ export default function TeacherJourneyPage() {
               <XAxis dataKey="week" tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} allowDecimals={false} />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="plans" fill="#4A90C4" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="plans" fill="#b2f0fb" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ChartContainer>
         </div>
@@ -366,7 +366,7 @@ export default function TeacherJourneyPage() {
               <XAxis dataKey="week" tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Area dataKey="xp" stroke="#1E3A5F" strokeWidth={2} fill="#D6E4F0" />
+              <Area dataKey="xp" stroke="#153b50" strokeWidth={2} fill="#f4d1ae" />
             </AreaChart>
           </ChartContainer>
         </div>
@@ -378,7 +378,7 @@ export default function TeacherJourneyPage() {
           <MdWhatshot size={22} className={weekStreak > 0 ? 'text-orange-500' : 'text-gray-300'} />
         </div>
         <div>
-          <p className="text-lg font-bold text-[#1E3A5F] leading-none">{weekStreak}</p>
+          <p className="text-lg font-bold text-[#153b50] leading-none">{weekStreak}</p>
           <p className="text-xs text-gray-400 mt-0.5">
             {weekStreak === 1 ? 'semana seguida criando planos' : 'semanas seguidas criando planos'}
           </p>
@@ -402,7 +402,7 @@ export default function TeacherJourneyPage() {
                 key={a.key}
                 className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border transition ${
                   unlocked
-                    ? 'bg-[#D6E4F0]/40 border-[#D6E4F0] text-[#1E3A5F]'
+                    ? 'bg-[#f4d1ae]/40 border-[#f4d1ae] text-[#153b50]'
                     : 'bg-gray-50 border-gray-100 text-gray-300'
                 }`}
               >

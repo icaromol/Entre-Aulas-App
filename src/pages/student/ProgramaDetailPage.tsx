@@ -16,7 +16,7 @@ import { StudentLayout } from '@/components/layout/StudentLayout'
 import { PROGRAM_TYPES } from '@/lib/programTypes'
 import type { Programa, ProgramPiece, ProgramExercise } from '@/types/programs'
 
-const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
+import { AVATAR_COLORS } from '@/lib/colors'
 
 const exerciseCategoryLabel: Record<string, string> = {
   technique: 'Técnica', ear_training: 'Percepção', harmony: 'Harmonia',
@@ -176,7 +176,7 @@ export default function StudentProgramaDetailPage() {
     <div className="fixed inset-0 bg-black/40 z-30 flex items-end" onClick={onClose}>
       <div className="bg-white rounded-t-2xl p-5 w-full max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-[#1E3A5F]">{pickerTitle}</h2>
+          <h2 className="text-base font-bold text-[#153b50]">{pickerTitle}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
             <MdClose size={20} />
           </button>
@@ -187,9 +187,9 @@ export default function StudentProgramaDetailPage() {
           <div className="space-y-2">
             {items.map(item => (
               <button key={item.id} onClick={() => onAdd(item.id)} disabled={addingId === item.id}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#4A90C4] transition text-left disabled:opacity-50">
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#b2f0fb] transition text-left disabled:opacity-50">
                 {renderItem(item)}
-                <span className="text-xs text-[#4A90C4] font-medium shrink-0">
+                <span className="text-xs text-[#b2f0fb] font-medium shrink-0">
                   {addingId === item.id ? '...' : '+ Adicionar'}
                 </span>
               </button>
@@ -243,11 +243,11 @@ export default function StudentProgramaDetailPage() {
         <Link to="/aluno/objetivos" className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
-        <div className="w-10 h-10 rounded-xl bg-[#1E3A5F] flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-[#153b50] flex items-center justify-center shrink-0">
           <ProgramaIcon size={20} color="white" />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-[#1E3A5F] truncate">{programa.title}</h1>
+          <h1 className="text-xl font-bold text-[#153b50] truncate">{programa.title}</h1>
           {(programa.status === 'archived' || programa.type !== 'regular') && (
             <p className="text-xs text-gray-400">
               {programa.status === 'archived'
@@ -256,7 +256,7 @@ export default function StudentProgramaDetailPage() {
             </p>
           )}
         </div>
-        <Link to={`/aluno/repertorio/programas/${programId}/editar`} className="text-gray-400 hover:text-[#4A90C4] transition shrink-0">
+        <Link to={`/aluno/repertorio/programas/${programId}/editar`} className="text-gray-400 hover:text-[#b2f0fb] transition shrink-0">
           <MdEdit size={20} />
         </Link>
       </div>
@@ -266,7 +266,7 @@ export default function StudentProgramaDetailPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-5 space-y-2">
           {programa.deadline && (
             <div className="flex items-center gap-2">
-              <MdCalendarMonth size={16} className="text-[#4A90C4] shrink-0" />
+              <MdCalendarMonth size={16} className="text-[#b2f0fb] shrink-0" />
               <span className="text-sm text-gray-700">{formatDeadline(programa.deadline)}</span>
               {days !== null && (
                 <span className={`text-xs font-semibold ml-auto px-2 py-0.5 rounded-full ${
@@ -297,7 +297,7 @@ export default function StudentProgramaDetailPage() {
                 <MdMusicNote size={15} />Peças ({programPieces.length})
               </h2>
               <button onClick={openPiecePicker}
-                className="flex items-center gap-1 text-xs font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition">
+                className="flex items-center gap-1 text-xs font-medium text-[#b2f0fb] hover:text-[#153b50] transition">
                 <MdAdd size={16} />Adicionar peça
               </button>
             </div>
@@ -310,7 +310,7 @@ export default function StudentProgramaDetailPage() {
                     <div className="relative w-9 h-9 shrink-0">
                       <svg viewBox="0 0 36 36" className="w-9 h-9 -rotate-90 absolute inset-0">
                         <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3"/>
-                        <circle cx="18" cy="18" r="15" fill="none" stroke="#4A90C4" strokeWidth="3"
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="#b2f0fb" strokeWidth="3"
                           strokeDasharray={`${((pp.piece?.completion_pct ?? 0) / 100) * 94.2} 94.2`}
                           strokeLinecap="round" />
                       </svg>
@@ -325,7 +325,7 @@ export default function StudentProgramaDetailPage() {
                       <p className="text-xs text-gray-400">{pp.piece?.composer ?? '—'} · {pp.piece?.completion_pct ?? 0}%</p>
                     </div>
                     <button onClick={() => removePiece(pp)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition">
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-[#ff4c3e] transition">
                       <MdDeleteOutline size={18} />
                     </button>
                   </div>
@@ -341,7 +341,7 @@ export default function StudentProgramaDetailPage() {
                 <MdSchool size={15} />Exercícios ({programExercises.length})
               </h2>
               <button onClick={openExercisePicker}
-                className="flex items-center gap-1 text-xs font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition">
+                className="flex items-center gap-1 text-xs font-medium text-[#b2f0fb] hover:text-[#153b50] transition">
                 <MdAdd size={16} />Adicionar exercício
               </button>
             </div>
@@ -359,7 +359,7 @@ export default function StudentProgramaDetailPage() {
                       <p className="text-xs text-gray-400">{exerciseCategoryLabel[pe.exercise?.category ?? ''] ?? '—'}</p>
                     </div>
                     <button onClick={() => removeExercise(pe)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition">
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-[#ff4c3e] transition">
                       <MdDeleteOutline size={18} />
                     </button>
                   </div>

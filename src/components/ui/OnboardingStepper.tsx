@@ -1,5 +1,5 @@
 // Stepper horizontal para os modais de onboarding.
-// Cores: cinza (inactive) → azul claro #4A90C4 (completed) → azul escuro #1E3A5F (active)
+// Cores: cinza (inactive) → azul claro #b2f0fb (completed) → azul escuro #153b50 (active)
 
 interface OnboardingStepperProps {
   totalSteps: number
@@ -7,8 +7,8 @@ interface OnboardingStepperProps {
 }
 
 export function OnboardingStepper({ totalSteps, currentStep }: OnboardingStepperProps) {
-  const ACTIVE    = '#1E3A5F'
-  const COMPLETED = '#4A90C4'
+  const ACTIVE    = '#153b50'
+  const COMPLETED = '#b2f0fb'
   const INACTIVE  = '#E5E7EB'
 
   function getColor(stepNumber: number) {

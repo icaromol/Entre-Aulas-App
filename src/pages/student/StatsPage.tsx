@@ -35,11 +35,11 @@ function fmtXp(n: number): string {
 }
 
 const minutesConfig = {
-  minutes: { label: 'Minutos', color: '#4A90C4' },
+  minutes: { label: 'Minutos', color: '#b2f0fb' },
 } satisfies ChartConfig
 
 const xpConfig = {
-  xp: { label: 'XP', color: '#1E3A5F' },
+  xp: { label: 'XP', color: '#153b50' },
 } satisfies ChartConfig
 
 export default function StatsPage() {
@@ -89,7 +89,7 @@ export default function StatsPage() {
     <StudentLayout>
 
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Estatísticas</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Estatísticas</h1>
         <p className="text-sm text-gray-400 mt-0.5">Seu progresso em números</p>
       </div>
 
@@ -97,10 +97,10 @@ export default function StatsPage() {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <div className="flex items-center gap-2 mb-1.5">
-            <MdAccessTime size={16} className="text-[#4A90C4]" />
+            <MdAccessTime size={16} className="text-[#b2f0fb]" />
             <p className="text-xs text-gray-400">Esta semana</p>
           </div>
-          <p className="text-xl font-bold text-[#1E3A5F] leading-none">{fmtMinutes(thisWeekMinutes)}</p>
+          <p className="text-xl font-bold text-[#153b50] leading-none">{fmtMinutes(thisWeekMinutes)}</p>
           <p className="text-[11px] text-gray-400 mt-1">{weekStats.sessions} {weekStats.sessions === 1 ? 'sessão' : 'sessões'}</p>
         </div>
 
@@ -109,32 +109,32 @@ export default function StatsPage() {
             <MdWhatshot size={16} className={streak > 0 ? 'text-orange-400' : 'text-gray-300'} />
             <p className="text-xs text-gray-400">Sequência</p>
           </div>
-          <p className="text-xl font-bold text-[#1E3A5F] leading-none">{streak}</p>
+          <p className="text-xl font-bold text-[#153b50] leading-none">{streak}</p>
           <p className="text-[11px] text-gray-400 mt-1">{streak === 1 ? 'dia seguido' : 'dias seguidos'}</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <div className="flex items-center gap-2 mb-1.5">
-            <MdCheckCircle size={16} className="text-[#4A90C4]" />
+            <MdCheckCircle size={16} className="text-[#b2f0fb]" />
             <p className="text-xs text-gray-400">Itens semana</p>
           </div>
-          <p className="text-xl font-bold text-[#1E3A5F] leading-none">
+          <p className="text-xl font-bold text-[#153b50] leading-none">
             {weekStats.doneItems}
             <span className="text-sm font-normal text-gray-400 ml-1">/ {weekStats.totalItems}</span>
           </p>
           {weekStats.totalItems > 0 && (
             <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mt-2">
-              <div className="h-full bg-[#4A90C4] rounded-full" style={{ width: `${itemsPct}%` }} />
+              <div className="h-full bg-[#b2f0fb] rounded-full" style={{ width: `${itemsPct}%` }} />
             </div>
           )}
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <div className="flex items-center gap-2 mb-1.5">
-            <MdStar size={16} className="text-[#4A90C4]" />
+            <MdStar size={16} className="text-[#b2f0fb]" />
             <p className="text-xs text-gray-400">XP total</p>
           </div>
-          <p className="text-xl font-bold text-[#1E3A5F] leading-none">{fmtXp(xpTotal)}</p>
+          <p className="text-xl font-bold text-[#153b50] leading-none">{fmtXp(xpTotal)}</p>
           <p className="text-[11px] text-gray-400 mt-1">pontos de experiência</p>
         </div>
       </div>
@@ -180,7 +180,7 @@ export default function StatsPage() {
               dataKey="xp"
               type="monotone"
               stroke="var(--color-xp)"
-              fill="#D6E4F0"
+              fill="#f4d1ae"
               strokeWidth={2}
               dot={false}
             />
@@ -191,7 +191,7 @@ export default function StatsPage() {
       {/* Link histórico */}
       <button
         onClick={() => navigate('/aluno/historico')}
-        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-gray-200 text-sm font-medium text-[#4A90C4] hover:bg-[#D6E4F0]/40 transition"
+        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-gray-200 text-sm font-medium text-[#b2f0fb] hover:bg-[#f4d1ae]/40 transition"
       >
         <MdHistory size={18} />
         Ver histórico de sessões

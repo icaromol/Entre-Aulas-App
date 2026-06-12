@@ -149,7 +149,7 @@ export default function NewProgramaPage() {
         <Link to={`/professor/alunos/${studentId}?tab=programs`} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Novo programa</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Novo programa</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -167,8 +167,8 @@ export default function NewProgramaPage() {
                 onClick={() => handleTypeChange(t.value)}
                 className={`py-3 px-3 rounded-xl border text-sm font-medium transition flex items-center gap-2 ${
                   type === t.value
-                    ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
+                    ? 'bg-[#153b50] text-white border-[#153b50]'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]'
                 }`}
               >
                 <t.Icon size={16} />
@@ -192,7 +192,7 @@ export default function NewProgramaPage() {
               onChange={e => handleTitleChange(e.target.value)}
               placeholder={type === 'outro' ? 'Nome do programa' : selected.label}
               maxLength={200}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition"
             />
           </div>
 
@@ -205,7 +205,7 @@ export default function NewProgramaPage() {
                 type="date"
                 value={deadline}
                 onChange={e => setDeadline(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition"
               />
             </div>
           )}
@@ -218,7 +218,7 @@ export default function NewProgramaPage() {
                 onChange={e => setVenue(e.target.value)}
                 placeholder="Ex: Teatro Municipal, Sala de Recitais..."
                 maxLength={200}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition"
               />
             </div>
           )}
@@ -238,7 +238,7 @@ export default function NewProgramaPage() {
                   <div className="flex gap-3">
                     <button type="button"
                       onClick={() => setSelectedPieceIds(new Set(pieces.map(p => p.id)))}
-                      className="text-xs text-[#4A90C4] hover:underline">
+                      className="text-xs text-[#b2f0fb] hover:underline">
                       Marcar todas
                     </button>
                     <button type="button"
@@ -255,7 +255,7 @@ export default function NewProgramaPage() {
                         type="checkbox"
                         checked={selectedPieceIds.has(piece.id)}
                         onChange={e => togglePiece(piece.id, e.target.checked)}
-                        className="mt-0.5 w-4 h-4 accent-[#4A90C4] shrink-0"
+                        className="mt-0.5 w-4 h-4 accent-[#b2f0fb] shrink-0"
                       />
                       <div className="min-w-0">
                         <p className="text-sm text-gray-800 truncate">{piece.title}</p>
@@ -280,7 +280,7 @@ export default function NewProgramaPage() {
                   <div className="flex gap-3">
                     <button type="button"
                       onClick={() => setSelectedExerciseIds(new Set(exercises.map(ex => ex.id)))}
-                      className="text-xs text-[#4A90C4] hover:underline">
+                      className="text-xs text-[#b2f0fb] hover:underline">
                       Marcar todos
                     </button>
                     <button type="button"
@@ -297,7 +297,7 @@ export default function NewProgramaPage() {
                         type="checkbox"
                         checked={selectedExerciseIds.has(ex.id)}
                         onChange={e => toggleExercise(ex.id, e.target.checked)}
-                        className="mt-0.5 w-4 h-4 accent-[#4A90C4] shrink-0"
+                        className="mt-0.5 w-4 h-4 accent-[#b2f0fb] shrink-0"
                       />
                       <div className="min-w-0">
                         <p className="text-sm text-gray-800 truncate">{ex.title}</p>
@@ -328,14 +328,14 @@ export default function NewProgramaPage() {
             rows={3}
             maxLength={2000}
             placeholder="Contexto, repertório previsto, objetivos..."
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none"
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition resize-none"
           />
         </div>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         <Button type="submit" disabled={saving}
-          className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10">
+          className="w-full bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl h-10">
           {saving ? 'Salvando...' : 'Criar programa'}
         </Button>
 

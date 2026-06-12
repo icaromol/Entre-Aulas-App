@@ -120,7 +120,7 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded, alwaysExpande
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="flex items-center gap-1 text-xs text-[#4A90C4] hover:text-[#1E3A5F] transition"
+              className="flex items-center gap-1 text-xs text-[#b2f0fb] hover:text-[#153b50] transition"
             >
               <MdEdit size={13} /> Editar
             </button>
@@ -141,7 +141,7 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded, alwaysExpande
                   onClick={() => toggleDay(day.day)}
                   className={`w-11 shrink-0 text-xs font-semibold py-1.5 rounded-lg border transition ${
                     day.active
-                      ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
+                      ? 'bg-[#153b50] text-white border-[#153b50]'
                       : 'bg-white text-gray-400 border-gray-200'
                   }`}
                 >
@@ -153,9 +153,9 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded, alwaysExpande
                       type="range" min={0} max={100} step={1}
                       value={toSliderPos(day.minutes)}
                       onChange={e => setMinutes(day.day, fromSliderPos(Number(e.target.value)))}
-                      className="flex-1 min-w-0 accent-[#1E3A5F]"
+                      className="flex-1 min-w-0 accent-[#153b50]"
                     />
-                    <span className="text-xs font-bold text-[#1E3A5F] w-12 text-right shrink-0">
+                    <span className="text-xs font-bold text-[#153b50] w-12 text-right shrink-0">
                       {fmtMin(day.minutes)}
                     </span>
                   </div>
@@ -168,7 +168,7 @@ export function AvailabilityEditor({ studentId, onSaved, onLoaded, alwaysExpande
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="w-full py-2 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-60"
+              className="w-full py-2 rounded-xl bg-[#153b50] text-white text-sm font-medium hover:bg-[#153b50]/90 transition disabled:opacity-60"
             >
               {saving ? 'Salvando...' : 'Salvar dias'}
             </button>

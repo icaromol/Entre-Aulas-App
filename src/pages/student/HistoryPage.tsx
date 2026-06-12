@@ -162,20 +162,20 @@ export default function HistoryPage() {
   return (
     <StudentLayout>
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Histórico</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Histórico</h1>
         <p className="text-sm text-gray-400 mt-0.5">Suas sessões de estudo</p>
       </div>
 
       {/* Destaque semanal */}
       {thisWeekSeconds > 0 && (
-        <div className="bg-[#D6E4F0] rounded-2xl p-4 mb-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+        <div className="bg-[#f4d1ae] rounded-2xl p-4 mb-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-[#153b50] flex items-center justify-center shrink-0">
             <MdAccessTime size={22} color="white" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-[#4A90C4]">Esta semana</p>
-            <p className="text-2xl font-bold text-[#1E3A5F]">{fmtWeekTotal(thisWeekSeconds)}</p>
-            <p className="text-xs text-[#4A90C4]">de estudo acumulado</p>
+            <p className="text-xs font-semibold text-[#b2f0fb]">Esta semana</p>
+            <p className="text-2xl font-bold text-[#153b50]">{fmtWeekTotal(thisWeekSeconds)}</p>
+            <p className="text-xs text-[#b2f0fb]">de estudo acumulado</p>
           </div>
         </div>
       )}
@@ -183,7 +183,7 @@ export default function HistoryPage() {
       {/* Empty state */}
       {sessions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 rounded-full bg-[#153b50] flex items-center justify-center mx-auto mb-3">
             <MdHistory size={24} color="white" />
           </div>
           <p className="text-sm font-semibold text-gray-600">Nenhuma sessão ainda</p>
@@ -242,7 +242,7 @@ export default function HistoryPage() {
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {sessionXp != null && (
-                              <span className="flex items-center gap-0.5 text-xs font-semibold text-[#4A90C4] bg-[#D6E4F0] px-1.5 py-0.5 rounded-full">
+                              <span className="flex items-center gap-0.5 text-xs font-semibold text-[#b2f0fb] bg-[#f4d1ae] px-1.5 py-0.5 rounded-full">
                                 <MdStar size={11} />
                                 +{sessionXp} XP
                               </span>
@@ -258,7 +258,7 @@ export default function HistoryPage() {
                         {allLabels.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {allLabels.map((label, i) => (
-                              <span key={i} className="text-[11px] bg-[#D6E4F0] text-[#1E3A5F] px-2 py-0.5 rounded-lg font-medium">
+                              <span key={i} className="text-[11px] bg-[#f4d1ae] text-[#153b50] px-2 py-0.5 rounded-lg font-medium">
                                 {label}
                               </span>
                             ))}

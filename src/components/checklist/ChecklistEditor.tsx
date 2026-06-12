@@ -82,7 +82,7 @@ export function ChecklistEditor({ items, onChange }: Props) {
                       if (e.key === 'Enter') { e.preventDefault(); updateItem(item.tempId, editingValue) }
                       if (e.key === 'Escape') setEditingId(null)
                     }}
-                    className="flex-1 px-2 py-0.5 text-xs rounded-md border border-[#4A90C4] outline-none bg-white"
+                    className="flex-1 px-2 py-0.5 text-xs rounded-md border border-[#b2f0fb] outline-none bg-white"
                   />
                 ) : (
                   <span
@@ -124,12 +124,12 @@ export function ChecklistEditor({ items, onChange }: Props) {
               onChange={e => setNewItemTitle(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addItem())}
               placeholder="Adicionar item ao checklist..."
-              className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs outline-none focus:border-[#4A90C4] transition bg-white"
+              className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs outline-none focus:border-[#b2f0fb] transition bg-white"
             />
             <button
               type="button"
               onClick={addItem}
-              className="px-3 py-1.5 rounded-lg bg-[#1E3A5F] text-white hover:bg-[#1E3A5F]/90 transition flex items-center"
+              className="px-3 py-1.5 rounded-lg bg-[#153b50] text-white hover:bg-[#153b50]/90 transition flex items-center"
             >
               <MdAdd size={14} />
             </button>

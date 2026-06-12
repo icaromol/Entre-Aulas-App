@@ -36,6 +36,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { TeacherLayout } from "@/components/layout/TeacherLayout";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StudentJornadaTab } from "@/components/teacher/StudentJornadaTab";
+import { AVATAR_COLORS } from "@/lib/colors";
 
 interface Student {
   id: string;
@@ -92,8 +93,6 @@ interface PlanItemLocal {
   exercise?: { title: string; category: string } | null;
   programa?: { title: string; type: string } | null;
 }
-
-const AVATAR_COLORS = ["#1E3A5F", "#4A90C4", "#D6E4F0", "#F5F7FA", "#FFFFFF"];
 
 const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -508,7 +507,7 @@ export default function StudentProfilePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold text-[#1E3A5F]">
+              <h2 className="text-base font-bold text-[#153b50]">
                 Link de convite
               </h2>
               <button
@@ -526,7 +525,7 @@ export default function StudentProfilePage() {
               <input
                 readOnly
                 value={`${window.location.origin}/cadastro?invite=${studentId}`}
-                className="flex-1 px-3 py-2 rounded-lg border border-[#4A90C4]/30 bg-white text-xs text-gray-600 outline-none"
+                className="flex-1 px-3 py-2 rounded-lg border border-[#b2f0fb]/30 bg-white text-xs text-gray-600 outline-none"
               />
               <button
                 onClick={() => {
@@ -536,7 +535,7 @@ export default function StudentProfilePage() {
                   setInviteCopied(true);
                   setTimeout(() => setInviteCopied(false), 2000);
                 }}
-                className="px-4 py-2 rounded-lg bg-[#1E3A5F] text-white text-xs font-medium hover:bg-[#1E3A5F]/90 transition whitespace-nowrap"
+                className="px-4 py-2 rounded-lg bg-[#153b50] text-white text-xs font-medium hover:bg-[#153b50]/90 transition whitespace-nowrap"
               >
                 {inviteCopied ? "✓ Copiado!" : "Copiar"}
               </button>
@@ -556,7 +555,7 @@ export default function StudentProfilePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-[#1E3A5F]">
+              <h2 className="text-base font-bold text-[#153b50]">
                 Informações
               </h2>
               <button
@@ -599,7 +598,7 @@ export default function StudentProfilePage() {
                       {DAYS[d.day_of_week]}
                     </span>
                     {d.is_active ? (
-                      <span className="text-xs text-[#4A90C4] font-medium">
+                      <span className="text-xs text-[#b2f0fb] font-medium">
                         {d.minutes_available} min
                       </span>
                     ) : (
@@ -621,7 +620,7 @@ export default function StudentProfilePage() {
             </div>
             <button
               onClick={() => setShowInfo(false)}
-              className="mt-5 w-full py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#4A90C4] transition"
+              className="mt-5 w-full py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#b2f0fb] transition"
             >
               Fechar
             </button>
@@ -646,7 +645,7 @@ export default function StudentProfilePage() {
           />
         </div>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-[#1E3A5F]">
+          <h1 className="text-xl font-bold text-[#153b50]">
             {student.first_name} {student.last_name}
           </h1>
           <p className="text-xs text-gray-400 mt-0.5">
@@ -718,9 +717,9 @@ export default function StudentProfilePage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
           {(() => {
             const Icon = instrumentIcon(student.instrument);
-            return <Icon size={32} className="mx-auto mb-2 text-[#4A90C4]" />;
+            return <Icon size={32} className="mx-auto mb-2 text-[#b2f0fb]" />;
           })()}
-          <p className="text-sm font-bold text-[#1E3A5F] truncate">
+          <p className="text-sm font-bold text-[#153b50] truncate">
             {student.instrument}
           </p>
           <p className="text-xs text-gray-400 mt-0.5">Instrumento</p>
@@ -728,9 +727,9 @@ export default function StudentProfilePage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
           {(() => {
             const Icon = levelIcon(student.level);
-            return <Icon size={32} className="mx-auto mb-2 text-[#4A90C4]" />;
+            return <Icon size={32} className="mx-auto mb-2 text-[#b2f0fb]" />;
           })()}
-          <p className="text-sm font-bold text-[#1E3A5F]">
+          <p className="text-sm font-bold text-[#153b50]">
             {levelLabel[student.level] ?? student.level}
           </p>
           <p className="text-xs text-gray-400 mt-0.5">Nível</p>
@@ -740,20 +739,20 @@ export default function StudentProfilePage() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-          <MdMusicNote size={16} className="mx-auto mb-1 text-[#4A90C4]" />
-          <p className="text-2xl font-bold text-[#1E3A5F]">{pieces.length}</p>
+          <MdMusicNote size={16} className="mx-auto mb-1 text-[#b2f0fb]" />
+          <p className="text-2xl font-bold text-[#153b50]">{pieces.length}</p>
           <p className="text-xs text-gray-400 mt-1">Peças</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-          <MdSchool size={16} className="mx-auto mb-1 text-[#4A90C4]" />
-          <p className="text-2xl font-bold text-[#1E3A5F]">
+          <MdSchool size={16} className="mx-auto mb-1 text-[#b2f0fb]" />
+          <p className="text-2xl font-bold text-[#153b50]">
             {exercises.length}
           </p>
           <p className="text-xs text-gray-400 mt-1">Exercícios</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-          <MdAccessTime size={16} className="mx-auto mb-1 text-[#4A90C4]" />
-          <p className="text-2xl font-bold text-[#1E3A5F]">{totalMinutes}</p>
+          <MdAccessTime size={16} className="mx-auto mb-1 text-[#b2f0fb]" />
+          <p className="text-2xl font-bold text-[#153b50]">{totalMinutes}</p>
           <p className="text-xs text-gray-400 mt-1">min/semana</p>
           <div className="flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mt-1.5">
             {activeDays.map((d) => (
@@ -783,7 +782,7 @@ export default function StudentProfilePage() {
             onClick={() => setActiveTab(tab.key)}
             className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${
               activeTab === tab.key
-                ? "bg-white text-[#1E3A5F] shadow-sm"
+                ? "bg-white text-[#153b50] shadow-sm"
                 : "text-gray-400 hover:text-gray-600"
             }`}
           >
@@ -809,11 +808,11 @@ export default function StudentProfilePage() {
                   <MdChevronLeft size={20} className="text-gray-400" />
                 </button>
                 <div className="text-center">
-                  <p className="text-sm font-bold text-[#1E3A5F]">
+                  <p className="text-sm font-bold text-[#153b50]">
                     {formatWeekLabel(ws)}
                   </p>
                   {planWeekOffset === 0 && (
-                    <p className="text-[10px] text-[#4A90C4] font-semibold uppercase tracking-wide mt-0.5">
+                    <p className="text-[10px] text-[#b2f0fb] font-semibold uppercase tracking-wide mt-0.5">
                       semana atual
                     </p>
                   )}
@@ -834,21 +833,21 @@ export default function StudentProfilePage() {
                 }
                 className={`w-full mb-4 rounded-2xl px-4 py-3 flex items-center justify-between transition group ${
                   hasPlan
-                    ? "bg-gray-50 border border-gray-200 hover:border-[#4A90C4]"
-                    : "bg-[#4A90C4] hover:bg-[#4A90C4]/90"
+                    ? "bg-gray-50 border border-gray-200 hover:border-[#b2f0fb]"
+                    : "bg-[#b2f0fb] hover:bg-[#b2f0fb]/90"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${hasPlan ? "bg-[#D6E4F0]" : "bg-white/15"}`}
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${hasPlan ? "bg-[#f4d1ae]" : "bg-white/15"}`}
                   >
                     <MdCalendarMonth
                       size={18}
-                      className={hasPlan ? "text-[#4A90C4]" : "text-white"}
+                      className={hasPlan ? "text-[#b2f0fb]" : "text-white"}
                     />
                   </div>
                   <p
-                    className={`font-semibold text-sm ${hasPlan ? "text-[#1E3A5F]" : "text-white"}`}
+                    className={`font-semibold text-sm ${hasPlan ? "text-[#153b50]" : "text-white"}`}
                   >
                     {hasPlan
                       ? "Regerar planejamento"
@@ -859,7 +858,7 @@ export default function StudentProfilePage() {
                   size={18}
                   className={
                     hasPlan
-                      ? "text-gray-400 group-hover:text-[#4A90C4]"
+                      ? "text-gray-400 group-hover:text-[#b2f0fb]"
                       : "text-white/60 group-hover:text-white"
                   }
                 />
@@ -901,7 +900,7 @@ export default function StudentProfilePage() {
                             </p>
                           </div>
                           {totalMin > 0 && (
-                            <span className="text-xs font-semibold text-[#4A90C4]">
+                            <span className="text-xs font-semibold text-[#b2f0fb]">
                               {totalMin} min
                             </span>
                           )}
@@ -922,7 +921,7 @@ export default function StudentProfilePage() {
                                 ? "bg-gray-100 hover:bg-gray-100/70"
                                 : task.exercise_id
                                   ? "bg-rose-50 hover:bg-rose-100/80"
-                                  : "bg-[#D6E4F0]/60 hover:bg-[#D6E4F0]";
+                                  : "bg-[#f4d1ae]/60 hover:bg-[#f4d1ae]";
                               return (
                                 <button
                                   key={task.id}
@@ -938,14 +937,14 @@ export default function StudentProfilePage() {
                                     {task.is_maintenance && (
                                       <MdSync
                                         size={14}
-                                        className="shrink-0 text-[#4A90C4]"
+                                        className="shrink-0 text-[#b2f0fb]"
                                       />
                                     )}
                                     <p className="text-sm font-medium text-gray-700 flex-1 leading-snug line-clamp-2">
                                       {title}
                                     </p>
                                     {task.is_done && (
-                                      <span className="shrink-0 w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center mt-0.5">
+                                      <span className="shrink-0 w-4 h-4 rounded-full bg-[#153b50] flex items-center justify-center mt-0.5">
                                         <svg
                                           width="8"
                                           height="8"
@@ -964,7 +963,7 @@ export default function StudentProfilePage() {
                                       {task.programa.title}
                                     </p>
                                   )}
-                                  <p className="text-xs font-semibold text-[#4A90C4] mt-1">
+                                  <p className="text-xs font-semibold text-[#b2f0fb] mt-1">
                                     {task.duration_minutes} min
                                   </p>
                                 </button>
@@ -990,7 +989,7 @@ export default function StudentProfilePage() {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0 pr-3">
-                        <p className="text-base font-bold text-[#1E3A5F] line-clamp-2">
+                        <p className="text-base font-bold text-[#153b50] line-clamp-2">
                           {editingPlanItem.is_maintenance
                             ? `Manutenção · ${editingPlanItem.piece?.title ?? "—"}`
                             : (editingPlanItem.piece?.title ??
@@ -1022,7 +1021,7 @@ export default function StudentProfilePage() {
                         onChange={(e) =>
                           setEditDuration(Number(e.target.value))
                         }
-                        className="w-20 text-center border border-gray-200 rounded-xl px-2 py-2.5 text-base font-semibold text-[#1E3A5F] outline-none focus:border-[#4A90C4]"
+                        className="w-20 text-center border border-gray-200 rounded-xl px-2 py-2.5 text-base font-semibold text-[#153b50] outline-none focus:border-[#b2f0fb]"
                       />
                       <span className="text-sm text-gray-400">min</span>
                       <input
@@ -1034,7 +1033,7 @@ export default function StudentProfilePage() {
                         onChange={(e) =>
                           setEditDuration(Number(e.target.value))
                         }
-                        className="flex-1 accent-[#4A90C4] h-2"
+                        className="flex-1 accent-[#b2f0fb] h-2"
                       />
                     </div>
                     <div className="flex gap-3">
@@ -1049,7 +1048,7 @@ export default function StudentProfilePage() {
                           savePlanItemDuration(editingPlanItem.id, editDuration)
                         }
                         disabled={savingPlanItem}
-                        className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold disabled:opacity-50"
+                        className="flex-1 py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold disabled:opacity-50"
                       >
                         {savingPlanItem ? "..." : "Salvar"}
                       </button>
@@ -1079,7 +1078,7 @@ export default function StudentProfilePage() {
                 onClick={() => setSubTab(t.key)}
                 className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${
                   subTab === t.key
-                    ? "bg-white text-[#1E3A5F] shadow-sm"
+                    ? "bg-white text-[#153b50] shadow-sm"
                     : "text-gray-400 hover:text-gray-600"
                 }`}
               >
@@ -1102,7 +1101,7 @@ export default function StudentProfilePage() {
                   <Link
                     key={piece.id}
                     to={`/professor/alunos/${studentId}/pecas/${piece.id}`}
-                    className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
+                    className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#b2f0fb] transition"
                   >
                     <div className="relative w-10 h-10 shrink-0">
                       <svg
@@ -1127,7 +1126,7 @@ export default function StudentProfilePage() {
                               ? "#D1D5DB"
                               : piece.status === "completed"
                                 ? "#22c55e"
-                                : "#4A90C4"
+                                : "#b2f0fb"
                           }
                           strokeWidth="3"
                           strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`}
@@ -1168,7 +1167,7 @@ export default function StudentProfilePage() {
               <div className="flex flex-col items-center gap-2 pt-4 pb-2">
                 <Link
                   to={`/professor/alunos/${studentId}/pecas/nova`}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition"
                 >
                   <MdAdd size={18} />
                   Nova peça
@@ -1199,7 +1198,7 @@ export default function StudentProfilePage() {
                   <Link
                     key={ex.id}
                     to={`/professor/alunos/${studentId}/exercicios/${ex.id}`}
-                    className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
+                    className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#b2f0fb] transition"
                   >
                     <div className="shrink-0">
                       {ex.status === "inactive" ? (
@@ -1234,7 +1233,7 @@ export default function StudentProfilePage() {
               <div className="flex flex-col items-center gap-2 pt-4 pb-2">
                 <Link
                   to={`/professor/alunos/${studentId}/exercicios/novo`}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition"
                 >
                   <MdAdd size={18} />
                   Novo exercício
@@ -1267,9 +1266,9 @@ export default function StudentProfilePage() {
               <Link
                 key={prog.id}
                 to={`/professor/alunos/${studentId}/programas/${prog.id}`}
-                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#4A90C4] transition"
+                className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 hover:border-[#b2f0fb] transition"
               >
-                <div className="w-9 h-9 rounded-lg bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-[#153b50] flex items-center justify-center shrink-0">
                   {programIcon(prog.type)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1291,7 +1290,7 @@ export default function StudentProfilePage() {
           )}
           <Link
             to={`/professor/alunos/${studentId}/programas/novo`}
-            className="flex items-center justify-center gap-2 w-full py-24 text-xl font-medium text-gray-300 hover:text-[#1E3A5F] transition"
+            className="flex items-center justify-center gap-2 w-full py-24 text-xl font-medium text-gray-300 hover:text-[#153b50] transition"
           >
             <MdAdd size={22} />
             Novo programa
@@ -1313,7 +1312,7 @@ export default function StudentProfilePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div>
-              <h3 className="text-base font-bold text-[#1E3A5F]">
+              <h3 className="text-base font-bold text-[#153b50]">
                 Importar {importMode === "pieces" ? "peças" : "exercícios"} em
                 lote
               </h3>
@@ -1331,12 +1330,12 @@ export default function StudentProfilePage() {
                   : "Escala de Dó maior\nArpejo de Sol\nHanon nº1"
               }
               rows={6}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition resize-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition resize-none"
             />
             <button
               onClick={handleImport}
               disabled={importing || !importText.trim()}
-              className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition disabled:opacity-50"
             >
               {importing
                 ? "Criando..."

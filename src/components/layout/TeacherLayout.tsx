@@ -12,8 +12,7 @@ import {
   MdSwapHoriz,
 } from "react-icons/md";
 import { OnboardingController } from "@/components/onboarding/OnboardingController";
-
-const AVATAR_COLORS = ["#1E3A5F", "#4A90C4", "#D6E4F0", "#F5F7FA", "#FFFFFF"];
+import { AVATAR_COLORS } from "@/lib/colors";
 
 interface TeacherLayoutProps {
   children: React.ReactNode;
@@ -91,7 +90,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
       {showLogout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">
+            <h2 className="text-base font-bold text-[#153b50] mb-1">
               Quer sair?
             </h2>
             <p className="text-sm text-gray-400 mb-5">
@@ -106,7 +105,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
               </button>
               <button
                 onClick={() => setShowLogout(false)}
-                className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition"
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#b2f0fb] transition"
               >
                 Permanecer conectado
               </button>
@@ -119,7 +118,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
       {showEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="text-base font-bold text-[#1E3A5F] mb-4">
+            <h2 className="text-base font-bold text-[#153b50] mb-4">
               Editar perfil
             </h2>
             <div className="space-y-3">
@@ -131,7 +130,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                   value={editFirst}
                   onChange={(e) => setEditFirst(e.target.value)}
                   maxLength={100}
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
+                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#b2f0fb] transition"
                 />
               </div>
               <div>
@@ -142,21 +141,21 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                   value={editLast}
                   onChange={(e) => setEditLast(e.target.value)}
                   maxLength={100}
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
+                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#b2f0fb] transition"
                 />
               </div>
             </div>
             <div className="flex gap-2 mt-5">
               <button
                 onClick={() => setShowEdit(false)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition"
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#b2f0fb] transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSaveProfile}
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-[#153b50] text-white text-sm font-medium hover:bg-[#153b50]/90 transition disabled:opacity-50"
               >
                 {saving ? "Salvando..." : "Salvar"}
               </button>
@@ -183,8 +182,8 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
               to="/professor/jornada"
               className={`text-sm font-medium transition ${
                 location.pathname.startsWith("/professor/jornada")
-                  ? "text-[#1E3A5F]"
-                  : "text-gray-400 hover:text-[#1E3A5F]"
+                  ? "text-[#153b50]"
+                  : "text-gray-400 hover:text-[#153b50]"
               }`}
             >
               Início
@@ -193,13 +192,13 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
               to="/professor/alunos"
               className={`relative text-sm font-medium transition ${
                 location.pathname.startsWith("/professor/alunos")
-                  ? "text-[#1E3A5F]"
-                  : "text-gray-400 hover:text-[#1E3A5F]"
+                  ? "text-[#153b50]"
+                  : "text-gray-400 hover:text-[#153b50]"
               }`}
             >
               Alunos
               {pendingCount > 0 && (
-                <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-[#4A90C4]" />
+                <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-[#b2f0fb]" />
               )}
             </Link>
           </nav>
@@ -208,7 +207,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
           <div className="relative flex justify-end">
             <button
               onClick={() => setShowMenu((v) => !v)}
-              className={`transition ${showMenu ? "text-[#1E3A5F]" : "text-gray-400 hover:text-[#1E3A5F]"}`}
+              className={`transition ${showMenu ? "text-[#153b50]" : "text-gray-400 hover:text-[#153b50]"}`}
               aria-label="Menu"
             >
               <MdMenu size={22} />
@@ -240,7 +239,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[#1E3A5F] truncate">
+                      <p className="text-sm font-semibold text-[#153b50] truncate">
                         {fullName || "Professor"}
                       </p>
                       <p className="text-xs text-gray-400 truncate">
@@ -260,7 +259,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                     >
                       <MdEmojiEvents
                         size={18}
-                        className="text-[#4A90C4] shrink-0"
+                        className="text-[#2d2b2b] shrink-0"
                       />
                       <span className="text-sm font-medium text-gray-700">
                         Minha Jornada
@@ -270,7 +269,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                       onClick={openEdit}
                       className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-left"
                     >
-                      <MdEdit size={18} className="text-[#4A90C4] shrink-0" />
+                      <MdEdit size={18} className="text-[#2d2b2b] shrink-0" />
                       <span className="text-sm font-medium text-gray-700 flex-1">
                         Editar perfil
                       </span>
@@ -285,7 +284,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                     >
                       <MdSwapHoriz
                         size={18}
-                        className="text-[#4A90C4] shrink-0"
+                        className="text-[#2d2b2b] shrink-0"
                       />
                       <span className="text-sm font-medium text-gray-700">
                         Trocar para a área de estudante
@@ -299,7 +298,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                       }}
                       className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-red-50 transition text-left"
                     >
-                      <MdLogout size={18} className="text-red-400 shrink-0" />
+                      <MdLogout size={18} className="text-[#ff4c3e] shrink-0" />
                       <span className="text-sm font-medium text-red-500">
                         Sair
                       </span>
@@ -317,7 +316,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
             to="/professor/jornada"
             className={`py-2 text-xs font-medium transition ${
               location.pathname.startsWith("/professor/jornada")
-                ? "text-[#1E3A5F] border-b-2 border-[#1E3A5F]"
+                ? "text-[#153b50] border-b-2 border-[#153b50]"
                 : "text-gray-400"
             }`}
           >
@@ -327,13 +326,13 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
             to="/professor/alunos"
             className={`relative py-2 text-xs font-medium transition ${
               location.pathname.startsWith("/professor/alunos")
-                ? "text-[#1E3A5F] border-b-2 border-[#1E3A5F]"
+                ? "text-[#153b50] border-b-2 border-[#153b50]"
                 : "text-gray-400"
             }`}
           >
             Alunos
             {pendingCount > 0 && (
-              <span className="absolute -top-0 -right-2 w-2 h-2 rounded-full bg-[#4A90C4]" />
+              <span className="absolute -top-0 -right-2 w-2 h-2 rounded-full bg-[#b2f0fb]" />
             )}
           </Link>
         </div>

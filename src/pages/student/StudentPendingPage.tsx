@@ -73,16 +73,16 @@ export default function StudentPendingPage() {
         >
           ←
         </button>
-        <h1 className="text-lg font-bold text-[#1E3A5F]">Vincular professor</h1>
+        <h1 className="text-lg font-bold text-[#153b50]">Vincular professor</h1>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <div className="flex flex-col items-center gap-3 text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-[#D6E4F0] flex items-center justify-center">
-            <MdSchool size={28} color="#1E3A5F" />
+          <div className="w-14 h-14 rounded-2xl bg-[#f4d1ae] flex items-center justify-center">
+            <MdSchool size={28} color="#153b50" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-[#1E3A5F]">Conectar a um professor</h2>
+            <h2 className="text-base font-bold text-[#153b50]">Conectar a um professor</h2>
             <p className="text-sm text-gray-400 mt-1 leading-relaxed">
               Cole o link de convite enviado pelo seu professor para vincular sua conta.
             </p>
@@ -99,7 +99,7 @@ export default function StudentPendingPage() {
                 value={inviteUrl}
                 onChange={e => setInviteUrl(e.target.value)}
                 placeholder="https://estudamus.vercel.app/cadastro?invite=..."
-                className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
+                className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#b2f0fb] transition"
                 required
               />
             </div>
@@ -107,7 +107,7 @@ export default function StudentPendingPage() {
           <button
             type="submit"
             disabled={linking || !inviteUrl.trim()}
-            className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-50"
+            className="w-full py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition disabled:opacity-50"
           >
             {linking ? 'Vinculando...' : 'Vincular professor'}
           </button>

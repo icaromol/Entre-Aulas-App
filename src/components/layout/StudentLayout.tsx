@@ -20,8 +20,7 @@ import {
 } from "react-icons/md";
 import { OnboardingController } from "@/components/onboarding/OnboardingController";
 import { AvailabilityEditor } from "@/components/ui/AvailabilityEditor";
-
-const AVATAR_COLORS = ["#1E3A5F", "#4A90C4", "#D6E4F0", "#F5F7FA", "#FFFFFF"];
+import { AVATAR_COLORS } from "@/lib/colors";
 
 interface StudentLayoutProps {
   children: React.ReactNode;
@@ -89,7 +88,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   const avatarUrl = profile?.avatar_url ?? user?.user_metadata?.avatar_url;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-[#F8F6F5] pb-20">
       <OnboardingController role="student" />
 
       {/* Overlay do menu */}
@@ -133,7 +132,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               </div>
             )}
             <div className="leading-tight min-w-0">
-              <p className="text-sm font-semibold text-[#1E3A5F] truncate">
+              <p className="text-sm font-semibold text-[#0099FF] truncate">
                 {fullName || "Aluno"}
               </p>
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
@@ -145,7 +144,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             onClick={openEdit}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
           >
-            <MdEdit size={20} className="text-[#4A90C4] shrink-0" />
+            <MdEdit size={20} className="text-[#2d2b2b] shrink-0" />
             <span className="text-sm font-medium text-gray-700">
               Editar perfil
             </span>
@@ -160,7 +159,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               }}
               className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
             >
-              <MdSchool size={20} className="text-[#4A90C4] shrink-0" />
+              <MdSchool size={20} className="text-[#2d2b2b] shrink-0" />
               <span className="text-sm font-medium text-gray-700">
                 Meu professor
               </span>
@@ -175,7 +174,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             }}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
           >
-            <MdAccessTime size={20} className="text-[#4A90C4] shrink-0" />
+            <MdAccessTime size={20} className="text-[#2d2b2b] shrink-0" />
             <span className="text-sm font-medium text-gray-700">
               Dias disponíveis
             </span>
@@ -189,7 +188,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             }}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
           >
-            <MdHistory size={20} className="text-[#4A90C4] shrink-0" />
+            <MdHistory size={20} className="text-[#2d2b2b] shrink-0" />
             <span className="text-sm font-medium text-gray-700">
               Histórico de sessões
             </span>
@@ -205,7 +204,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                 }}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition text-left"
               >
-                <MdSwapHoriz size={20} className="text-[#4A90C4] shrink-0" />
+                <MdSwapHoriz size={20} className="text-[#2d2b2b] shrink-0" />
                 <span className="text-sm font-medium text-gray-700">
                   Trocar para a área do professor
                 </span>
@@ -220,7 +219,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               }}
               className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-red-50 transition text-left"
             >
-              <MdLogout size={20} className="text-red-400 shrink-0" />
+              <MdLogout size={20} className="text-[#ff4c3e] shrink-0" />
               <span className="text-sm font-medium text-red-500">
                 Sair do app
               </span>
@@ -233,7 +232,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       {showLogout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="text-base font-bold text-[#1E3A5F] mb-1">
+            <h2 className="text-base font-bold text-[#0099FF] mb-1">
               Quer sair?
             </h2>
             <p className="text-sm text-gray-400 mb-5">
@@ -248,7 +247,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               </button>
               <button
                 onClick={() => setShowLogout(false)}
-                className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition"
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#b2f0fb] transition"
               >
                 Permanecer conectado
               </button>
@@ -261,7 +260,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       {showEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="text-base font-bold text-[#1E3A5F] mb-4">
+            <h2 className="text-base font-bold text-[#0099FF] mb-4">
               Editar perfil
             </h2>
             <div className="space-y-3">
@@ -273,7 +272,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                   value={editFirst}
                   onChange={(e) => setEditFirst(e.target.value)}
                   maxLength={100}
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
+                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#b2f0fb] transition"
                 />
               </div>
               <div>
@@ -284,21 +283,21 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                   value={editLast}
                   onChange={(e) => setEditLast(e.target.value)}
                   maxLength={100}
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
+                  className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#b2f0fb] transition"
                 />
               </div>
             </div>
             <div className="flex gap-2 mt-5">
               <button
                 onClick={() => setShowEdit(false)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition"
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#b2f0fb] transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSaveProfile}
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-[#0099FF] text-white text-sm font-medium hover:bg-[#0099FF]/90 transition disabled:opacity-50"
               >
                 {saving ? "Salvando..." : "Salvar"}
               </button>
@@ -312,7 +311,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
           <div className="bg-white rounded-t-2xl w-full max-w-lg shadow-xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
-              <h2 className="text-base font-bold text-[#1E3A5F]">
+              <h2 className="text-base font-bold text-[#0099FF]">
                 Dias disponíveis
               </h2>
               <button
@@ -334,9 +333,9 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       )}
 
       {/* Header — só logo */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <header className="bg-[#0099FF] border-b border-[#0099FF] sticky top-0 z-10">
         <div className="px-4 h-14 flex items-center justify-center">
-          <img src="/estudamus_logo.png" alt="estudamus" className="h-5" />
+          <img src="/estudamus_logo.png" alt="estudamus" className="h-5 brightness-0 invert" />
         </div>
       </header>
 
@@ -346,7 +345,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
         {children}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-10">
+      <nav className="fixed bottom-0 left-0 right-0 bg-[#0099FF] border-t border-[#0099FF] z-10">
         <div className="flex">
           {navItems.map(({ label, path, Icon }) => {
             const active = location.pathname.startsWith(path);
@@ -356,9 +355,9 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                 to={path}
                 className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
               >
-                <Icon size={22} color={active ? "#1E3A5F" : "#9CA3AF"} />
+                <Icon size={22} color={active ? "#FFFFFF" : "rgba(255,255,255,0.5)"} />
                 <span
-                  className={`text-[10px] font-medium ${active ? "text-[#1E3A5F]" : "text-gray-400"}`}
+                  className={`text-[10px] font-medium ${active ? "text-white" : "text-white/50"}`}
                 >
                   {label}
                   </span>
@@ -369,9 +368,9 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               onClick={() => setShowMenu(true)}
               className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
             >
-              <MdMenu size={22} color={showMenu ? "#1E3A5F" : "#9CA3AF"} />
+              <MdMenu size={22} color={showMenu ? "#FFFFFF" : "rgba(255,255,255,0.5)"} />
               <span
-                className={`text-[10px] font-medium ${showMenu ? "text-[#1E3A5F]" : "text-gray-400"}`}
+                className={`text-[10px] font-medium ${showMenu ? "text-white" : "text-white/50"}`}
               >
                 Menu
               </span>

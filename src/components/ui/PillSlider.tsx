@@ -152,7 +152,7 @@ export function PillSlider({ value, min = 1, max = 4, labels, onChange }: PillSl
         <div
           key={n}
           className={`relative z-10 flex-1 py-2 text-center text-xs font-semibold transition-colors duration-150 pointer-events-none ${
-            value === n ? 'text-[#1E3A5F]' : 'text-gray-500'
+            value === n ? 'text-[#153b50]' : 'text-gray-500'
           }`}
         >
           {labels ? labels[i] : n}

@@ -575,7 +575,7 @@ export default function PomodoroPage() {
       // Mount point — PiP uses inline styles only, no external CSS needed
       const container = pip.document.createElement("div");
       container.style.cssText =
-        "width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1E3A5F;";
+        "width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#153b50;";
       pip.document.body.style.margin = "0";
       pip.document.body.appendChild(container);
       pipContainerRef.current = container;
@@ -1172,18 +1172,18 @@ export default function PomodoroPage() {
         {showSaveModal && (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
             <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-              <h2 className="text-base font-bold text-[#1E3A5F] mb-1">Salvar configuração?</h2>
+              <h2 className="text-base font-bold text-[#153b50] mb-1">Salvar configuração?</h2>
               <p className="text-sm text-gray-400 mb-5">Quer salvar estes tempos como seu padrão para o início rápido?</p>
               <div className="flex gap-2 mb-4">
                 <button
                   onClick={() => handleModalSave(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition"
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#b2f0fb] transition"
                 >
                   Não salvar
                 </button>
                 <button
                   onClick={() => handleModalSave(true)}
-                  className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-sm font-medium text-white hover:bg-[#1E3A5F]/90 transition"
+                  className="flex-1 py-2.5 rounded-xl bg-[#153b50] text-sm font-medium text-white hover:bg-[#153b50]/90 transition"
                 >
                   Salvar
                 </button>
@@ -1192,7 +1192,7 @@ export default function PomodoroPage() {
                 <div
                   onClick={() => setDontAskAgain(v => !v)}
                   className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                    dontAskAgain ? "bg-[#1E3A5F] border-[#1E3A5F]" : "bg-white border-gray-300"
+                    dontAskAgain ? "bg-[#153b50] border-[#153b50]" : "bg-white border-gray-300"
                   }`}
                 >
                   {dontAskAgain && (
@@ -1212,13 +1212,13 @@ export default function PomodoroPage() {
           id="onboarding-pomodoro-cycles"
           className="flex justify-center items-center gap-[14%] pt-4 mb-10 mx-auto w-full max-w-lg"
         >
-          <ArcSlider value={customWork}  min={1} max={60} color="#1E3A5F" label="Estudo" onChange={setCustomWork} />
+          <ArcSlider value={customWork}  min={1} max={60} color="#153b50" label="Estudo" onChange={setCustomWork} />
           <ArcSlider value={customBreak} min={1} max={30} color="#374151" label="Pausa"  onChange={setCustomBreak} />
         </div>
 
         {/* Cycle slider — container */}
         <div className="mx-auto w-full max-w-lg bg-white rounded-2xl border border-gray-100 px-4 py-3 mb-2">
-          <p className="text-[10px] font-bold text-[#1E3A5F] uppercase tracking-widest mb-3 text-center">
+          <p className="text-[10px] font-bold text-[#153b50] uppercase tracking-widest mb-3 text-center">
             Ciclos
           </p>
           <PillSlider value={customCycles} min={1} max={4} onChange={(v) => setCustomCycles(v)} />
@@ -1229,7 +1229,7 @@ export default function PomodoroPage() {
           <button
             onClick={() => handleSaveConfig()}
             disabled={savingConfig}
-            className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-500 hover:border-[#4A90C4] hover:text-[#1E3A5F] transition disabled:opacity-50"
+            className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-500 hover:border-[#b2f0fb] hover:text-[#153b50] transition disabled:opacity-50"
           >
             {savingConfig ? "Salvando..." : "Salvar configuração"}
           </button>
@@ -1239,7 +1239,7 @@ export default function PomodoroPage() {
         <Button
           onClick={handleStartClick}
           disabled={customWork < 1 || customBreak < 1 || customCycles < 1}
-          className="w-full mt-3 h-12 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-2xl text-sm font-semibold max-w-lg mx-auto block"
+          className="w-full mt-3 h-12 bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-2xl text-sm font-semibold max-w-lg mx-auto block"
         >
           Iniciar sessão
         </Button>
@@ -1275,7 +1275,7 @@ export default function PomodoroPage() {
                     setShowEarlyDialog(false);
                     setIsPaused(false);
                   }}
-                  className="flex-1 py-3.5 rounded-xl border border-gray-200 text-base text-gray-600 hover:border-[#4A90C4] transition"
+                  className="flex-1 py-3.5 rounded-xl border border-gray-200 text-base text-gray-600 hover:border-[#b2f0fb] transition"
                 >
                   Continuar
                 </button>
@@ -1284,7 +1284,7 @@ export default function PomodoroPage() {
                     setShowEarlyDialog(false);
                     saveSession();
                   }}
-                  className="flex-1 py-3.5 rounded-xl bg-[#1E3A5F] text-base text-white font-semibold hover:bg-[#1E3A5F]/90 transition"
+                  className="flex-1 py-3.5 rounded-xl bg-[#153b50] text-base text-white font-semibold hover:bg-[#153b50]/90 transition"
                 >
                   Finalizar
                 </button>
@@ -1297,7 +1297,7 @@ export default function PomodoroPage() {
         <div className="flex items-center justify-between mb-2">
           <button
             onClick={() => navigate(-1)}
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-[#1E3A5F] transition"
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-[#153b50] transition"
           >
             <MdChevronLeft size={26} />
           </button>
@@ -1306,14 +1306,14 @@ export default function PomodoroPage() {
               <button
                 onClick={openPip}
                 title="Abrir mini-timer"
-                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-[#1E3A5F] opacity-50 hover:opacity-100 transition"
+                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-[#153b50] opacity-50 hover:opacity-100 transition"
               >
                 <MdPictureInPicture size={20} />
               </button>
             )}
             <button
               onClick={() => setShowConfigModal(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-[#1E3A5F] transition"
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-[#153b50] transition"
             >
               <MdSettings size={20} />
             </button>
@@ -1328,7 +1328,7 @@ export default function PomodoroPage() {
           <div
             className={`text-xs font-semibold mb-3 px-3 py-1 rounded-full ${
               isWork
-                ? "bg-[#D6E4F0] text-[#1E3A5F]"
+                ? "bg-[#f4d1ae] text-[#153b50]"
                 : "bg-green-100 text-green-600"
             }`}
           >
@@ -1354,7 +1354,7 @@ export default function PomodoroPage() {
                 cy="60"
                 r="54"
                 fill="none"
-                stroke={isWork ? "#1E3A5F" : "#4ADE80"}
+                stroke={isWork ? "#153b50" : "#4ADE80"}
                 strokeWidth="5"
                 strokeLinecap="round"
                 strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
@@ -1363,7 +1363,7 @@ export default function PomodoroPage() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-5xl font-bold text-[#1E3A5F] tabular-nums">
+              <span className="text-5xl font-bold text-[#153b50] tabular-nums">
                 {fmt(timeLeft)}
               </span>
               <span className="text-sm text-gray-400 mt-2">
@@ -1384,9 +1384,9 @@ export default function PomodoroPage() {
                   key={i}
                   className={`w-2.5 h-2.5 rounded-full transition ${
                     i < completedCycles
-                      ? "bg-[#1E3A5F]"
+                      ? "bg-[#153b50]"
                       : i === currentCycle - 1 && isWork
-                        ? "bg-[#4A90C4]"
+                        ? "bg-[#b2f0fb]"
                         : "bg-gray-200"
                   }`}
                 />
@@ -1483,7 +1483,7 @@ export default function PomodoroPage() {
                               }
                               className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition ${
                                 worked
-                                  ? "bg-[#1E3A5F]"
+                                  ? "bg-[#153b50]"
                                   : "border-2 border-gray-300"
                               }`}
                             />
@@ -1555,9 +1555,9 @@ export default function PomodoroPage() {
                               groupAllDone
                                 ? "bg-green-500"
                                 : groupChecked
-                                  ? "bg-[#1E3A5F]"
+                                  ? "bg-[#153b50]"
                                   : groupIndeterminate
-                                    ? "bg-[#4A90C4]/40"
+                                    ? "bg-[#b2f0fb]/40"
                                     : "border-2 border-gray-300"
                             }`}
                           >
@@ -1646,7 +1646,7 @@ export default function PomodoroPage() {
                                       done
                                         ? "bg-green-500"
                                         : checked
-                                          ? "bg-[#1E3A5F]"
+                                          ? "bg-[#153b50]"
                                           : "border-2 border-gray-300"
                                     }`}
                                   >
@@ -1703,7 +1703,7 @@ export default function PomodoroPage() {
                           }
                           className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition ${
                             worked
-                              ? "bg-[#1E3A5F]"
+                              ? "bg-[#153b50]"
                               : "border-2 border-gray-300"
                           }`}
                         />
@@ -1733,7 +1733,7 @@ export default function PomodoroPage() {
               {!showCustomForm ? (
                 <button
                   onClick={() => setShowCustomForm(true)}
-                  className="mt-3 flex items-center gap-1.5 text-xs text-[#4A90C4] hover:text-[#1E3A5F] transition font-medium"
+                  className="mt-3 flex items-center gap-1.5 text-xs text-[#b2f0fb] hover:text-[#153b50] transition font-medium"
                 >
                   <span className="text-base leading-none">+</span> Adicionar personalizado
                 </button>
@@ -1761,7 +1761,7 @@ export default function PomodoroPage() {
                       }
                     }}
                     placeholder="Nome do item…"
-                    className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-[#4A90C4]"
+                    className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-[#b2f0fb]"
                   />
                   <div className="flex gap-1.5">
                     {(["piece", "exercise", "other"] as const).map((t) => (
@@ -1770,8 +1770,8 @@ export default function PomodoroPage() {
                         onClick={() => setNewCustomType(t)}
                         className={`flex-1 text-xs py-1.5 rounded-lg border transition font-medium ${
                           newCustomType === t
-                            ? "bg-[#1E3A5F] border-[#1E3A5F] text-white"
-                            : "border-gray-200 text-gray-500 hover:border-[#4A90C4]"
+                            ? "bg-[#153b50] border-[#153b50] text-white"
+                            : "border-gray-200 text-gray-500 hover:border-[#b2f0fb]"
                         }`}
                       >
                         {t === "piece" ? "Peça" : t === "exercise" ? "Exercício" : "Outro"}
@@ -1792,7 +1792,7 @@ export default function PomodoroPage() {
                         setShowCustomForm(false);
                       }}
                       disabled={!newCustomTitle.trim()}
-                      className="flex-1 bg-[#1E3A5F] text-white text-xs font-semibold py-2 rounded-xl disabled:opacity-40 hover:bg-[#1E3A5F]/90 transition"
+                      className="flex-1 bg-[#153b50] text-white text-xs font-semibold py-2 rounded-xl disabled:opacity-40 hover:bg-[#153b50]/90 transition"
                     >
                       Adicionar
                     </button>
@@ -1829,8 +1829,8 @@ export default function PomodoroPage() {
                   onClick={() => setDifficulty(d.key)}
                   className={`flex-1 flex flex-col items-center py-2.5 rounded-xl border transition ${
                     difficulty === d.key
-                      ? "bg-[#1E3A5F] border-[#1E3A5F] text-white"
-                      : "bg-white border-gray-200 text-gray-600 hover:border-[#4A90C4]"
+                      ? "bg-[#153b50] border-[#153b50] text-white"
+                      : "bg-white border-gray-200 text-gray-600 hover:border-[#b2f0fb]"
                   }`}
                 >
                   <span className="text-xl">{d.emoji}</span>
@@ -1852,7 +1852,7 @@ export default function PomodoroPage() {
               placeholder="Dificuldades, dúvidas, observações..."
               rows={3}
               maxLength={500}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-y"
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition resize-y"
               style={{ minHeight: "72px" }}
             />
           </div>
@@ -1867,7 +1867,7 @@ export default function PomodoroPage() {
                   fontSize: "11px",
                   fontWeight: 600,
                   marginBottom: "12px",
-                  color: isWork ? "#D6E4F0" : "#4ADE80",
+                  color: isWork ? "#f4d1ae" : "#4ADE80",
                   letterSpacing: "0.05em",
                 }}
               >
@@ -1888,7 +1888,7 @@ export default function PomodoroPage() {
                 <div
                   style={{
                     fontSize: "11px",
-                    color: "#8BA9C4",
+                    color: "#b2f0fb",
                     marginTop: "10px",
                   }}
                 >
@@ -1909,30 +1909,30 @@ export default function PomodoroPage() {
               className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-base font-bold text-[#1E3A5F] mb-5">Configurar Pomodoro</h2>
+              <h2 className="text-base font-bold text-[#153b50] mb-5">Configurar Pomodoro</h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700">Foco (min)</span>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setCustomWork(w => Math.max(5, w - 5))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">−</button>
-                    <span className="w-8 text-center font-semibold text-[#1E3A5F]">{customWork}</span>
-                    <button onClick={() => setCustomWork(w => Math.min(90, w + 5))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">+</button>
+                    <button onClick={() => setCustomWork(w => Math.max(5, w - 5))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">−</button>
+                    <span className="w-8 text-center font-semibold text-[#153b50]">{customWork}</span>
+                    <button onClick={() => setCustomWork(w => Math.min(90, w + 5))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">+</button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700">Pausa (min)</span>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setCustomBreak(b => Math.max(1, b - 1))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">−</button>
-                    <span className="w-8 text-center font-semibold text-[#1E3A5F]">{customBreak}</span>
-                    <button onClick={() => setCustomBreak(b => Math.min(30, b + 1))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">+</button>
+                    <button onClick={() => setCustomBreak(b => Math.max(1, b - 1))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">−</button>
+                    <span className="w-8 text-center font-semibold text-[#153b50]">{customBreak}</span>
+                    <button onClick={() => setCustomBreak(b => Math.min(30, b + 1))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">+</button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700">Ciclos</span>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setCustomCycles(n => Math.max(1, n - 1))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">−</button>
-                    <span className="w-8 text-center font-semibold text-[#1E3A5F]">{customCycles}</span>
-                    <button onClick={() => setCustomCycles(n => Math.min(8, n + 1))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">+</button>
+                    <button onClick={() => setCustomCycles(n => Math.max(1, n - 1))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">−</button>
+                    <span className="w-8 text-center font-semibold text-[#153b50]">{customCycles}</span>
+                    <button onClick={() => setCustomCycles(n => Math.min(8, n + 1))} className="w-8 h-8 rounded-full bg-[#f4d1ae] text-[#153b50] font-bold text-lg flex items-center justify-center hover:bg-[#f4d1ae] transition">+</button>
                   </div>
                 </div>
               </div>
@@ -1943,7 +1943,7 @@ export default function PomodoroPage() {
                   window.location.reload();
                 }}
                 disabled={savingConfig}
-                className="mt-6 w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-60"
+                className="mt-6 w-full py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition disabled:opacity-60"
               >
                 {savingConfig ? "Salvando..." : "Salvar e aplicar"}
               </button>
@@ -1960,10 +1960,10 @@ export default function PomodoroPage() {
   return (
     <StudentLayout>
       <div className="flex flex-col items-center pt-6 pb-8">
-        <div className="w-16 h-16 rounded-full bg-[#D6E4F0] flex items-center justify-center mb-3">
-          <MdEmojiEvents size={36} color="#1E3A5F" />
+        <div className="w-16 h-16 rounded-full bg-[#f4d1ae] flex items-center justify-center mb-3">
+          <MdEmojiEvents size={36} color="#153b50" />
         </div>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Sessão encerrada!</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Sessão encerrada!</h1>
         <p className="text-sm text-gray-400 mt-1">
           {fmtStudied(finalWorkSecs.current)}
         </p>
@@ -1980,7 +1980,7 @@ export default function PomodoroPage() {
         <Button
           onClick={saveSession}
           disabled={saving}
-          className="flex-1 h-12 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-2xl text-sm font-semibold"
+          className="flex-1 h-12 bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-2xl text-sm font-semibold"
         >
           {saving ? "Salvando..." : "Salvar sessão"}
         </Button>

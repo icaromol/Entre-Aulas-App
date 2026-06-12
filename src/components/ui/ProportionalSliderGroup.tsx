@@ -28,7 +28,7 @@ function SingleSlider({
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-gray-700 truncate mr-2">{label}</span>
         <div className="flex items-center gap-1.5 shrink-0">
-          {locked && <MdLock size={11} className="text-[#4A90C4]" />}
+          {locked && <MdLock size={11} className="text-[#b2f0fb]" />}
           <input
             type="number" min={0} max={100}
             value={value}
@@ -36,7 +36,7 @@ function SingleSlider({
               const v = Math.max(0, Math.min(100, Number(e.target.value) || 0))
               onChange(id, v)
             }}
-            className="w-12 text-center text-xs border border-gray-200 rounded-lg px-1 py-1 outline-none focus:border-[#4A90C4] transition"
+            className="w-12 text-center text-xs border border-gray-200 rounded-lg px-1 py-1 outline-none focus:border-[#b2f0fb] transition"
           />
           <span className="text-xs text-gray-400">%</span>
         </div>
@@ -48,9 +48,9 @@ function SingleSlider({
         className="relative flex items-center w-full h-5 select-none touch-none"
       >
         <SliderPrimitive.Track className="relative h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden">
-          <SliderPrimitive.Range className="absolute h-full bg-[#4A90C4] rounded-full" />
+          <SliderPrimitive.Range className="absolute h-full bg-[#b2f0fb] rounded-full" />
         </SliderPrimitive.Track>
-        <SliderPrimitive.Thumb className="block w-4 h-4 rounded-full bg-[#1E3A5F] shadow focus:outline-none focus:ring-2 focus:ring-[#4A90C4]/40 transition" />
+        <SliderPrimitive.Thumb className="block w-4 h-4 rounded-full bg-[#153b50] shadow focus:outline-none focus:ring-2 focus:ring-[#b2f0fb]/40 transition" />
       </SliderPrimitive.Root>
     </div>
   )
@@ -95,7 +95,7 @@ export function ProportionalSliderGroup({ items, onChange }: Props) {
         <button
           type="button"
           onClick={sliders.reset}
-          className="flex items-center gap-1 text-xs text-[#4A90C4] hover:text-[#1E3A5F] transition"
+          className="flex items-center gap-1 text-xs text-[#b2f0fb] hover:text-[#153b50] transition"
         >
           <MdBalance size={13} /> Auto-balancear
         </button>

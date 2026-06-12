@@ -38,7 +38,7 @@ export default function LoginPage() {
             onClick={handleGoogleLogin}
             disabled={loading}
             variant="outline"
-            className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition"
+            className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#b2f0fb] hover:bg-gray-50 transition"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -51,7 +51,7 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Primeira vez?{' '}
-          <Link to="/cadastro" className="text-[#4A90C4] font-medium hover:underline">
+          <Link to="/cadastro" className="text-[#b2f0fb] font-medium hover:underline">
             Criar conta
           </Link>
         </p>

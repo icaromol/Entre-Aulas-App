@@ -172,7 +172,7 @@ export default function ObjetivosPage() {
   return (
     <StudentLayout>
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Objetivos</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Objetivos</h1>
         <p className="text-sm text-gray-400 mt-0.5">Suas metas e eventos musicais</p>
       </div>
 
@@ -181,10 +181,10 @@ export default function ObjetivosPage() {
         {/* Empty state */}
         {objetivos.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-            <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+            <div className="w-12 h-12 rounded-full bg-[#153b50] flex items-center justify-center mx-auto mb-3">
               <MdFlag size={22} className="text-white" />
             </div>
-            <p className="text-base font-bold text-[#1E3A5F]">Onde você quer chegar?</p>
+            <p className="text-base font-bold text-[#153b50]">Onde você quer chegar?</p>
             <p className="text-sm text-gray-400 mt-1.5 leading-relaxed">Defina um objetivo e o seu plano se adapta a você.</p>
           </div>
         )}
@@ -195,7 +195,7 @@ export default function ObjetivosPage() {
           const ObjIcon = (PROGRAM_TYPES[obj.type] ?? PROGRAM_TYPES.outro).Icon
           return (
             <div key={obj.id}
-              className="w-full bg-white rounded-2xl border border-gray-100 px-4 py-3 hover:border-[#4A90C4]/40 transition">
+              className="w-full bg-white rounded-2xl border border-gray-100 px-4 py-3 hover:border-[#b2f0fb]/40 transition">
 
               {/* Título — visível apenas em telas pequenas, acima do conteúdo */}
               <p
@@ -207,7 +207,7 @@ export default function ObjetivosPage() {
               {/* Linha principal: ícone + título (sm+) + badge + slider */}
               <div className="flex items-center gap-3">
                 <div
-                  className="w-9 h-9 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0 cursor-pointer"
+                  className="w-9 h-9 rounded-full bg-[#153b50] flex items-center justify-center shrink-0 cursor-pointer"
                   onClick={() => navigate(`/aluno/repertorio/programas/${obj.id}`)}>
                   <ObjIcon size={18} color="white" />
                 </div>
@@ -246,7 +246,7 @@ export default function ObjetivosPage() {
           <button
             onClick={savePriorities}
             disabled={savingPriorities}
-            className="w-full flex items-center justify-center gap-2 bg-[#1E3A5F] hover:bg-[#163050] text-white text-sm font-semibold py-3 rounded-xl transition disabled:opacity-60">
+            className="w-full flex items-center justify-center gap-2 bg-[#153b50] hover:bg-[#153b50]/90 text-white text-sm font-semibold py-3 rounded-xl transition disabled:opacity-60">
             {savingPriorities ? 'Salvando…' : 'Salvar objetivos'}
           </button>
         )}
@@ -270,19 +270,19 @@ export default function ObjetivosPage() {
                 type="button"
                 onClick={() => openModal(card.value)}
                 className="group flex flex-col items-center gap-2.5 rounded-2xl p-5 bg-white border border-gray-100
-                  opacity-40 hover:opacity-100 hover:shadow-md hover:scale-[1.02] hover:border-[#4A90C4]/30
+                  opacity-40 hover:opacity-100 hover:shadow-md hover:scale-[1.02] hover:border-[#b2f0fb]/30
                   transition-all duration-300 active:scale-[0.98] text-center
                   cursor-pointer select-none"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {/* Ícone */}
-                <div className="w-10 h-10 rounded-xl bg-gray-200 group-hover:bg-[#1E3A5F] flex items-center justify-center transition-colors duration-300">
+                <div className="w-10 h-10 rounded-xl bg-gray-200 group-hover:bg-[#153b50] flex items-center justify-center transition-colors duration-300">
                   <Icon size={18} className="text-gray-500 group-hover:text-white transition-colors duration-300" />
                 </div>
 
                 {/* Label e descrição */}
                 <div>
-                  <p className="text-sm font-bold text-gray-600 group-hover:text-[#1E3A5F] leading-snug transition-colors duration-300">{card.label}</p>
+                  <p className="text-sm font-bold text-gray-600 group-hover:text-[#153b50] leading-snug transition-colors duration-300">{card.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5 leading-snug">{card.description}</p>
                 </div>
               </button>
@@ -306,7 +306,7 @@ export default function ObjetivosPage() {
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="bg-[#1E3A5F] px-5 pt-5 pb-6 relative flex items-center gap-3">
+              <div className="bg-[#153b50] px-5 pt-5 pb-6 relative flex items-center gap-3">
                 <button
                   onClick={closeModal}
                   className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition"
@@ -334,7 +334,7 @@ export default function ObjetivosPage() {
                       placeholder={newType === 'outro' ? 'Nome do objetivo' : cfg.label}
                       maxLength={200}
                       autoFocus
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition"
                     />
                   </div>
 
@@ -342,7 +342,7 @@ export default function ObjetivosPage() {
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-gray-500">Data do evento <span className="text-red-400">*</span></label>
                       <input type="date" value={newDeadline} onChange={e => setNewDeadline(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition" />
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition" />
                     </div>
                   )}
 
@@ -351,7 +351,7 @@ export default function ObjetivosPage() {
                     <input value={newVenue} onChange={e => setNewVenue(e.target.value)}
                       placeholder="Ex: Teatro Municipal..."
                       maxLength={200}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition" />
                   </div>
 
                   {(modalPieces.length > 0 || modalExercises.length > 0) && (
@@ -363,7 +363,7 @@ export default function ObjetivosPage() {
                               <MdMusicNote size={13} />Peças
                             </h3>
                             <div className="flex gap-3">
-                              <button type="button" onClick={() => setNewPieceIds(new Set(modalPieces.map(p => p.id)))} className="text-xs text-[#4A90C4] hover:underline">Todas</button>
+                              <button type="button" onClick={() => setNewPieceIds(new Set(modalPieces.map(p => p.id)))} className="text-xs text-[#b2f0fb] hover:underline">Todas</button>
                               <button type="button" onClick={() => setNewPieceIds(new Set())} className="text-xs text-gray-400 hover:underline">Nenhuma</button>
                             </div>
                           </div>
@@ -371,7 +371,7 @@ export default function ObjetivosPage() {
                             <label key={p.id} className="flex items-start gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 cursor-pointer transition">
                               <input type="checkbox" checked={newPieceIds.has(p.id)}
                                 onChange={e => setNewPieceIds(prev => { const n = new Set(prev); e.target.checked ? n.add(p.id) : n.delete(p.id); return n })}
-                                className="mt-0.5 w-4 h-4 accent-[#4A90C4] shrink-0" />
+                                className="mt-0.5 w-4 h-4 accent-[#b2f0fb] shrink-0" />
                               <div className="min-w-0">
                                 <p className="text-sm text-gray-800 truncate">{p.title}</p>
                                 {p.composer && <p className="text-xs text-gray-400 truncate">{p.composer}</p>}
@@ -388,7 +388,7 @@ export default function ObjetivosPage() {
                               <MdSchool size={13} />Exercícios
                             </h3>
                             <div className="flex gap-3">
-                              <button type="button" onClick={() => setNewExIds(new Set(modalExercises.map(e => e.id)))} className="text-xs text-[#4A90C4] hover:underline">Todos</button>
+                              <button type="button" onClick={() => setNewExIds(new Set(modalExercises.map(e => e.id)))} className="text-xs text-[#b2f0fb] hover:underline">Todos</button>
                               <button type="button" onClick={() => setNewExIds(new Set())} className="text-xs text-gray-400 hover:underline">Nenhum</button>
                             </div>
                           </div>
@@ -396,7 +396,7 @@ export default function ObjetivosPage() {
                             <label key={ex.id} className="flex items-start gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 cursor-pointer transition">
                               <input type="checkbox" checked={newExIds.has(ex.id)}
                                 onChange={e => setNewExIds(prev => { const n = new Set(prev); e.target.checked ? n.add(ex.id) : n.delete(ex.id); return n })}
-                                className="mt-0.5 w-4 h-4 accent-[#4A90C4] shrink-0" />
+                                className="mt-0.5 w-4 h-4 accent-[#b2f0fb] shrink-0" />
                               <div className="min-w-0">
                                 <p className="text-sm text-gray-800 truncate">{ex.title}</p>
                                 <p className="text-xs text-gray-400">{exerciseCategoryLabel[ex.category] ?? ex.category}</p>
@@ -415,7 +415,7 @@ export default function ObjetivosPage() {
                     <textarea value={newNotes} onChange={e => setNewNotes(e.target.value)}
                       rows={3} maxLength={2000}
                       placeholder="Contexto, repertório previsto, objetivos..."
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition resize-none" />
                   </div>
 
                   {newError && <p className="text-sm text-red-500">{newError}</p>}
@@ -423,7 +423,7 @@ export default function ObjetivosPage() {
 
                 <div className="px-5 pb-8 pt-1">
                   <Button type="submit" disabled={newSaving}
-                    className="w-full h-11 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl">
+                    className="w-full h-11 bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl">
                     {newSaving ? 'Criando...' : 'Criar objetivo'}
                   </Button>
                 </div>

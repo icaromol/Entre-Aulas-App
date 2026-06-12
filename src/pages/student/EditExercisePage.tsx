@@ -70,7 +70,7 @@ export default function StudentEditExercisePage() {
         <Link to={`/aluno/repertorio/exercicios/${exerciseId}`} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Editar exercício</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Editar exercício</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -81,7 +81,7 @@ export default function StudentEditExercisePage() {
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Nome do exercício</label>
             <input value={title} onChange={e => setTitle(e.target.value)} required maxLength={200}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition" />
           </div>
 
           <div className="space-y-1">
@@ -91,8 +91,8 @@ export default function StudentEditExercisePage() {
                 <button key={cat.value} type="button" onClick={() => setCategory(cat.value)}
                   className={`py-2 px-3 rounded-lg border text-xs font-medium transition text-center ${
                     category === cat.value
-                      ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
+                      ? 'bg-[#153b50] text-white border-[#153b50]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]'
                   }`}>{cat.label}</button>
               ))}
             </div>
@@ -101,30 +101,30 @@ export default function StudentEditExercisePage() {
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Objetivo</label>
             <textarea value={objective} onChange={e => setObjective(e.target.value)} rows={2} maxLength={500}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition resize-none" />
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <label className="text-xs font-medium text-gray-500">Dificuldade</label>
-              <span className="text-xs font-bold text-[#1E3A5F]">{difficulty}/10</span>
+              <span className="text-xs font-bold text-[#153b50]">{difficulty}/10</span>
             </div>
             <input type="range" min={1} max={10} value={difficulty}
               onChange={e => setDifficulty(Number(e.target.value))}
-              className="w-full accent-[#1E3A5F]" />
+              className="w-full accent-[#153b50]" />
           </div>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-600"><MdNotes size={15} />Observações</h2>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} maxLength={2000}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition resize-none" />
         </div>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         <Button type="submit" disabled={saving}
-          className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10">
+          className="w-full bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl h-10">
           {saving ? 'Salvando...' : 'Salvar alterações'}
         </Button>
 

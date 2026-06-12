@@ -120,7 +120,7 @@ export default function StudentNewPiecePage() {
         <Link to="/aluno/repertorio?tab=pieces" className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Nova peça</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Nova peça</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -134,7 +134,7 @@ export default function StudentNewPiecePage() {
             <label className="text-xs font-medium text-gray-500">Título da peça</label>
             <input value={title} onChange={e => setTitle(e.target.value)} required maxLength={200}
               placeholder="Ex: Sonatina Op.36 nº1"
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -142,13 +142,13 @@ export default function StudentNewPiecePage() {
               <label className="text-xs font-medium text-gray-500">Compositor</label>
               <input value={composer} onChange={e => setComposer(e.target.value)} maxLength={150}
                 placeholder="Ex: Clementi"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition" />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-500">Opus / Catálogo</label>
               <input value={catalogNumber} onChange={e => setCatalogNumber(e.target.value)} maxLength={50}
                 placeholder="Ex: Op.36, BWV 772"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition" />
             </div>
           </div>
 
@@ -163,7 +163,7 @@ export default function StudentNewPiecePage() {
                     onClick={() => setPeriod(active ? '' : p.value)}
                     className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-medium transition ${
                       p.value === 'other' ? 'col-span-3 border-dashed flex-row justify-center gap-2 py-2' : ''
-                    } ${active ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'}`}>
+                    } ${active ? 'bg-[#153b50] text-white border-[#153b50]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]'}`}>
                     <Icon size={p.value === 'other' ? 16 : 22} />
                     <span className="leading-none">{p.label}</span>
                     {p.years && <span className={`text-[10px] leading-none ${active ? 'text-white/60' : 'text-gray-400'} ${p.value === 'other' ? 'hidden' : ''}`}>{p.years}</span>}
@@ -185,7 +185,7 @@ export default function StudentNewPiecePage() {
                     onClick={() => setPedagogicalGoal(active ? '' : g.value)}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-medium transition ${
                       g.value === 'other' ? 'col-span-2 border-dashed justify-center' : ''
-                    } ${active ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'}`}>
+                    } ${active ? 'bg-[#153b50] text-white border-[#153b50]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]'}`}>
                     <Icon size={18} />
                     <span>{g.label}</span>
                   </button>
@@ -204,13 +204,13 @@ export default function StudentNewPiecePage() {
                     title={d.desc}
                     onClick={() => setDifficulty(d.value)}
                     className={`flex flex-col items-center gap-2 py-4 rounded-xl border transition ${
-                      active ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
+                      active ? 'bg-[#153b50] text-white border-[#153b50]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]'
                     }`}>
                     <div className="flex gap-1">
                       {[1,2,3].map(bar => (
                         <div key={bar} className={`w-4 h-1.5 rounded-full transition ${
                           bar <= d.bars
-                            ? active ? 'bg-white' : 'bg-[#4A90C4]'
+                            ? active ? 'bg-white' : 'bg-[#b2f0fb]'
                             : active ? 'bg-white/25' : 'bg-gray-200'
                         }`} />
                       ))}
@@ -232,7 +232,7 @@ export default function StudentNewPiecePage() {
           </h2>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} maxLength={2000}
             placeholder="Anotações sobre a peça..."
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none" />
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition resize-none" />
         </div>
 
         {/* Checklist */}
@@ -243,7 +243,7 @@ export default function StudentNewPiecePage() {
         <div className="space-y-3 pb-6">
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
             <input type="checkbox" checked={keepCreating} onChange={e => setKeepCreating(e.target.checked)}
-              className="w-4 h-4 accent-[#4A90C4] rounded" />
+              className="w-4 h-4 accent-[#b2f0fb] rounded" />
             <span className="text-sm text-gray-500">Continuar criando</span>
           </label>
           <div className="flex gap-3">
@@ -251,7 +251,7 @@ export default function StudentNewPiecePage() {
               onClick={() => navigate('/aluno/repertorio?tab=pieces')}
               className="flex-1 rounded-xl border-gray-200 text-gray-600">Cancelar</Button>
             <Button type="submit" disabled={loading}
-              className="flex-1 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10">
+              className="flex-1 bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl h-10">
               {loading ? 'Criando...' : keepCreating ? 'Criar e continuar' : 'Criar peça'}
             </Button>
           </div>

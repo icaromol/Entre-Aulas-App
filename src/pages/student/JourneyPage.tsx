@@ -108,20 +108,20 @@ function OnboardingModal({ onClose }: { onClose: () => void }) {
         {/* Conteúdo */}
         <div className="px-6 pb-2">
           <div className="flex justify-center mb-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#D6E4F0] flex items-center justify-center">
-              <Icon size={28} className="text-[#1E3A5F]" />
+            <div className="w-14 h-14 rounded-2xl bg-[#f4d1ae] flex items-center justify-center">
+              <Icon size={28} className="text-[#153b50]" />
             </div>
           </div>
 
-          <h2 className="text-base font-bold text-[#1E3A5F] text-center mb-2">{title}</h2>
+          <h2 className="text-base font-bold text-[#153b50] text-center mb-2">{title}</h2>
           <p className="text-sm text-gray-500 text-center leading-relaxed">{body}</p>
 
           {extra && (
             <div className="mt-4 space-y-2">
               {extra.map(item => (
-                <div key={item.label} className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-[#F5F7FA]">
+                <div key={item.label} className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-[#F8F6F5]">
                   <span className="text-xs text-gray-600">{item.label}</span>
-                  <span className="text-xs font-bold text-[#4A90C4]">{item.xp}</span>
+                  <span className="text-xs font-bold text-[#b2f0fb]">{item.xp}</span>
                 </div>
               ))}
             </div>
@@ -135,7 +135,7 @@ function OnboardingModal({ onClose }: { onClose: () => void }) {
               <div
                 key={i}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === step ? 'w-5 bg-[#1E3A5F]' : 'w-1.5 bg-gray-200'
+                  i === step ? 'w-5 bg-[#153b50]' : 'w-1.5 bg-gray-200'
                 }`}
               />
             ))}
@@ -150,7 +150,7 @@ function OnboardingModal({ onClose }: { onClose: () => void }) {
             </button>
             <button
               onClick={() => isLast ? onClose() : setStep(s => s + 1)}
-              className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition flex items-center justify-center gap-1.5"
             >
               {isLast ? 'Entendi!' : 'Próximo'}
               {!isLast && <MdArrowForward size={15} />}
@@ -242,7 +242,7 @@ export default function JourneyPage() {
 
       {/* Título da página */}
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Jornada Musical</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Jornada Musical</h1>
         <p className="text-xs text-gray-400 mt-0.5">Acompanhe seu crescimento como músico</p>
       </div>
 
@@ -250,13 +250,13 @@ export default function JourneyPage() {
       <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
         <div className="mb-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rank atual</p>
-          <p className="text-lg font-bold text-[#1E3A5F] mt-0.5">{rank.current.display}</p>
+          <p className="text-lg font-bold text-[#153b50] mt-0.5">{rank.current.display}</p>
         </div>
 
         {/* Barra de progresso */}
         <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2">
           <div
-            className="h-full bg-[#4A90C4] rounded-full transition-all duration-700"
+            className="h-full bg-[#b2f0fb] rounded-full transition-all duration-700"
             style={{ width: `${rank.progressPct}%` }}
           />
         </div>
@@ -275,7 +275,7 @@ export default function JourneyPage() {
             <MdWhatshot size={20} className={streak > 0 ? 'text-orange-500' : 'text-gray-300'} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-[#1E3A5F] leading-none">{streak}</p>
+            <p className="text-lg font-bold text-[#153b50] leading-none">{streak}</p>
             <p className="text-xs text-gray-400 mt-0.5 leading-tight">
               {streak === 1 ? 'dia seguido' : 'dias seguidos'}
             </p>
@@ -284,14 +284,14 @@ export default function JourneyPage() {
 
         <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
           <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-            nextEvent ? 'bg-[#D6E4F0]' : 'bg-gray-100'
+            nextEvent ? 'bg-[#f4d1ae]' : 'bg-gray-100'
           }`}>
-            <MdStar size={20} className={nextEvent ? 'text-[#1E3A5F]' : 'text-gray-300'} />
+            <MdStar size={20} className={nextEvent ? 'text-[#153b50]' : 'text-gray-300'} />
           </div>
           <div className="min-w-0">
             {nextEvent ? (
               <>
-                <p className="text-sm font-bold text-[#1E3A5F] leading-tight truncate">{nextEvent.title}</p>
+                <p className="text-sm font-bold text-[#153b50] leading-tight truncate">{nextEvent.title}</p>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {nextEvent.daysUntil === 0 ? 'Hoje!' : `em ${nextEvent.daysUntil}d`}
                 </p>
@@ -321,7 +321,7 @@ export default function JourneyPage() {
             <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  todayMission.completed ? 'bg-green-400' : 'bg-[#4A90C4]'
+                  todayMission.completed ? 'bg-green-400' : 'bg-[#b2f0fb]'
                 }`}
                 style={{ width: `${Math.round((todayMission.done / todayMission.total) * 100)}%` }}
               />
@@ -342,14 +342,14 @@ export default function JourneyPage() {
               <div key={m.id}>
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <MdMusicNote size={13} className="text-[#4A90C4] shrink-0" />
+                    <MdMusicNote size={13} className="text-[#b2f0fb] shrink-0" />
                     <p className="text-xs font-medium text-gray-700 truncate">{m.title}</p>
                   </div>
                   <span className="text-xs text-gray-400 shrink-0 ml-2">{m.pct}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#4A90C4] rounded-full"
+                    className="h-full bg-[#b2f0fb] rounded-full"
                     style={{ width: `${m.pct}%` }}
                   />
                 </div>
@@ -368,7 +368,7 @@ export default function JourneyPage() {
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2 min-w-0">
                   {m.completed ? (
-                    <div className="w-4 h-4 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                    <div className="w-4 h-4 rounded-full bg-[#153b50] flex items-center justify-center shrink-0">
                       <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
                         <path d="M5 13l4 4L19 7"/>
                       </svg>
@@ -380,14 +380,14 @@ export default function JourneyPage() {
                     {m.label}
                   </p>
                 </div>
-                <span className={`text-xs shrink-0 ml-2 ${m.completed ? 'text-gray-300' : 'text-[#4A90C4] font-semibold'}`}>
+                <span className={`text-xs shrink-0 ml-2 ${m.completed ? 'text-gray-300' : 'text-[#b2f0fb] font-semibold'}`}>
                   +{m.xpReward} XP
                 </span>
               </div>
               {!m.completed && (
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden ml-6" style={{ width: 'calc(100% - 1.5rem)' }}>
                   <div
-                    className="h-full bg-[#D6E4F0] rounded-full"
+                    className="h-full bg-[#f4d1ae] rounded-full"
                     style={{ width: `${Math.round(m.progress * 100)}%` }}
                   />
                 </div>
@@ -409,7 +409,7 @@ export default function JourneyPage() {
                   className="h-full rounded-full transition-all duration-700"
                   style={{
                     width: `${Math.round((xp / maxAttr) * 100)}%`,
-                    backgroundColor: xp > 0 ? '#4A90C4' : 'transparent',
+                    backgroundColor: xp > 0 ? '#b2f0fb' : 'transparent',
                     minWidth: xp > 0 ? '4px' : '0',
                   }}
                 />
@@ -436,7 +436,7 @@ export default function JourneyPage() {
                 key={a.key}
                 className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border transition ${
                   unlocked
-                    ? 'bg-[#D6E4F0]/40 border-[#D6E4F0] text-[#1E3A5F]'
+                    ? 'bg-[#f4d1ae]/40 border-[#f4d1ae] text-[#153b50]'
                     : 'bg-gray-50 border-gray-100 text-gray-300'
                 }`}
               >

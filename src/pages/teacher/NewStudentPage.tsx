@@ -153,7 +153,7 @@ export default function NewStudentPage() {
         <Link to="/professor/alunos" className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Novo aluno</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Novo aluno</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -170,7 +170,7 @@ export default function NewStudentPage() {
                 placeholder="Ex: João"
                 required
                 maxLength={100}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition placeholder:text-gray-300"
               />
             </div>
             <div className="space-y-1">
@@ -181,7 +181,7 @@ export default function NewStudentPage() {
                 placeholder="Ex: Silva"
                 required
                 maxLength={100}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition placeholder:text-gray-300"
               />
             </div>
           </div>
@@ -195,7 +195,7 @@ export default function NewStudentPage() {
               placeholder="Ex: joao@email.com"
               required
               maxLength={254}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition placeholder:text-gray-300"
             />
           </div>
 
@@ -206,7 +206,7 @@ export default function NewStudentPage() {
               onChange={e => setPhone(e.target.value)}
               placeholder="Ex: (11) 98765-4321"
               maxLength={20}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition placeholder:text-gray-300"
             />
           </div>
         </div>
@@ -225,8 +225,8 @@ export default function NewStudentPage() {
                   onClick={() => setInstrument(inst.value)}
                   className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-medium transition ${
                     instrument === inst.value
-                      ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
+                      ? 'bg-[#153b50] text-white border-[#153b50]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]'
                   }`}
                 >
                   <inst.Icon size={20} />
@@ -239,8 +239,8 @@ export default function NewStudentPage() {
                 onClick={() => setInstrument('Outro')}
                 className={`col-span-4 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-medium transition ${
                   instrument === 'Outro'
-                    ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                    : 'bg-white text-gray-500 border-gray-200 border-dashed hover:border-[#4A90C4]'
+                    ? 'bg-[#153b50] text-white border-[#153b50]'
+                    : 'bg-white text-gray-500 border-gray-200 border-dashed hover:border-[#b2f0fb]'
                 }`}
               >
                 <MdAdd size={15} />Outro instrumento
@@ -261,8 +261,8 @@ export default function NewStudentPage() {
                     onClick={() => setLevel(lvl.value as typeof level)}
                     className={`flex flex-col items-center gap-2 py-4 rounded-xl border transition ${
                       active
-                        ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
+                        ? 'bg-[#153b50] text-white border-[#153b50]'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]'
                     }`}
                   >
                     <lvl.Icon size={22} />
@@ -271,7 +271,7 @@ export default function NewStudentPage() {
                       {[1, 2, 3].map(bar => (
                         <div key={bar} className={`w-3 h-1 rounded-full transition ${
                           bar <= lvl.bars
-                            ? active ? 'bg-white' : 'bg-[#4A90C4]'
+                            ? active ? 'bg-white' : 'bg-[#b2f0fb]'
                             : active ? 'bg-white/25' : 'bg-gray-200'
                         }`} />
                       ))}
@@ -294,7 +294,7 @@ export default function NewStudentPage() {
                   onClick={() => toggleDay(day.day)}
                   className={`w-12 shrink-0 text-xs font-semibold py-1.5 rounded-lg border transition ${
                     day.active
-                      ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
+                      ? 'bg-[#153b50] text-white border-[#153b50]'
                       : 'bg-white text-gray-400 border-gray-200'
                   }`}
                 >
@@ -310,9 +310,9 @@ export default function NewStudentPage() {
                       step={1}
                       value={toSliderPos(day.minutes)}
                       onChange={e => setMinutes(day.day, fromSliderPos(Number(e.target.value)))}
-                      className="flex-1 accent-[#1E3A5F]"
+                      className="flex-1 accent-[#153b50]"
                     />
-                    <span className="text-xs font-bold text-[#1E3A5F] w-14 text-right shrink-0">
+                    <span className="text-xs font-bold text-[#153b50] w-14 text-right shrink-0">
                       {fmtMin(day.minutes)}
                     </span>
                   </div>
@@ -330,7 +330,7 @@ export default function NewStudentPage() {
             placeholder="Ex: Aluno iniciante, preferência por jazz"
             rows={3}
             maxLength={2000}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition resize-none placeholder:text-gray-300"
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition resize-none placeholder:text-gray-300"
           />
         </div>
 
@@ -339,7 +339,7 @@ export default function NewStudentPage() {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10"
+          className="w-full bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl h-10"
         >
           {loading ? 'Salvando...' : <span className="flex items-center gap-1.5 justify-center"><MdAdd size={16} />Cadastrar aluno e enviar convite</span>}
         </Button>

@@ -29,7 +29,7 @@ export function MoveTaskModal({ item, todayDow, onClose, onMove }: Props) {
           </p>
           <button
             onClick={onClose}
-            className="mt-4 w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold"
+            className="mt-4 w-full py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold"
           >
             Fechar
           </button>
@@ -69,9 +69,9 @@ export function MoveTaskModal({ item, todayDow, onClose, onMove }: Props) {
               <button
                 key={dow}
                 onClick={() => onMove(item, dow)}
-                className="flex items-center w-full rounded-xl border border-gray-100 bg-[#F5F7FA] px-4 py-3.5 hover:border-[#4A90C4] hover:bg-[#D6E4F0] transition text-left"
+                className="flex items-center w-full rounded-xl border border-gray-100 bg-[#F8F6F5] px-4 py-3.5 hover:border-[#b2f0fb] hover:bg-[#f4d1ae] transition text-left"
               >
-                <p className="text-sm font-semibold text-[#1E3A5F]">{label}</p>
+                <p className="text-sm font-semibold text-[#153b50]">{label}</p>
               </button>
             );
           })}

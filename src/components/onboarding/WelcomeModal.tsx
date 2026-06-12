@@ -27,12 +27,12 @@ export function WelcomeModal({ onStart }: Props) {
             alt="Estudamus"
             className="h-7 object-contain mb-7"
           />
-          <h1 className="text-2xl font-bold text-[#1E3A5F] mb-3">
+          <h1 className="text-2xl font-bold text-[#153b50] mb-3">
             Bem-vindo ao Estudamus!
           </h1>
           <p className="text-base text-gray-500 leading-relaxed max-w-sm">
             Vamos configurar seus estudos em{" "}
-            <strong className="text-[#1E3A5F]">poucos passos simples</strong>.
+            <strong className="text-[#153b50]">poucos passos simples</strong>.
             Leva menos de um minuto.
           </p>
         </div>
@@ -41,7 +41,7 @@ export function WelcomeModal({ onStart }: Props) {
         <div className="px-10 pb-8">
           <button
             onClick={onStart}
-            className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white font-semibold text-sm hover:bg-[#1E3A5F]/90 transition"
+            className="w-full py-3 rounded-xl bg-[#153b50] text-white font-semibold text-sm hover:bg-[#153b50]/90 transition"
           >
             Começar →
           </button>

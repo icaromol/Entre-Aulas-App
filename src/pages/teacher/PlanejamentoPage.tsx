@@ -58,7 +58,7 @@ function shortDate(isoDate: string): string {
 function taskCardClass(task: PlannedTask) {
   if (task.isMaintenance)             return 'bg-gray-100 hover:bg-gray-200/70'
   if (task.sourceType === 'exercise') return 'bg-rose-50 hover:bg-rose-100/80'
-  return 'bg-[#D6E4F0]/60 hover:bg-[#D6E4F0]'
+  return 'bg-[#f4d1ae]/60 hover:bg-[#f4d1ae]'
 }
 
 function taskTitle(task: PlannedTask) {
@@ -481,23 +481,23 @@ export default function PlanejamentoPage() {
           <button onClick={() => navigate(`/professor/alunos/${studentId}?tab=plans`)} className="text-gray-400 hover:text-gray-600 transition">
             <MdArrowBack size={20} />
           </button>
-          <h1 className="text-xl font-bold text-[#1E3A5F]">Planejamento de Estudos</h1>
+          <h1 className="text-xl font-bold text-[#153b50]">Planejamento de Estudos</h1>
         </div>
 
         {programs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#D6E4F0] flex items-center justify-center">
-              <MdAutoAwesome size={28} className="text-[#1E3A5F]" />
+            <div className="w-16 h-16 rounded-2xl bg-[#f4d1ae] flex items-center justify-center">
+              <MdAutoAwesome size={28} className="text-[#153b50]" />
             </div>
             <div>
-              <p className="text-base font-bold text-[#1E3A5F] mb-1">Nenhum programa ativo</p>
+              <p className="text-base font-bold text-[#153b50] mb-1">Nenhum programa ativo</p>
               <p className="text-sm text-gray-400 max-w-xs leading-relaxed">
                 Você precisa de ao menos um programa para gerar o planejamento.
               </p>
             </div>
             <Button
               onClick={() => navigate(`/professor/alunos/${studentId}/programas/novo`)}
-              className="flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl px-6 h-11"
+              className="flex items-center gap-2 bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl px-6 h-11"
             >
               <MdAdd size={18} /> Criar primeiro programa
             </Button>
@@ -506,10 +506,10 @@ export default function PlanejamentoPage() {
           <div className="space-y-5">
 
             {/* Nível do aluno detectado */}
-            <div className="bg-[#D6E4F0]/50 border border-[#4A90C4]/20 rounded-2xl px-5 py-3 flex items-center gap-3">
+            <div className="bg-[#f4d1ae]/50 border border-[#b2f0fb]/20 rounded-2xl px-5 py-3 flex items-center gap-3">
               <div>
-                <p className="text-xs font-semibold text-[#1E3A5F]">Ciclo pomodoro · {levelLabel[studentLevel]}</p>
-                <p className="text-xs text-[#1E3A5F]/60 mt-0.5">
+                <p className="text-xs font-semibold text-[#153b50]">Ciclo pomodoro · {levelLabel[studentLevel]}</p>
+                <p className="text-xs text-[#153b50]/60 mt-0.5">
                   {studentLevel === 'beginner' ? '10 min trabalho · 5 min pausa' :
                    studentLevel === 'intermediate' ? '15 min trabalho · 5 min pausa' :
                    '25 min trabalho · 5 min pausa'}
@@ -522,7 +522,7 @@ export default function PlanejamentoPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-600">Programas</h2>
                 <button onClick={() => distributeWeights(selectedIds)}
-                  className="flex items-center gap-1 text-xs text-[#4A90C4] hover:text-[#1E3A5F] transition">
+                  className="flex items-center gap-1 text-xs text-[#b2f0fb] hover:text-[#153b50] transition">
                   <MdBalance size={13} /> Auto-balancear
                 </button>
               </div>
@@ -530,12 +530,12 @@ export default function PlanejamentoPage() {
                 {programs.map(prog => {
                   const sel = selectedIds.has(prog.id)
                   return (
-                    <div key={prog.id} className={`rounded-xl border transition ${sel ? 'border-[#4A90C4] bg-[#D6E4F0]/30' : 'border-gray-100 bg-gray-50'}`}>
+                    <div key={prog.id} className={`rounded-xl border transition ${sel ? 'border-[#b2f0fb] bg-[#f4d1ae]/30' : 'border-gray-100 bg-gray-50'}`}>
                       <div className="flex items-center gap-3 p-3">
-                        <button onClick={() => toggleProgram(prog.id)} className="text-[#4A90C4] shrink-0">
+                        <button onClick={() => toggleProgram(prog.id)} className="text-[#b2f0fb] shrink-0">
                           {sel ? <MdCheckBox size={20} /> : <MdCheckBoxOutlineBlank size={20} className="text-gray-300" />}
                         </button>
-                        <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#153b50] flex items-center justify-center shrink-0">
                           {programIcon(prog.type, 16)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -547,7 +547,7 @@ export default function PlanejamentoPage() {
                           )}
                         </div>
                         {sel && (
-                          <span className="text-sm font-bold text-[#1E3A5F] shrink-0 w-10 text-right">
+                          <span className="text-sm font-bold text-[#153b50] shrink-0 w-10 text-right">
                             {weights[prog.id] ?? 0}%
                           </span>
                         )}
@@ -558,13 +558,13 @@ export default function PlanejamentoPage() {
                             type="range" min={0} max={100} step={1}
                             value={weights[prog.id] ?? 0}
                             onChange={e => setWeights(w => ({ ...w, [prog.id]: Number(e.target.value) }))}
-                            className="flex-1 accent-[#4A90C4] h-2"
+                            className="flex-1 accent-[#b2f0fb] h-2"
                           />
                           <input
                             type="number" min={0} max={100}
                             value={weights[prog.id] ?? 0}
                             onChange={e => setWeights(w => ({ ...w, [prog.id]: Math.max(0, Math.min(100, Number(e.target.value))) }))}
-                            className="w-12 text-center text-xs border border-gray-200 rounded-lg px-1 py-1.5 outline-none focus:border-[#4A90C4]"
+                            className="w-12 text-center text-xs border border-gray-200 rounded-lg px-1 py-1.5 outline-none focus:border-[#b2f0fb]"
                           />
                         </div>
                       )}
@@ -586,7 +586,7 @@ export default function PlanejamentoPage() {
               <div className="grid grid-cols-3 gap-2">
                 {HORIZON_OPTIONS.map(h => (
                   <button key={h.value} onClick={() => setHorizon(h.value)}
-                    className={`py-2 rounded-xl border text-sm font-medium transition ${horizon === h.value ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'}`}>
+                    className={`py-2 rounded-xl border text-sm font-medium transition ${horizon === h.value ? 'bg-[#153b50] text-white border-[#153b50]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]'}`}>
                     {h.label}
                   </button>
                 ))}
@@ -599,7 +599,7 @@ export default function PlanejamentoPage() {
                 <h2 className="text-sm font-semibold text-gray-600">Opções</h2>
                 <div className="space-y-2">
                   <button onClick={() => setMaintenanceEnabled(v => !v)} className="w-full flex items-center gap-3 text-left">
-                    {maintenanceEnabled ? <MdCheckBox size={20} className="text-[#4A90C4] shrink-0" /> : <MdCheckBoxOutlineBlank size={20} className="text-gray-300 shrink-0" />}
+                    {maintenanceEnabled ? <MdCheckBox size={20} className="text-[#b2f0fb] shrink-0" /> : <MdCheckBoxOutlineBlank size={20} className="text-gray-300 shrink-0" />}
                     <div>
                       <p className="text-sm font-medium text-gray-700">Manutenção de repertório concluído</p>
                       <p className="text-xs text-gray-400">Peças concluídas revisitadas em ciclo rotativo</p>
@@ -608,8 +608,8 @@ export default function PlanejamentoPage() {
                   {maintenanceEnabled && (
                     <div className="ml-8 flex items-center gap-3">
                       <input type="range" min={10} max={40} step={5} value={maintenanceBudget}
-                        onChange={e => setMaintenanceBudget(Number(e.target.value))} className="flex-1 accent-[#4A90C4]" />
-                      <span className="text-sm font-semibold text-[#1E3A5F] w-8">{maintenanceBudget}%</span>
+                        onChange={e => setMaintenanceBudget(Number(e.target.value))} className="flex-1 accent-[#b2f0fb]" />
+                      <span className="text-sm font-semibold text-[#153b50] w-8">{maintenanceBudget}%</span>
                     </div>
                   )}
                 </div>
@@ -619,7 +619,7 @@ export default function PlanejamentoPage() {
             {error && <p className="text-sm text-red-500">{error}</p>}
 
             <Button onClick={handleGenerate} disabled={!weightOk || generating}
-              className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10 flex items-center gap-2">
+              className="w-full bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl h-10 flex items-center gap-2">
               <MdAutoAwesome size={16} />
               {generating ? 'Gerando...' : `Gerar preview — ${HORIZON_OPTIONS.find(h => h.value === horizon)?.label}`}
             </Button>
@@ -642,7 +642,7 @@ export default function PlanejamentoPage() {
         <button onClick={() => setStep('config')} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </button>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Preview do Planejamento</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Preview do Planejamento</h1>
       </div>
 
       {/* Stats + pomodoro info */}
@@ -653,14 +653,14 @@ export default function PlanejamentoPage() {
           { label: 'Minutos', value: totalMinutes },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-3 text-center">
-            <p className="text-xl font-bold text-[#1E3A5F]">{s.value}</p>
+            <p className="text-xl font-bold text-[#153b50]">{s.value}</p>
             <p className="text-[10px] text-gray-400">{s.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="flex items-center gap-2 bg-[#D6E4F0]/50 rounded-xl px-3 py-2 mb-4">
-        <span className="text-xs text-[#1E3A5F]/70">Slots de <span className="font-bold text-[#1E3A5F]">{pomodoroWork} min</span> por tarefa · {levelLabel[studentLevel]}</span>
+      <div className="flex items-center gap-2 bg-[#f4d1ae]/50 rounded-xl px-3 py-2 mb-4">
+        <span className="text-xs text-[#153b50]/70">Slots de <span className="font-bold text-[#153b50]">{pomodoroWork} min</span> por tarefa · {levelLabel[studentLevel]}</span>
       </div>
 
       {/* Week tabs */}
@@ -668,7 +668,7 @@ export default function PlanejamentoPage() {
         <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
           {weekStarts.map((ws, i) => (
             <button key={ws} onClick={() => setSelectedWeekIdx(i)}
-              className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${i === selectedWeekIdx ? 'bg-[#1E3A5F] text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-[#4A90C4]'}`}>
+              className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${i === selectedWeekIdx ? 'bg-[#153b50] text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-[#b2f0fb]'}`}>
               {formatWeekLabel(ws)}
             </button>
           ))}
@@ -700,7 +700,7 @@ export default function PlanejamentoPage() {
                     <p className="text-xs text-gray-400">{shortDate(col.date)}</p>
                   </div>
                   {minutesUsed > 0 && (
-                    <span className="text-xs font-semibold text-[#4A90C4]">{minutesUsed} min</span>
+                    <span className="text-xs font-semibold text-[#b2f0fb]">{minutesUsed} min</span>
                   )}
                 </div>
 
@@ -712,18 +712,18 @@ export default function PlanejamentoPage() {
                     <button key={i} onClick={() => setEditingTask({ date: col.date, idx: i })}
                       className={`w-full text-left rounded-xl p-3 transition group ${taskCardClass(task)}`}>
                       <div className="flex items-start gap-2">
-                        {task.isMaintenance && <MdSync size={14} className="shrink-0 mt-0.5 text-[#4A90C4]" />}
+                        {task.isMaintenance && <MdSync size={14} className="shrink-0 mt-0.5 text-[#b2f0fb]" />}
                         <p className="text-sm font-medium text-gray-700 flex-1 leading-snug line-clamp-2">
                           {taskTitle(task)}
                         </p>
                         <button
                           onClick={e => { e.stopPropagation(); deleteTask(col.date, i) }}
-                          className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 shrink-0 transition mt-0.5">
+                          className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-[#ff4c3e] shrink-0 transition mt-0.5">
                           <MdClose size={14} />
                         </button>
                       </div>
                       <p className="text-xs text-gray-400 mt-1 truncate">{task.programTitle}</p>
-                      <p className="text-xs font-semibold text-[#4A90C4] mt-1">{task.durationMinutes} min</p>
+                      <p className="text-xs font-semibold text-[#b2f0fb] mt-1">{task.durationMinutes} min</p>
                     </button>
                   ))}
                 </div>
@@ -731,7 +731,7 @@ export default function PlanejamentoPage() {
                 <div className="px-3 pb-3">
                   <button
                     onClick={() => { setAddingToDay({ date: col.date, dow: col.dow, weekStart: currentWS }); setAddTab('program') }}
-                    className="w-full py-2 rounded-xl border border-dashed border-gray-200 text-xs text-gray-400 hover:border-[#4A90C4] hover:text-[#4A90C4] transition flex items-center justify-center gap-1">
+                    className="w-full py-2 rounded-xl border border-dashed border-gray-200 text-xs text-gray-400 hover:border-[#b2f0fb] hover:text-[#b2f0fb] transition flex items-center justify-center gap-1">
                     <MdAdd size={14} /> Adicionar
                   </button>
                 </div>
@@ -758,7 +758,7 @@ export default function PlanejamentoPage() {
         <Button onClick={() => setStep('config')} variant="outline" className="flex-1 rounded-xl border-gray-200 text-gray-600">
           Voltar
         </Button>
-        <Button onClick={handleSave} disabled={saving} className="flex-1 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl">
+        <Button onClick={handleSave} disabled={saving} className="flex-1 bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl">
           {saving ? 'Salvando...' : 'Confirmar e Salvar'}
         </Button>
       </div>
@@ -767,21 +767,21 @@ export default function PlanejamentoPage() {
       {showConflictDialog && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <p className="text-base font-bold text-[#1E3A5F] mb-1">Já existe um planejamento</p>
+            <p className="text-base font-bold text-[#153b50] mb-1">Já existe um planejamento</p>
             <p className="text-sm text-gray-500 mb-5">
               Uma ou mais semanas já possuem itens planejados. O que deseja fazer?
             </p>
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => doSave('replace')}
-                className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition text-left px-4"
+                className="w-full py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition text-left px-4"
               >
                 <span className="block font-semibold">Substituir</span>
                 <span className="block text-xs text-white/70 mt-0.5">Remove os itens existentes e insere os novos</span>
               </button>
               <button
                 onClick={() => doSave('merge')}
-                className="w-full py-3 rounded-xl border border-[#4A90C4] text-[#1E3A5F] text-sm font-semibold hover:bg-[#D6E4F0] transition text-left px-4"
+                className="w-full py-3 rounded-xl border border-[#b2f0fb] text-[#153b50] text-sm font-semibold hover:bg-[#f4d1ae] transition text-left px-4"
               >
                 <span className="block font-semibold">Adicionar</span>
                 <span className="block text-xs text-gray-400 mt-0.5">Mantém os itens existentes e adiciona os novos</span>
@@ -803,7 +803,7 @@ export default function PlanejamentoPage() {
           <div className="bg-white rounded-t-2xl px-6 pt-6 pb-8 w-full max-w-lg mx-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0 pr-3">
-                <p className="text-base font-bold text-[#1E3A5F] line-clamp-2">{taskTitle(editTask)}</p>
+                <p className="text-base font-bold text-[#153b50] line-clamp-2">{taskTitle(editTask)}</p>
                 <p className="text-sm text-gray-400 mt-1 truncate">{editTask.programTitle}</p>
               </div>
               <button onClick={() => setEditingTask(null)} className="text-gray-400 shrink-0"><MdClose size={22} /></button>
@@ -812,12 +812,12 @@ export default function PlanejamentoPage() {
             <div className="flex items-center gap-4 mb-10">
               <input type="number" min={5} max={180} value={editTask.durationMinutes}
                 onChange={e => updateTaskDuration(editingTask.date, editingTask.idx, Number(e.target.value))}
-                className="w-20 text-center border border-gray-200 rounded-xl px-2 py-2.5 text-base font-semibold text-[#1E3A5F] outline-none focus:border-[#4A90C4]"
+                className="w-20 text-center border border-gray-200 rounded-xl px-2 py-2.5 text-base font-semibold text-[#153b50] outline-none focus:border-[#b2f0fb]"
               />
               <span className="text-sm text-gray-400">min</span>
               <input type="range" min={5} max={180} step={5} value={editTask.durationMinutes}
                 onChange={e => updateTaskDuration(editingTask.date, editingTask.idx, Number(e.target.value))}
-                className="flex-1 accent-[#4A90C4] h-2"
+                className="flex-1 accent-[#b2f0fb] h-2"
               />
             </div>
             <div className="flex gap-3">
@@ -826,7 +826,7 @@ export default function PlanejamentoPage() {
                 Excluir tarefa
               </button>
               <button onClick={() => setEditingTask(null)}
-                className="flex-1 py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold">
+                className="flex-1 py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold">
                 Fechar
               </button>
             </div>
@@ -839,7 +839,7 @@ export default function PlanejamentoPage() {
         <div className="fixed inset-0 bg-black/40 z-30 flex items-end" onClick={() => setAddingToDay(null)}>
           <div className="bg-white rounded-t-2xl w-full max-w-lg mx-auto max-h-[75vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
-              <p className="text-sm font-bold text-[#1E3A5F]">
+              <p className="text-sm font-bold text-[#153b50]">
                 Adicionar tarefa — {DAY_LABELS[DAY_ORDER.indexOf(addingToDay.dow)]} {shortDate(addingToDay.date)}
               </p>
               <button onClick={() => setAddingToDay(null)} className="text-gray-400"><MdClose size={20} /></button>
@@ -847,7 +847,7 @@ export default function PlanejamentoPage() {
             <div className="flex gap-1 px-5 pb-3 shrink-0">
               {(['program', 'custom'] as const).map(tab => (
                 <button key={tab} onClick={() => setAddTab(tab)}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${addTab === tab ? 'bg-[#1E3A5F] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${addTab === tab ? 'bg-[#153b50] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                   {tab === 'program' ? 'Do programa' : 'Personalizado'}
                 </button>
               ))}
@@ -870,7 +870,7 @@ export default function PlanejamentoPage() {
                       score: 0,
                       groupId: null,
                     })}
-                    className="w-full text-left p-3 rounded-xl border border-gray-100 hover:border-[#4A90C4] transition">
+                    className="w-full text-left p-3 rounded-xl border border-gray-100 hover:border-[#b2f0fb] transition">
                     <p className="text-sm font-medium text-gray-800 truncate">
                       {item.title}
                     </p>
@@ -888,15 +888,15 @@ export default function PlanejamentoPage() {
                     value={addCustomTitle}
                     onChange={e => setAddCustomTitle(e.target.value)}
                     placeholder="Ex: Praticar escala cromática"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition"
                   />
                 </div>
                 <div className="space-y-3">
                   <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                    Duração: <span className="text-[#1E3A5F]">{addCustomDuration} min</span>
+                    Duração: <span className="text-[#153b50]">{addCustomDuration} min</span>
                   </label>
                   <input type="range" min={5} max={120} step={5} value={addCustomDuration}
-                    onChange={e => setAddCustomDuration(Number(e.target.value))} className="w-full accent-[#4A90C4] h-2" />
+                    onChange={e => setAddCustomDuration(Number(e.target.value))} className="w-full accent-[#b2f0fb] h-2" />
                 </div>
                 <Button
                   disabled={!addCustomTitle.trim()}
@@ -909,7 +909,7 @@ export default function PlanejamentoPage() {
                     isMaintenance: false, score: 0,
                     groupId: null,
                   })}
-                  className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10">
+                  className="w-full bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl h-10">
                   Adicionar tarefa
                 </Button>
               </div>

@@ -85,7 +85,7 @@ export default function EditProgramaPage() {
         <Link to={`/professor/alunos/${studentId}/programas/${programId}`} className="text-gray-400 hover:text-gray-600 transition">
           <MdArrowBack size={20} />
         </Link>
-        <h1 className="text-xl font-bold text-[#1E3A5F]">Editar programa</h1>
+        <h1 className="text-xl font-bold text-[#153b50]">Editar programa</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -103,8 +103,8 @@ export default function EditProgramaPage() {
                 onClick={() => setType(t.value)}
                 className={`py-3 px-3 rounded-xl border text-sm font-medium transition flex items-center gap-2 ${
                   type === t.value
-                    ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]'
+                    ? 'bg-[#153b50] text-white border-[#153b50]'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]'
                 }`}
               >
                 <t.Icon size={16} />
@@ -128,7 +128,7 @@ export default function EditProgramaPage() {
               onChange={e => setTitle(e.target.value)}
               required
               maxLength={200}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition"
             />
           </div>
 
@@ -141,7 +141,7 @@ export default function EditProgramaPage() {
                 type="date"
                 value={deadline}
                 onChange={e => setDeadline(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition"
               />
             </div>
           )}
@@ -154,7 +154,7 @@ export default function EditProgramaPage() {
                 onChange={e => setVenue(e.target.value)}
                 placeholder="Ex: Teatro Municipal, Sala de Recitais..."
                 maxLength={200}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition"
               />
             </div>
           )}
@@ -170,14 +170,14 @@ export default function EditProgramaPage() {
             onChange={e => setNotes(e.target.value)}
             rows={3}
             maxLength={2000}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition resize-none"
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition resize-none"
           />
         </div>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         <Button type="submit" disabled={saving}
-          className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10">
+          className="w-full bg-[#153b50] hover:bg-[#153b50]/90 text-white rounded-xl h-10">
           {saving ? 'Salvando...' : 'Salvar alterações'}
         </Button>
 

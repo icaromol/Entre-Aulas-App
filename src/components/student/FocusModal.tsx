@@ -97,13 +97,13 @@ export function FocusModal({
         <div className="px-5 pb-6 space-y-4">
           {/* Visual antes → depois */}
           <div className="flex items-center gap-2">
-            <div className="flex-1 bg-[#F5F7FA] rounded-xl p-3">
+            <div className="flex-1 bg-[#F8F6F5] rounded-xl p-3">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Antes</p>
               <div className="space-y-1.5">
                 {[["Peça A", 25], ["Peça B", 25]].map(([label, min]) => (
                   <div key={label as string} className="flex items-center gap-2">
-                    <div className="h-5 rounded-md bg-[#4A90C4]/30 flex items-center justify-center flex-1">
-                      <span className="text-[10px] font-medium text-[#1E3A5F]">{label}</span>
+                    <div className="h-5 rounded-md bg-[#b2f0fb]/30 flex items-center justify-center flex-1">
+                      <span className="text-[10px] font-medium text-[#153b50]">{label}</span>
                     </div>
                     <span className="text-[10px] text-gray-400 shrink-0">{min}m</span>
                   </div>
@@ -111,15 +111,15 @@ export function FocusModal({
               </div>
             </div>
 
-            <div className="text-[#4A90C4] text-lg font-bold shrink-0">→</div>
+            <div className="text-[#b2f0fb] text-lg font-bold shrink-0">→</div>
 
-            <div className="flex-1 bg-[#F5F7FA] rounded-xl p-3">
+            <div className="flex-1 bg-[#F8F6F5] rounded-xl p-3">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Com foco</p>
               <div className="space-y-1.5">
                 {[["Peça A ⭐", 35, true], ["Peça B", 15, false]].map(([label, min, focus]) => (
                   <div key={label as string} className="flex items-center gap-2">
-                    <div className={`h-5 rounded-md flex items-center justify-center flex-1 ${focus ? "bg-[#1E3A5F]" : "bg-[#4A90C4]/20"}`}>
-                      <span className={`text-[10px] font-medium ${focus ? "text-white" : "text-[#1E3A5F]"}`}>{label}</span>
+                    <div className={`h-5 rounded-md flex items-center justify-center flex-1 ${focus ? "bg-[#153b50]" : "bg-[#b2f0fb]/20"}`}>
+                      <span className={`text-[10px] font-medium ${focus ? "text-white" : "text-[#153b50]"}`}>{label}</span>
                     </div>
                     <span className="text-[10px] text-gray-400 shrink-0">{min}m</span>
                   </div>
@@ -145,12 +145,12 @@ export function FocusModal({
                       onClick={() => setSelectedKey(active ? null : opt.key)}
                       className={`flex items-center gap-3 w-full rounded-xl border-2 px-4 py-3 transition text-left ${
                         active
-                          ? "border-[#1E3A5F] bg-[#D6E4F0]"
-                          : "border-gray-100 bg-[#F5F7FA] hover:border-[#4A90C4]"
+                          ? "border-[#153b50] bg-[#f4d1ae]"
+                          : "border-gray-100 bg-[#F8F6F5] hover:border-[#b2f0fb]"
                       }`}
                     >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${active ? "bg-[#1E3A5F]" : "bg-[#4A90C4]/30"}`}>
-                        <Icon size={16} color={active ? "white" : "#1E3A5F"} />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${active ? "bg-[#153b50]" : "bg-[#b2f0fb]/30"}`}>
+                        <Icon size={16} color={active ? "white" : "#153b50"} />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-800 truncate">{opt.title}</p>
@@ -167,8 +167,8 @@ export function FocusModal({
 
           {/* Item pré-selecionado destacado */}
           {hasPreSelection && preSelected && (
-            <div className="flex items-center gap-3 rounded-xl border-2 border-[#1E3A5F] bg-[#D6E4F0] px-4 py-3">
-              <div className="w-8 h-8 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3 rounded-xl border-2 border-[#153b50] bg-[#f4d1ae] px-4 py-3">
+              <div className="w-8 h-8 rounded-full bg-[#153b50] flex items-center justify-center shrink-0">
                 {preSelected.type === "piece"
                   ? <MdMusicNote size={16} color="white" />
                   : <MdFitnessCenter size={16} color="white" />}
@@ -187,23 +187,23 @@ export function FocusModal({
             <button
               onClick={() => handleApply("day")}
               disabled={!selectedOption}
-              className="flex-1 flex flex-col items-center gap-1 rounded-xl border-2 border-[#D6E4F0] bg-[#F5F7FA] px-3 py-3 hover:border-[#1E3A5F] hover:bg-[#D6E4F0] transition disabled:opacity-40 disabled:pointer-events-none"
+              className="flex-1 flex flex-col items-center gap-1 rounded-xl border-2 border-[#f4d1ae] bg-[#F8F6F5] px-3 py-3 hover:border-[#153b50] hover:bg-[#f4d1ae] transition disabled:opacity-40 disabled:pointer-events-none"
             >
-              <div className="w-8 h-8 rounded-full bg-[#1E3A5F] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-[#153b50] flex items-center justify-center">
                 <MdGpsFixed size={16} color="white" />
               </div>
-              <p className="text-xs font-semibold text-[#1E3A5F]">Foco do Dia</p>
+              <p className="text-xs font-semibold text-[#153b50]">Foco do Dia</p>
               <p className="text-[10px] text-gray-400 text-center leading-tight">Redistribui o tempo hoje</p>
             </button>
             <button
               onClick={() => handleApply("week")}
               disabled={!selectedOption}
-              className="flex-1 flex flex-col items-center gap-1 rounded-xl border-2 border-[#D6E4F0] bg-[#F5F7FA] px-3 py-3 hover:border-[#4A90C4] hover:bg-[#D6E4F0] transition disabled:opacity-40 disabled:pointer-events-none"
+              className="flex-1 flex flex-col items-center gap-1 rounded-xl border-2 border-[#f4d1ae] bg-[#F8F6F5] px-3 py-3 hover:border-[#b2f0fb] hover:bg-[#f4d1ae] transition disabled:opacity-40 disabled:pointer-events-none"
             >
-              <div className="w-8 h-8 rounded-full bg-[#4A90C4] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-[#b2f0fb] flex items-center justify-center">
                 <MdCalendarToday size={16} color="white" />
               </div>
-              <p className="text-xs font-semibold text-[#1E3A5F]">Foco da Semana</p>
+              <p className="text-xs font-semibold text-[#153b50]">Foco da Semana</p>
               <p className="text-[10px] text-gray-400 text-center leading-tight">Prioriza nos dias restantes</p>
             </button>
           </div>

@@ -45,7 +45,7 @@ export function EditDurationModal({
               max={240}
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              className="w-24 text-center text-2xl font-bold text-[#1E3A5F] border-2 border-[#D6E4F0] rounded-xl py-2 focus:outline-none focus:border-[#4A90C4]"
+              className="w-24 text-center text-2xl font-bold text-[#153b50] border-2 border-[#f4d1ae] rounded-xl py-2 focus:outline-none focus:border-[#b2f0fb]"
             />
             <span className="text-sm text-gray-400">minutos</span>
           </div>
@@ -54,14 +54,14 @@ export function EditDurationModal({
             <button
               disabled={!valid}
               onClick={() => onSaveThis(minutes)}
-              className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold disabled:opacity-40 transition"
+              className="w-full py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold disabled:opacity-40 transition"
             >
               Salvar só este item
             </button>
             <button
               disabled={!valid}
               onClick={() => onSaveAll(minutes)}
-              className="w-full py-3 rounded-xl border-2 border-[#1E3A5F] text-[#1E3A5F] text-sm font-semibold disabled:opacity-40 transition"
+              className="w-full py-3 rounded-xl border-2 border-[#153b50] text-[#153b50] text-sm font-semibold disabled:opacity-40 transition"
             >
               Salvar e redistribuir os outros
             </button>

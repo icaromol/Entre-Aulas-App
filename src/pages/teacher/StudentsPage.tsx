@@ -13,7 +13,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import { Button } from '@/components/ui/button'
 
-const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
+import { AVATAR_COLORS } from '@/lib/colors'
 
 interface Student {
   id: string
@@ -219,7 +219,7 @@ export default function StudentsPage() {
                 <MdCheckCircle size={22} className="text-green-500" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-[#1E3A5F]">{inviteStudentName} cadastrado!</h2>
+                <h2 className="text-base font-bold text-[#153b50]">{inviteStudentName} cadastrado!</h2>
                 <p className="text-xs text-gray-400">Envie o acesso para o aluno</p>
               </div>
             </div>
@@ -230,7 +230,7 @@ export default function StudentsPage() {
               <input readOnly value={inviteLink}
                 className="flex-1 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-500 outline-none min-w-0" />
               <button onClick={handleCopy}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#1E3A5F] text-white text-xs font-medium hover:bg-[#1E3A5F]/90 transition">
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#153b50] text-white text-xs font-medium hover:bg-[#153b50]/90 transition">
                 {copied ? <><MdCheck size={14} />Copiado</> : <><MdContentCopy size={14} />Copiar</>}
               </button>
             </div>
@@ -258,11 +258,11 @@ export default function StudentsPage() {
               <MdClose size={20} />
             </button>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[#D6E4F0] flex items-center justify-center shrink-0">
-                <MdPersonSearch size={22} className="text-[#1E3A5F]" />
+              <div className="w-10 h-10 rounded-full bg-[#f4d1ae] flex items-center justify-center shrink-0">
+                <MdPersonSearch size={22} className="text-[#153b50]" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-[#1E3A5F]">Vincular aluno existente</h2>
+                <h2 className="text-base font-bold text-[#153b50]">Vincular aluno existente</h2>
                 <p className="text-xs text-gray-400">Aluno que já tem conta no estudamus</p>
               </div>
             </div>
@@ -275,21 +275,21 @@ export default function StudentsPage() {
                 onKeyDown={e => e.key === 'Enter' && handleLinkExisting()}
                 placeholder="aluno@email.com"
                 maxLength={254}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4A90C4] transition"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#b2f0fb] transition"
                 autoFocus
               />
             </div>
             <div className="flex gap-2 mt-5">
               <button
                 onClick={() => { setShowLinkModal(false); setLinkEmail('') }}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#4A90C4] transition"
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#b2f0fb] transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleLinkExisting}
                 disabled={linking || !linkEmail.trim()}
-                className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-40"
+                className="flex-1 py-2.5 rounded-xl bg-[#153b50] text-white text-sm font-medium hover:bg-[#153b50]/90 transition disabled:opacity-40"
               >
                 {linking ? 'Buscando...' : 'Vincular'}
               </button>
@@ -301,7 +301,7 @@ export default function StudentsPage() {
       {/* Cabeçalho */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#1E3A5F]">Meus alunos</h1>
+          <h1 className="text-xl font-bold text-[#153b50]">Meus alunos</h1>
           <p className="text-sm text-gray-400 mt-0.5">
             {students.length} {students.length === 1 ? 'aluno ativo' : 'alunos ativos'}
             {pending.length > 0 && ` · ${pending.length} solicitação${pending.length > 1 ? 'ões' : ''}`}
@@ -311,12 +311,12 @@ export default function StudentsPage() {
           <button
             onClick={() => setShowLinkModal(true)}
             title="Vincular aluno existente"
-            className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:border-[#4A90C4] hover:text-[#1E3A5F] transition"
+            className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:border-[#b2f0fb] hover:text-[#153b50] transition"
           >
             <MdPersonSearch size={18} />
           </button>
           <Link to="/professor/alunos/novo">
-            <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm">
+            <Button className="bg-[#153b50] hover:bg-[#153b50]/90 text-white text-sm">
               <MdAdd size={16} className="inline -mt-0.5 mr-0.5" />Novo aluno
             </Button>
           </Link>
@@ -334,16 +334,16 @@ export default function StudentsPage() {
           {pending.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <MdPersonAdd size={16} className="text-[#4A90C4]" />
+                <MdPersonAdd size={16} className="text-[#b2f0fb]" />
                 <h2 className="text-sm font-semibold text-gray-500">Solicitações pendentes</h2>
-                <span className="ml-auto text-xs bg-[#4A90C4] text-white px-2 py-0.5 rounded-full font-medium">
+                <span className="ml-auto text-xs bg-[#b2f0fb] text-white px-2 py-0.5 rounded-full font-medium">
                   {pending.length}
                 </span>
               </div>
               <div className="grid gap-2">
                 {pending.map(student => (
                   <div key={student.id}
-                    className="bg-[#D6E4F0]/40 border border-[#4A90C4]/30 rounded-2xl px-5 py-4 flex items-center gap-4">
+                    className="bg-[#f4d1ae]/40 border border-[#b2f0fb]/30 rounded-2xl px-5 py-4 flex items-center gap-4">
                     <div className="shrink-0 rounded-full overflow-hidden">
                       <Avatar size={40} name={`${student.first_name} ${student.last_name}`} variant="beam" colors={AVATAR_COLORS} />
                     </div>
@@ -363,7 +363,7 @@ export default function StudentsPage() {
                       </button>
                       <button
                         onClick={() => handleAccept(student)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#1E3A5F] text-white hover:bg-[#1E3A5F]/90 transition"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#153b50] text-white hover:bg-[#153b50]/90 transition"
                         title="Aceitar"
                       >
                         <MdCheck size={16} />
@@ -380,7 +380,7 @@ export default function StudentsPage() {
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
               <p className="text-gray-400 text-sm">Nenhum aluno cadastrado ainda.</p>
               <Link to="/professor/alunos/novo">
-                <Button className="mt-4 bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-sm">
+                <Button className="mt-4 bg-[#153b50] hover:bg-[#153b50]/90 text-white text-sm">
                   Cadastrar primeiro aluno
                 </Button>
               </Link>
@@ -393,7 +393,7 @@ export default function StudentsPage() {
               <div className="grid gap-3">
                 {students.map(student => (
                   <div key={student.id}
-                    className="relative bg-white rounded-2xl border border-gray-100 hover:border-[#4A90C4] transition px-5 py-4 flex items-center gap-4 group">
+                    className="relative bg-white rounded-2xl border border-gray-100 hover:border-[#b2f0fb] transition px-5 py-4 flex items-center gap-4 group">
                     <Link to={`/professor/alunos/${student.id}`} className="flex items-center gap-4 flex-1 min-w-0">
                       <div className="shrink-0 rounded-full overflow-hidden">
                         <Avatar size={40} name={`${student.first_name} ${student.last_name}`} variant="beam" colors={AVATAR_COLORS} />
@@ -420,7 +420,7 @@ export default function StudentsPage() {
                       {menuOpenId === student.id && (
                         <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-48 z-20">
                           <button onClick={() => { setMenuOpenId(null); navigate(`/professor/alunos/${student.id}/planejamento`) }}
-                            className="w-full px-4 py-2.5 text-left text-sm font-medium text-[#1E3A5F] hover:bg-[#D6E4F0] transition">
+                            className="w-full px-4 py-2.5 text-left text-sm font-medium text-[#153b50] hover:bg-[#f4d1ae] transition">
                             Novo planejamento
                           </button>
                           <div className="border-t border-gray-100 my-1" />

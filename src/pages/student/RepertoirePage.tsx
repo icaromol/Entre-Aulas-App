@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Switch } from "@/components/ui/switch";
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { autoGeneratePlan } from "@/lib/autoplan";
-const AVATAR_COLORS = ["#1E3A5F", "#4A90C4", "#D6E4F0", "#F5F7FA", "#FFFFFF"];
+import { AVATAR_COLORS } from "@/lib/colors";
 
 interface ChecklistItem {
   id: string;
@@ -407,15 +407,15 @@ export default function RepertoirePage() {
     <StudentLayout>
       <div className="mb-5 flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[#1E3A5F]">Repertório</h1>
+          <h1 className="text-xl font-bold text-[#153b50]">Repertório</h1>
           <p className="text-sm text-gray-400 mt-0.5">Seu material de estudo</p>
         </div>
         <button
           onClick={toggleSelectionMode}
           className={`p-2 rounded-xl transition ${
             isSelectionMode
-              ? "bg-[#4A90C4] text-white"
-              : "text-gray-400 hover:text-[#1E3A5F] hover:bg-gray-100"
+              ? "bg-[#b2f0fb] text-white"
+              : "text-gray-400 hover:text-[#153b50] hover:bg-gray-100"
           }`}
           aria-label="Selecionar itens"
         >
@@ -440,7 +440,7 @@ export default function RepertoirePage() {
             onClick={() => switchTab(tab.key)}
             className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
               activeTab === tab.key
-                ? "bg-white text-[#1E3A5F] shadow-sm"
+                ? "bg-white text-[#153b50] shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -452,7 +452,7 @@ export default function RepertoirePage() {
       {/* Selection mode: counter + action bar */}
       {isSelectionMode && (
         <div className="mb-4 flex items-center justify-between gap-3">
-          <p className="text-xs text-[#4A90C4] font-semibold shrink-0">
+          <p className="text-xs text-[#b2f0fb] font-semibold shrink-0">
             {selectedIds.size} {selectedIds.size === 1 ? "item selecionado" : "itens selecionados"}
           </p>
           {selectedIds.size > 0 && (
@@ -462,7 +462,7 @@ export default function RepertoirePage() {
                 <button
                   onClick={() => setShowStatusMenu((v) => !v)}
                   disabled={bulkLoading}
-                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium text-gray-600 hover:border-[#4A90C4] hover:text-[#4A90C4] transition disabled:opacity-50 flex items-center gap-1.5 min-w-[120px] justify-between"
+                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium text-gray-600 hover:border-[#b2f0fb] hover:text-[#b2f0fb] transition disabled:opacity-50 flex items-center gap-1.5 min-w-[120px] justify-between"
                 >
                   <span>{selectedAction ? selectedAction.label : "Selecione"}</span>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className={`transition-transform shrink-0 ${showStatusMenu ? "rotate-180" : ""}`}>
@@ -474,19 +474,19 @@ export default function RepertoirePage() {
                     <p className="px-4 pt-3 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Alterar status</p>
                     {activeTab === "pieces" ? (
                       <>
-                        <button onClick={() => { setSelectedAction({ type: "status", value: "in_progress", label: "Em andamento" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Em andamento</button>
-                        <button onClick={() => { setSelectedAction({ type: "status", value: "paused", label: "Pausada" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Pausada</button>
-                        <button onClick={() => { setSelectedAction({ type: "status", value: "completed", label: "Concluída" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Concluída</button>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "in_progress", label: "Em andamento" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5]">Em andamento</button>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "paused", label: "Pausada" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5]">Pausada</button>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "completed", label: "Concluída" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5]">Concluída</button>
                       </>
                     ) : (
                       <>
-                        <button onClick={() => { setSelectedAction({ type: "status", value: "active", label: "Em andamento" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Em andamento</button>
-                        <button onClick={() => { setSelectedAction({ type: "status", value: "inactive", label: "Pausada" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Pausada</button>
-                        <button onClick={() => { setSelectedAction({ type: "status", value: "completed", label: "Concluída" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA]">Concluída</button>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "active", label: "Em andamento" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5]">Em andamento</button>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "inactive", label: "Pausada" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5]">Pausada</button>
+                        <button onClick={() => { setSelectedAction({ type: "status", value: "completed", label: "Concluída" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F8F6F5]">Concluída</button>
                       </>
                     )}
                     <div className="border-t border-gray-100 mt-1">
-                      <button onClick={() => { setSelectedAction({ type: "delete", label: "Excluir" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-[#F5F7FA] rounded-b-xl">Excluir</button>
+                      <button onClick={() => { setSelectedAction({ type: "delete", label: "Excluir" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-[#F8F6F5] rounded-b-xl">Excluir</button>
                     </div>
                   </div>
                 )}
@@ -500,7 +500,7 @@ export default function RepertoirePage() {
                   else setConfirmBulkAction("delete");
                 }}
                 disabled={!selectedAction || bulkLoading}
-                className="px-3 py-1.5 rounded-lg bg-[#1E3A5F] text-white text-xs font-medium hover:bg-[#1E3A5F]/90 transition disabled:opacity-40"
+                className="px-3 py-1.5 rounded-lg bg-[#153b50] text-white text-xs font-medium hover:bg-[#153b50]/90 transition disabled:opacity-40"
               >
                 Aplicar ação a todos
               </button>
@@ -529,7 +529,7 @@ export default function RepertoirePage() {
         <div className="space-y-3">
           {sortedPieces.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#153b50] flex items-center justify-center mx-auto mb-3">
                 <MdMusicNote size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-600">
@@ -561,7 +561,7 @@ export default function RepertoirePage() {
                   }
                   className={`rounded-2xl border overflow-hidden transition ${
                     isSelectionMode && selectedIds.has(piece.id)
-                      ? "bg-[#EBF4FB] border-2 border-[#4A90C4]"
+                      ? "bg-[#EBF4FB] border-2 border-[#b2f0fb]"
                       : "bg-white border-gray-100"
                   }`}
                   onClick={isSelectionMode ? () => toggleItemSelected(piece.id) : undefined}
@@ -570,7 +570,7 @@ export default function RepertoirePage() {
                     {isSelectionMode && (
                       <div className="shrink-0">
                         {selectedIds.has(piece.id)
-                          ? <MdCheckBox size={22} className="text-[#4A90C4]" />
+                          ? <MdCheckBox size={22} className="text-[#b2f0fb]" />
                           : <MdCheckBoxOutlineBlank size={22} className="text-gray-300" />
                         }
                       </div>
@@ -604,7 +604,7 @@ export default function RepertoirePage() {
                               ? "#D1D5DB"
                               : piece.status === "completed"
                                 ? "#22c55e"
-                                : "#4A90C4"
+                                : "#b2f0fb"
                           }
                           strokeWidth="3"
                           strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`}
@@ -655,7 +655,7 @@ export default function RepertoirePage() {
                         e.stopPropagation();
                         if (isSelectionMode) toggleItemSelected(piece.id);
                       }}
-                      className={`shrink-0 ${piece.status === "completed" ? "data-checked:bg-green-500" : "data-checked:bg-[#1E3A5F]"}`}
+                      className={`shrink-0 ${piece.status === "completed" ? "data-checked:bg-green-500" : "data-checked:bg-[#153b50]"}`}
                     />
 
                     <button
@@ -701,7 +701,7 @@ export default function RepertoirePage() {
                                     <div
                                       className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
                                         completedIds.has(item.id)
-                                          ? "bg-[#1E3A5F] border-[#1E3A5F]"
+                                          ? "bg-[#153b50] border-[#153b50]"
                                           : "border-gray-300"
                                       }`}
                                     >
@@ -744,7 +744,7 @@ export default function RepertoirePage() {
           <div className="flex flex-col items-center gap-2 pt-4 pb-2">
             <button
               onClick={() => navigate("/aluno/repertorio/pecas/nova")}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition"
             >
               <MdAdd size={18} />
               Nova peça
@@ -767,7 +767,7 @@ export default function RepertoirePage() {
         <div className="space-y-3">
           {sortedExercises.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#153b50] flex items-center justify-center mx-auto mb-3">
                 <MdFitnessCenter size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-600">
@@ -783,7 +783,7 @@ export default function RepertoirePage() {
                 key={ex.id}
                 className={`rounded-2xl border px-5 py-4 flex items-center gap-4 transition ${
                   isSelectionMode && selectedIds.has(ex.id)
-                    ? "bg-[#EBF4FB] border-2 border-[#4A90C4]"
+                    ? "bg-[#EBF4FB] border-2 border-[#b2f0fb]"
                     : "bg-white border-gray-100"
                 }`}
                 onClick={isSelectionMode ? () => toggleItemSelected(ex.id) : undefined}
@@ -791,7 +791,7 @@ export default function RepertoirePage() {
                 {isSelectionMode && (
                   <div className="shrink-0">
                     {selectedIds.has(ex.id)
-                      ? <MdCheckBox size={22} className="text-[#4A90C4]" />
+                      ? <MdCheckBox size={22} className="text-[#b2f0fb]" />
                       : <MdCheckBoxOutlineBlank size={22} className="text-gray-300" />
                     }
                   </div>
@@ -839,7 +839,7 @@ export default function RepertoirePage() {
                     e.stopPropagation();
                     if (isSelectionMode) toggleItemSelected(ex.id);
                   }}
-                  className="shrink-0 data-checked:bg-[#1E3A5F]"
+                  className="shrink-0 data-checked:bg-[#153b50]"
                 />
                 <button
                   onClick={isSelectionMode
@@ -865,7 +865,7 @@ export default function RepertoirePage() {
           <div className="flex flex-col items-center gap-2 pt-4 pb-2">
             <button
               onClick={() => navigate("/aluno/repertorio/exercicios/novo")}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition"
             >
               <MdAdd size={18} />
               Novo exercício
@@ -894,7 +894,7 @@ export default function RepertoirePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-3">
-              <h3 className="text-xl font-bold text-[#1E3A5F]">
+              <h3 className="text-xl font-bold text-[#153b50]">
                 Controle de estudo
               </h3>
               {pendingToggle?.context === "piece_maintenance" ? (
@@ -930,7 +930,7 @@ export default function RepertoirePage() {
                 type="checkbox"
                 checked={dontShowAgain}
                 onChange={(e) => setDontShowAgain(e.target.checked)}
-                className="w-4 h-4 rounded accent-[#1E3A5F] cursor-pointer"
+                className="w-4 h-4 rounded accent-[#153b50] cursor-pointer"
               />
               <span className="text-xs text-gray-500">
                 Não mostrar novamente
@@ -945,7 +945,7 @@ export default function RepertoirePage() {
               </button>
               <button
                 onClick={confirmToggle}
-                className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition"
+                className="flex-1 py-2.5 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition"
               >
                 Entendi, continuar
               </button>
@@ -965,7 +965,7 @@ export default function RepertoirePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-3">
-              <h3 className="text-xl font-bold text-[#1E3A5F]">Excluir itens</h3>
+              <h3 className="text-xl font-bold text-[#153b50]">Excluir itens</h3>
               <p className="text-sm text-gray-500 leading-relaxed">
                 {selectedIds.size === 1
                   ? "1 item será excluído permanentemente."
@@ -1003,7 +1003,7 @@ export default function RepertoirePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div>
-              <h3 className="text-base font-bold text-[#1E3A5F]">
+              <h3 className="text-base font-bold text-[#153b50]">
                 Importar {importMode === "pieces" ? "peças" : "exercícios"} em
                 lote
               </h3>
@@ -1021,12 +1021,12 @@ export default function RepertoirePage() {
                   : "Escala de Dó maior\nArpejo de Sol\nHanon nº1"
               }
               rows={6}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition resize-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition resize-none"
             />
             <button
               onClick={handleImport}
               disabled={importing || !importText.trim()}
-              className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#153b50]/90 transition disabled:opacity-50"
             >
               {importing
                 ? "Criando..."

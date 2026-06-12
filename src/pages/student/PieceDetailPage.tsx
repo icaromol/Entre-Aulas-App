@@ -299,14 +299,14 @@ export default function StudentPieceDetailPage() {
           <MdArrowBack size={20} />
         </Link>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-[#1E3A5F]">{piece.title}</h1>
+          <h1 className="text-xl font-bold text-[#153b50]">{piece.title}</h1>
           <p className="text-xs text-gray-400 mt-0.5">
             {piece.composer ?? '—'}
             {piece.catalog_number && ` · ${piece.catalog_number}`}
             {piece.period && ` · ${periodLabel[piece.period] ?? piece.period}`}
           </p>
         </div>
-        <Link to={`/aluno/repertorio/pecas/${pieceId}/editar`} className="text-gray-400 hover:text-[#4A90C4] transition">
+        <Link to={`/aluno/repertorio/pecas/${pieceId}/editar`} className="text-gray-400 hover:text-[#b2f0fb] transition">
           <MdEdit size={20} />
         </Link>
       </div>
@@ -315,17 +315,17 @@ export default function StudentPieceDetailPage() {
       <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-semibold text-gray-600">Progresso</span>
-          <span className="text-xl font-bold text-[#1E3A5F]">{piece.completion_pct}%</span>
+          <span className="text-xl font-bold text-[#153b50]">{piece.completion_pct}%</span>
         </div>
         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full transition-all duration-500 ${piece.completion_pct === 100 ? 'bg-green-500' : 'bg-[#4A90C4]'}`}
+          <div className={`h-full rounded-full transition-all duration-500 ${piece.completion_pct === 100 ? 'bg-green-500' : 'bg-[#b2f0fb]'}`}
             style={{ width: `${piece.completion_pct}%` }} />
         </div>
         <div className="mt-4 space-y-1">
           <label className="text-xs font-medium text-gray-500">Status</label>
           <select value={piece.status} onChange={e => updateStatus(e.target.value)}
             disabled={savingStatus}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] transition bg-white">
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] transition bg-white">
             {statusOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </div>
@@ -340,7 +340,7 @@ export default function StudentPieceDetailPage() {
         ]).map(tab => (
           <button key={tab.key} onClick={() => switchTab(tab.key)}
             className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
-              activeTab === tab.key ? 'bg-white text-[#1E3A5F] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              activeTab === tab.key ? 'bg-white text-[#153b50] shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}>
             {tab.label}
           </button>
@@ -362,7 +362,7 @@ export default function StudentPieceDetailPage() {
                     <div key={item.id} className="flex items-center gap-3 group">
                       <button onClick={() => toggleItem(item)}
                         className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
-                          item.completed ? 'bg-[#1E3A5F] border-[#1E3A5F]' : 'border-gray-300 hover:border-[#4A90C4]'
+                          item.completed ? 'bg-[#153b50] border-[#153b50]' : 'border-gray-300 hover:border-[#b2f0fb]'
                         }`}>
                         {item.completed && (
                           <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
@@ -393,9 +393,9 @@ export default function StudentPieceDetailPage() {
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomItem())}
                 placeholder="Ex: Trabalhar digitação do compasso 12"
                 maxLength={200}
-                className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition" />
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition" />
               <Button onClick={addCustomItem} disabled={addingItem || !newItemTitle.trim()}
-                className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white text-xs px-4">
+                className="bg-[#153b50] hover:bg-[#153b50]/90 text-white text-xs px-4">
                 {addingItem ? '...' : 'Adicionar'}
               </Button>
             </div>
@@ -408,7 +408,7 @@ export default function StudentPieceDetailPage() {
         <div className="space-y-3 mb-5">
           {detailFields.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#153b50] flex items-center justify-center mx-auto mb-3">
                 <MdNotes size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-600">Nenhum detalhe cadastrado</p>
@@ -417,7 +417,7 @@ export default function StudentPieceDetailPage() {
           ) : (
             detailFields.map(field => (
               <div key={field.label} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4">
-                <div className="w-9 h-9 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[#153b50] flex items-center justify-center shrink-0">
                   <field.Icon size={18} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -437,7 +437,7 @@ export default function StudentPieceDetailPage() {
             <div className="flex justify-center py-12"><Spinner /></div>
           ) : sessions.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-              <div className="w-12 h-12 rounded-full bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#153b50] flex items-center justify-center mx-auto mb-3">
                 <MdHistory size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-600">Nenhuma sessão registrada</p>
@@ -469,7 +469,7 @@ export default function StudentPieceDetailPage() {
                     <div className="space-y-1.5">
                       {completedInSession.map(ci => (
                         <div key={ci.id} className="flex items-center gap-2">
-                          <MdCheckCircle size={13} className="text-[#4A90C4] shrink-0" />
+                          <MdCheckCircle size={13} className="text-[#b2f0fb] shrink-0" />
                           <span className="text-xs text-gray-600">{ci.title}</span>
                         </div>
                       ))}

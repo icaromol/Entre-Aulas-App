@@ -244,7 +244,7 @@ export default function RegisterPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-8 pt-7 pb-8 space-y-6">
           {!inviteStudentId && (
-            <p className="text-base font-bold text-[#1E3A5F] text-center leading-snug">{subtitle}</p>
+            <p className="text-base font-bold text-[#153b50] text-center leading-snug">{subtitle}</p>
           )}
           {inviteStudentId && (
             <p className="text-sm text-gray-500 text-center">{subtitle}</p>
@@ -267,12 +267,12 @@ export default function RegisterPage() {
                     }
                     className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${
                       selected
-                        ? "border-[#1E3A5F] bg-[#D6E4F0]"
-                        : "border-gray-200 bg-white hover:border-[#4A90C4]"
+                        ? "border-[#153b50] bg-[#f4d1ae]"
+                        : "border-gray-200 bg-white hover:border-[#b2f0fb]"
                     }`}
                   >
                     <div
-                      className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${selected ? "bg-[#1E3A5F]" : "bg-gray-100"}`}
+                      className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${selected ? "bg-[#153b50]" : "bg-gray-100"}`}
                     >
                       <Icon
                         size={22}
@@ -282,7 +282,7 @@ export default function RegisterPage() {
                     <div className="flex-1 min-w-0">
                       <div className="mb-2">
                         <span
-                          className={`text-sm font-bold ${selected ? "text-[#1E3A5F]" : "text-gray-700"}`}
+                          className={`text-sm font-bold ${selected ? "text-[#153b50]" : "text-gray-700"}`}
                         >
                           {label}
                         </span>
@@ -293,11 +293,11 @@ export default function RegisterPage() {
                             <MdCheckCircle
                               size={12}
                               className={
-                                selected ? "text-[#1E3A5F]" : "text-gray-300"
+                                selected ? "text-[#153b50]" : "text-gray-300"
                               }
                             />
                             <span
-                              className={`text-xs ${selected ? "text-[#1E3A5F]" : "text-gray-400"}`}
+                              className={`text-xs ${selected ? "text-[#153b50]" : "text-gray-400"}`}
                             >
                               {f}
                             </span>
@@ -326,8 +326,8 @@ export default function RegisterPage() {
                       }
                       className={`py-2 px-1 rounded-xl border text-xs font-medium transition ${
                         instrument === inst
-                          ? "bg-[#1E3A5F] text-white border-[#1E3A5F]"
-                          : "bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]"
+                          ? "bg-[#153b50] text-white border-[#153b50]"
+                          : "bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]"
                       }`}
                     >
                       {inst}
@@ -346,8 +346,8 @@ export default function RegisterPage() {
                         onClick={() => toggleTeacherInstrument(inst)}
                         className={`py-2 px-1 rounded-xl border text-xs font-medium transition ${
                           sel
-                            ? "bg-[#1E3A5F] text-white border-[#1E3A5F]"
-                            : "bg-white text-gray-600 border-gray-200 hover:border-[#4A90C4]"
+                            ? "bg-[#153b50] text-white border-[#153b50]"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-[#b2f0fb]"
                         }`}
                       >
                         {inst}
@@ -364,13 +364,13 @@ export default function RegisterPage() {
             <div className="flex justify-center py-4"><Spinner /></div>
           ) : autoSignup ? (
             <Button onClick={handleDirectSignup} disabled={loading || !canProceedStep1}
-              className="w-full h-11 rounded-xl bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white disabled:opacity-40">
+              className="w-full h-11 rounded-xl bg-[#153b50] hover:bg-[#153b50]/90 text-white disabled:opacity-40">
               {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" /> : "Continuar"}
             </Button>
           ) : step === 1 ? (
             inviteStudentId && (
               <Button onClick={handleGoogleSignup} disabled={loading || !canProceedStep1} variant="outline"
-                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40">
+                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#b2f0fb] hover:bg-gray-50 transition disabled:opacity-40">
                 {loading ? <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <FcGoogle size={20} />}
                 {loading ? "Redirecionando..." : "Continuar com Google"}
               </Button>
@@ -379,7 +379,7 @@ export default function RegisterPage() {
             // Passo 2: botão final Google + voltar
             <div className="flex flex-col gap-2">
               <Button onClick={handleGoogleSignup} disabled={loading} variant="outline"
-                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#4A90C4] hover:bg-gray-50 transition disabled:opacity-40">
+                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border-gray-200 text-gray-700 hover:border-[#b2f0fb] hover:bg-gray-50 transition disabled:opacity-40">
                 {loading ? <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <FcGoogle size={20} />}
                 {loading ? "Redirecionando..." : "Continuar com Google"}
               </Button>
@@ -396,7 +396,7 @@ export default function RegisterPage() {
             Já tem conta?{" "}
             <Link
               to="/login"
-              className="text-[#4A90C4] font-medium hover:underline"
+              className="text-[#b2f0fb] font-medium hover:underline"
             >
               Entrar
             </Link>

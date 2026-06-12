@@ -17,7 +17,7 @@ export function AvailabilitySetupModal({ studentId, onDone }: Props) {
 
         {/* Title */}
         <div className="px-7 pt-5 pb-3">
-          <h2 className="text-base font-bold text-[#1E3A5F]">
+          <h2 className="text-base font-bold text-[#153b50]">
             Quando você costuma estudar?
           </h2>
           <p className="text-xs text-gray-400 mt-2">

@@ -73,11 +73,11 @@ function shortWeekLabel(isoMonday: string): string {
 }
 
 const minutesChartConfig = {
-  minutes: { label: 'Minutos', color: '#4A90C4' },
+  minutes: { label: 'Minutos', color: '#b2f0fb' },
 } satisfies ChartConfig
 
 const xpChartConfig = {
-  xp: { label: 'XP', color: '#1E3A5F' },
+  xp: { label: 'XP', color: '#153b50' },
 } satisfies ChartConfig
 
 // ─── Tipos e helpers de sessões ──────────────────────────────────────────────
@@ -192,11 +192,11 @@ export function StudentJornadaTab({ studentId }: Props) {
       <div className="bg-white rounded-2xl border border-gray-100 p-4">
         <div className="mb-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rank atual</p>
-          <p className="text-lg font-bold text-[#1E3A5F] mt-0.5">{rank.current.display}</p>
+          <p className="text-lg font-bold text-[#153b50] mt-0.5">{rank.current.display}</p>
         </div>
         <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2">
           <div
-            className="h-full bg-[#4A90C4] rounded-full transition-all duration-700"
+            className="h-full bg-[#b2f0fb] rounded-full transition-all duration-700"
             style={{ width: `${rank.progressPct}%` }}
           />
         </div>
@@ -204,7 +204,7 @@ export function StudentJornadaTab({ studentId }: Props) {
           <p className="text-xs text-gray-400">
             {fmtXp(rank.xpIntoRank)} / {rank.next ? fmtXp(rank.next.xpMin - rank.current.xpMin) : '—'} XP
           </p>
-          <p className="text-xs text-gray-400">Total: <span className="font-semibold text-[#1E3A5F]">{fmtXp(xpTotal)} XP</span></p>
+          <p className="text-xs text-gray-400">Total: <span className="font-semibold text-[#153b50]">{fmtXp(xpTotal)} XP</span></p>
         </div>
       </div>
 
@@ -215,16 +215,16 @@ export function StudentJornadaTab({ studentId }: Props) {
             <MdWhatshot size={20} className={streak > 0 ? 'text-orange-500' : 'text-gray-300'} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-[#1E3A5F] leading-none">{streak}</p>
+            <p className="text-lg font-bold text-[#153b50] leading-none">{streak}</p>
             <p className="text-xs text-gray-400 mt-0.5 leading-tight">{streak === 1 ? 'dia seguido' : 'dias seguidos'}</p>
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#D6E4F0] flex items-center justify-center shrink-0">
-            <MdEmojiEvents size={20} className="text-[#1E3A5F]" />
+          <div className="w-9 h-9 rounded-full bg-[#f4d1ae] flex items-center justify-center shrink-0">
+            <MdEmojiEvents size={20} className="text-[#153b50]" />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-[#1E3A5F] leading-none">{achievements.length}</p>
+            <p className="text-lg font-bold text-[#153b50] leading-none">{achievements.length}</p>
             <p className="text-xs text-gray-400 mt-0.5 leading-tight">de {ALL_ACHIEVEMENTS.length} conquistas</p>
           </div>
         </div>
@@ -252,11 +252,11 @@ export function StudentJornadaTab({ studentId }: Props) {
               <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={4} tick={{ fontSize: 9, fill: '#9CA3AF' }} />
               <YAxis hide />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Area dataKey="xp" type="monotone" stroke="var(--color-xp)" fill="#D6E4F0" strokeWidth={2} dot={false} />
+              <Area dataKey="xp" type="monotone" stroke="var(--color-xp)" fill="#f4d1ae" strokeWidth={2} dot={false} />
             </AreaChart>
           </ChartContainer>
           {xpChartData.length > 0 && xpChartData[xpChartData.length - 1].xp > 0 && (
-            <p className="text-[10px] font-semibold text-[#1E3A5F] text-right mt-1">
+            <p className="text-[10px] font-semibold text-[#153b50] text-right mt-1">
               {fmtXp(xpChartData[xpChartData.length - 1].xp)} XP acumulado
             </p>
           )}
@@ -267,10 +267,10 @@ export function StudentJornadaTab({ studentId }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <div className="flex items-center gap-2 mb-2">
-            <MdAccessTime size={15} className="text-[#4A90C4] shrink-0" />
+            <MdAccessTime size={15} className="text-[#b2f0fb] shrink-0" />
             <p className="text-xs font-semibold text-gray-500">Acessos esta semana</p>
           </div>
-          <p className="text-2xl font-bold text-[#1E3A5F] leading-none">
+          <p className="text-2xl font-bold text-[#153b50] leading-none">
             {weekStats.activeDays}
             <span className="text-sm font-normal text-gray-400 ml-1">
               / {weekStats.plannedDays || '—'} dias
@@ -280,10 +280,10 @@ export function StudentJornadaTab({ studentId }: Props) {
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <div className="flex items-center gap-2 mb-2">
-            <MdCheckCircle size={15} className="text-[#4A90C4] shrink-0" />
+            <MdCheckCircle size={15} className="text-[#b2f0fb] shrink-0" />
             <p className="text-xs font-semibold text-gray-500">Itens desta semana</p>
           </div>
-          <p className="text-2xl font-bold text-[#1E3A5F] leading-none">
+          <p className="text-2xl font-bold text-[#153b50] leading-none">
             {weekStats.doneItems}
             <span className="text-sm font-normal text-gray-400 ml-1">
               / {weekStats.totalItems}
@@ -293,7 +293,7 @@ export function StudentJornadaTab({ studentId }: Props) {
             <>
               <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mt-2">
                 <div
-                  className="h-full bg-[#4A90C4] rounded-full"
+                  className="h-full bg-[#b2f0fb] rounded-full"
                   style={{ width: `${Math.round((weekStats.doneItems / weekStats.totalItems) * 100)}%` }}
                 />
               </div>
@@ -318,7 +318,7 @@ export function StudentJornadaTab({ studentId }: Props) {
                   className="h-full rounded-full transition-all duration-700"
                   style={{
                     width: `${Math.round((xp / maxAttr) * 100)}%`,
-                    backgroundColor: xp > 0 ? '#4A90C4' : 'transparent',
+                    backgroundColor: xp > 0 ? '#b2f0fb' : 'transparent',
                     minWidth: xp > 0 ? '4px' : '0',
                   }}
                 />
@@ -382,7 +382,7 @@ export function StudentJornadaTab({ studentId }: Props) {
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {s.xp > 0 && (
-                    <span className="flex items-center gap-0.5 text-xs font-semibold text-[#4A90C4] bg-[#D6E4F0] px-1.5 py-0.5 rounded-full">
+                    <span className="flex items-center gap-0.5 text-xs font-semibold text-[#b2f0fb] bg-[#f4d1ae] px-1.5 py-0.5 rounded-full">
                       <MdStar size={11} />
                       +{s.xp} XP
                     </span>

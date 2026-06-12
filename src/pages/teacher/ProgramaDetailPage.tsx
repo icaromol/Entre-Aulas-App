@@ -11,7 +11,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { TeacherLayout } from '@/components/layout/TeacherLayout'
 import type { Programa, ProgramPiece, ProgramExercise } from '@/types/programs'
 
-const AVATAR_COLORS = ['#1E3A5F', '#4A90C4', '#D6E4F0', '#F5F7FA', '#FFFFFF']
+import { AVATAR_COLORS } from '@/lib/colors'
 
 const typeLabel: Record<string, string> = {
   regular: 'Aulas Regulares', recital: 'Recital', concerto: 'Concerto',
@@ -195,7 +195,7 @@ export default function ProgramaDetailPage() {
     <div className="fixed inset-0 bg-black/40 z-30 flex items-end" onClick={onClose}>
       <div className="bg-white rounded-t-2xl p-5 w-full max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-[#1E3A5F]">{pickerTitle}</h2>
+          <h2 className="text-base font-bold text-[#153b50]">{pickerTitle}</h2>
           <button onClick={onClose} className="text-gray-400 text-lg leading-none">✕</button>
         </div>
         {items.length === 0 ? (
@@ -207,10 +207,10 @@ export default function ProgramaDetailPage() {
                 key={item.id}
                 onClick={() => onAdd(item.id)}
                 disabled={addingId === item.id}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#4A90C4] transition text-left disabled:opacity-50"
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#b2f0fb] transition text-left disabled:opacity-50"
               >
                 {renderItem(item)}
-                <span className="text-xs text-[#4A90C4] font-medium shrink-0">
+                <span className="text-xs text-[#b2f0fb] font-medium shrink-0">
                   {addingId === item.id ? '...' : '+ Adicionar'}
                 </span>
               </button>
@@ -277,7 +277,7 @@ export default function ProgramaDetailPage() {
           <MdArrowBack size={20} />
         </Link>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-[#1E3A5F]">{programa.title}</h1>
+          <h1 className="text-xl font-bold text-[#153b50]">{programa.title}</h1>
           <div className="flex items-center gap-2 mt-1">
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${typeBadgeColor[programa.type] ?? 'bg-gray-100 text-gray-600'}`}>
               {typeLabel[programa.type] ?? programa.type}
@@ -289,7 +289,7 @@ export default function ProgramaDetailPage() {
             )}
           </div>
         </div>
-        <Link to={`/professor/alunos/${studentId}/programas/${programId}/editar`} className="text-gray-400 hover:text-[#4A90C4] transition">
+        <Link to={`/professor/alunos/${studentId}/programas/${programId}/editar`} className="text-gray-400 hover:text-[#b2f0fb] transition">
           <MdEdit size={20} />
         </Link>
       </div>
@@ -299,7 +299,7 @@ export default function ProgramaDetailPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-5 space-y-2">
           {programa.deadline && (
             <div className="flex items-center gap-2">
-              <MdCalendarMonth size={16} className="text-[#4A90C4] shrink-0" />
+              <MdCalendarMonth size={16} className="text-[#b2f0fb] shrink-0" />
               <span className="text-sm text-gray-700">{formatDeadline(programa.deadline)}</span>
               {days !== null && (
                 <span className={`text-xs font-semibold ml-auto px-2 py-0.5 rounded-full ${
@@ -324,9 +324,9 @@ export default function ProgramaDetailPage() {
 
       {/* Repertório */}
       {programa.type === 'regular' ? (
-        <div className="bg-[#D6E4F0]/40 rounded-2xl border border-[#D6E4F0] p-5 mb-5 text-center">
-          <MdMusicNote size={24} className="mx-auto text-[#4A90C4] mb-2" />
-          <p className="text-sm font-semibold text-[#1E3A5F]">Repertório completo</p>
+        <div className="bg-[#f4d1ae]/40 rounded-2xl border border-[#f4d1ae] p-5 mb-5 text-center">
+          <MdMusicNote size={24} className="mx-auto text-[#b2f0fb] mb-2" />
+          <p className="text-sm font-semibold text-[#153b50]">Repertório completo</p>
           <p className="text-xs text-gray-500 mt-1">
             Todo o repertório ativo do aluno entra automaticamente no planejamento.
           </p>
@@ -340,7 +340,7 @@ export default function ProgramaDetailPage() {
                 <MdMusicNote size={15} />Peças ({programPieces.length})
               </h2>
               <button onClick={openPiecePicker}
-                className="flex items-center gap-1 text-xs font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition">
+                className="flex items-center gap-1 text-xs font-medium text-[#b2f0fb] hover:text-[#153b50] transition">
                 <MdAdd size={16} />Adicionar
               </button>
             </div>
@@ -353,7 +353,7 @@ export default function ProgramaDetailPage() {
                     <div className="relative w-9 h-9 shrink-0">
                       <svg viewBox="0 0 36 36" className="w-9 h-9 -rotate-90 absolute inset-0">
                         <circle cx="18" cy="18" r="15" fill="none" stroke="#F3F4F6" strokeWidth="3"/>
-                        <circle cx="18" cy="18" r="15" fill="none" stroke="#4A90C4" strokeWidth="3"
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="#b2f0fb" strokeWidth="3"
                           strokeDasharray={`${((pp.piece?.completion_pct ?? 0) / 100) * 94.2} 94.2`}
                           strokeLinecap="round" />
                       </svg>
@@ -384,7 +384,7 @@ export default function ProgramaDetailPage() {
                 <MdSchool size={15} />Exercícios ({programExercises.length})
               </h2>
               <button onClick={openExercisePicker}
-                className="flex items-center gap-1 text-xs font-medium text-[#4A90C4] hover:text-[#1E3A5F] transition">
+                className="flex items-center gap-1 text-xs font-medium text-[#b2f0fb] hover:text-[#153b50] transition">
                 <MdAdd size={16} />Adicionar
               </button>
             </div>

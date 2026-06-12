@@ -113,7 +113,7 @@ export function PiecesSetupModal({ studentId, onDone }: Props) {
 
         {/* Title */}
         <div className="px-7 pt-5 pb-5">
-          <h2 className="text-base font-bold text-[#1E3A5F]">
+          <h2 className="text-base font-bold text-[#153b50]">
             Quais peças você está estudando?
           </h2>
           <p className="text-xs text-gray-400 mt-2">
@@ -132,7 +132,7 @@ export function PiecesSetupModal({ studentId, onDone }: Props) {
                 ref={(el) => {
                   inputRefs.current[i] = el;
                 }}
-                className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#4A90C4] focus:ring-2 focus:ring-[#4A90C4]/20 transition placeholder:text-gray-300"
+                className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#b2f0fb] focus:ring-2 focus:ring-[#b2f0fb]/20 transition placeholder:text-gray-300"
                 placeholder={
                   i === 0
                     ? "Ex: Sonatina Op.36 nº1"
@@ -156,7 +156,7 @@ export function PiecesSetupModal({ studentId, onDone }: Props) {
                 setNames((prev) => [...prev, ""]);
                 setTimeout(() => inputRefs.current[nextIdx]?.focus(), 0);
               }}
-              className="flex items-center gap-1.5 text-xs text-[#4A90C4] hover:text-[#1E3A5F] transition pl-6 py-1"
+              className="flex items-center gap-1.5 text-xs text-[#b2f0fb] hover:text-[#153b50] transition pl-6 py-1"
             >
               <MdAdd size={14} /> Adicionar mais
             </button>
@@ -168,7 +168,7 @@ export function PiecesSetupModal({ studentId, onDone }: Props) {
           <button
             onClick={handleSubmit}
             disabled={saving || filled.length === 0}
-            className="w-full py-3 rounded-xl bg-[#1E3A5F] text-white font-semibold text-sm hover:bg-[#1E3A5F]/90 transition disabled:opacity-50"
+            className="w-full py-3 rounded-xl bg-[#153b50] text-white font-semibold text-sm hover:bg-[#153b50]/90 transition disabled:opacity-50"
           >
             {saving ? "Criando..." : `Continuar →`}
           </button>
