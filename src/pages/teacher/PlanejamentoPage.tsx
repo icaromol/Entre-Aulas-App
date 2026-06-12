@@ -868,6 +868,7 @@ export default function PlanejamentoPage() {
                       durationMinutes: pomodoroWork,
                       isMaintenance: false,
                       score: 0,
+                      groupId: null,
                     })}
                     className="w-full text-left p-3 rounded-xl border border-gray-100 hover:border-[#4A90C4] transition">
                     <p className="text-sm font-medium text-gray-800 truncate">
@@ -906,6 +907,7 @@ export default function PlanejamentoPage() {
                     programId: null, programTitle: 'Personalizado',
                     durationMinutes: addCustomDuration,
                     isMaintenance: false, score: 0,
+                    groupId: null,
                   })}
                   className="w-full bg-[#1E3A5F] hover:bg-[#1E3A5F]/90 text-white rounded-xl h-10">
                   Adicionar tarefa

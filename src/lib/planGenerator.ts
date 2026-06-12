@@ -234,7 +234,7 @@ export function generatePlan(input: GeneratorInput): GeneratedPlan {
           sourceType: 'piece', sourceTitle: p.pieceTitle,
           programId: prog.id, programTitle: prog.title,
           durationMinutes: pomo.work,
-          isMaintenance: false, score, combinedScore,
+          isMaintenance: false, score, combinedScore, groupId: null,
         })
       }
     }
@@ -249,7 +249,7 @@ export function generatePlan(input: GeneratorInput): GeneratedPlan {
           sourceType: 'exercise', sourceTitle: e.exerciseTitle,
           programId: prog.id, programTitle: prog.title,
           durationMinutes: pomo.work,
-          isMaintenance: false, score, combinedScore,
+          isMaintenance: false, score, combinedScore, groupId: null,
         })
       }
     }
@@ -266,7 +266,7 @@ export function generatePlan(input: GeneratorInput): GeneratedPlan {
         sourceType: 'maintenance', sourceTitle: p.pieceTitle,
         programId: null, programTitle: 'Manutenção',
         durationMinutes: pomo.work,
-        isMaintenance: true, score, combinedScore: score,
+        isMaintenance: true, score, combinedScore: score, groupId: null,
       })
     }
     mainItems.sort((a, b) => b.combinedScore - a.combinedScore)

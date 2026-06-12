@@ -36,13 +36,6 @@ interface Exercise {
   status: string;
 }
 
-const pieceStatusLabel: Record<string, string> = {
-  in_progress: "Em andamento",
-  completed: "Concluída",
-  paused: "Pausada",
-  future: "Repertório futuro",
-};
-
 const categoryLabel: Record<string, string> = {
   technique: "Técnica",
   ear_training: "Percepção musical",

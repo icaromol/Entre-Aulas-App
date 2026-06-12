@@ -9,7 +9,6 @@ import {
   MdEdit,
   MdLogout,
   MdEmojiEvents,
-  MdChevronRight,
   MdSwapHoriz,
 } from "react-icons/md";
 import { OnboardingController } from "@/components/onboarding/OnboardingController";
