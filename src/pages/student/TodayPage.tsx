@@ -25,6 +25,7 @@ import {
   MdTouchApp,
   MdCheckCircle,
   MdSwapHoriz,
+  MdCallSplit,
 } from "react-icons/md";
 import { ChangeTimeModal } from "@/components/student/ChangeTimeModal";
 import { PomodoroStrip } from "@/components/student/PomodoroStrip";
@@ -766,6 +767,72 @@ export default function TodayPage() {
       toast.success(`Tarefa trocada para "${exercise.title}".`);
     }
     setSwapItem(null);
+  }
+
+  async function handleUngroup(item: PlanItem) {
+    const total = item.duration_minutes ?? 0;
+    const blockMin = pomodoroConfig?.work ?? 25;
+    if (total <= blockMin) {
+      toast("Tarefa já cabe em uma sessão.");
+      return;
+    }
+
+    const blocks: number[] = [];
+    let remaining = total;
+    while (remaining > 0) {
+      blocks.push(Math.min(blockMin, remaining));
+      remaining -= blockMin;
+    }
+
+    // posição base: após o item atual
+    const basePosition = item.position;
+    const after = items.filter((i) => i.day_of_week === viewDay && i.position > basePosition);
+
+    // shift items after to make room
+    if (after.length > 0) {
+      await Promise.all(
+        after.map((i) =>
+          supabase.from("plan_items").update({ position: i.position + blocks.length - 1 }).eq("id", i.id),
+        ),
+      );
+    }
+
+    // delete original
+    await supabase.from("plan_items").delete().eq("id", item.id);
+
+    // insert new blocks
+    const newRows = blocks.map((mins, idx) => ({
+      plan_id: item.plan_id,
+      day_of_week: item.day_of_week,
+      piece_id: item.piece_id,
+      exercise_id: item.exercise_id,
+      program_id: item.program_id,
+      duration_minutes: mins,
+      position: basePosition + idx,
+      is_done: false,
+      is_maintenance: item.is_maintenance,
+    }));
+
+    const { data: inserted } = await supabase
+      .from("plan_items")
+      .insert(newRows)
+      .select(`id, plan_id, day_of_week, piece_id, exercise_id, program_id,
+        duration_minutes, position, is_done, done_at, is_maintenance, completed_manually, moved_from_dow,
+        piece:pieces(title, composer), exercise:exercises(title, category), programa:programas(title, type)`);
+
+    setItems((prev) => {
+      const without = prev.filter((i) => i.id !== item.id);
+      const shifted = without.map((i) =>
+        i.day_of_week === viewDay && i.position > basePosition
+          ? { ...i, position: i.position + blocks.length - 1 }
+          : i,
+      );
+      return [...shifted, ...((inserted ?? []) as unknown as PlanItem[])].sort(
+        (a, b) => a.position - b.position,
+      );
+    });
+
+    toast.success(`Dividido em ${blocks.length} sessões de ${blockMin} min.`);
   }
 
   async function handleApplyFocus(
@@ -1762,6 +1829,17 @@ export default function TodayPage() {
                     Concluir
                   </button>
                 )}
+                <button
+                  onClick={() => {
+                    setOpenMenuItemId(null);
+                    setMenuAnchor(null);
+                    handleUngroup(menuItem);
+                  }}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F5F7FA] transition"
+                >
+                  <MdCallSplit size={16} color="#4A90C4" />
+                  Desagrupar
+                </button>
                 <button
                   onClick={() => {
                     setOpenMenuItemId(null);
