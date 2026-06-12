@@ -91,13 +91,13 @@ function SwapPieceModal({
           <div className="flex gap-1 bg-[#f5f5f5] rounded-xl p-1">
             <button
               onClick={() => setTab("pieces")}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${tab === "pieces" ? "bg-white text-[#0993ae] shadow-sm" : "text-gray-400"}`}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${tab === "pieces" ? "bg-white text-[#ff4c3e] shadow-sm" : "text-gray-400"}`}
             >
               Peças
             </button>
             <button
               onClick={() => setTab("exercises")}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${tab === "exercises" ? "bg-white text-[#0993ae] shadow-sm" : "text-gray-400"}`}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${tab === "exercises" ? "bg-white text-[#ff4c3e] shadow-sm" : "text-gray-400"}`}
             >
               Exercícios
             </button>
@@ -1304,7 +1304,7 @@ export default function TodayPage() {
 
       {/* Banner de geração de plano */}
       {planGenerating && (
-        <div className="flex items-center gap-3 bg-[#0993ae] text-white text-sm font-medium px-4 py-3 rounded-2xl mb-4">
+        <div className="flex items-center gap-3 bg-[#ff4c3e] text-white text-sm font-medium px-4 py-3 rounded-2xl mb-4">
           <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin shrink-0" />
           Gerando plano de estudos…
         </div>
@@ -1317,18 +1317,18 @@ export default function TodayPage() {
       >
         <button
           onClick={() => setViewDay((d) => (d + 6) % 7)}
-          className="shrink-0 p-1 rounded-xl hover:bg-gray-100 transition cursor-pointer text-gray-300 hover:text-[#0993ae]"
+          className="shrink-0 p-1 rounded-xl hover:bg-gray-100 transition cursor-pointer text-gray-300 hover:text-[#ff4c3e]"
         >
           <MdChevronLeft size={36} />
         </button>
 
         {/* Data — centralizado */}
         <div className="flex-1 flex items-center justify-center gap-3">
-          <p className="text-7xl font-black text-[#0993ae] leading-none">
+          <p className="text-7xl font-black text-[#ff4c3e] leading-none">
             {dayNum}
           </p>
           <div>
-            <h1 className="text-4xl font-normal text-[#0993ae] leading-none">
+            <h1 className="text-4xl font-normal text-[#ff4c3e] leading-none">
               {getDayExtendedLabel(viewDay)}
             </h1>
             <p className="text-sm text-gray-400 mt-1 mx-0.5">{monthLabel}</p>
@@ -1337,7 +1337,7 @@ export default function TodayPage() {
 
         <button
           onClick={() => setViewDay((d) => (d + 1) % 7)}
-          className="shrink-0 p-1 rounded-xl hover:bg-gray-100 transition cursor-pointer text-gray-300 hover:text-[#0993ae]"
+          className="shrink-0 p-1 rounded-xl hover:bg-gray-100 transition cursor-pointer text-gray-300 hover:text-[#ff4c3e]"
         >
           <MdChevronRight size={36} />
         </button>
@@ -1348,7 +1348,7 @@ export default function TodayPage() {
         <div className="bg-white rounded-2xl border border-gray-100 px-8 py-10 text-center">
           {hasAnyPlan === false ? (
             <>
-              <div className="w-12 h-12 rounded-full bg-[#0993ae] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#ff4c3e] flex items-center justify-center mx-auto mb-3">
                 <MdSelfImprovement size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-700">
@@ -1362,7 +1362,7 @@ export default function TodayPage() {
               {!(hasTeacher && profile?.role === "student") && (
                 <button
                   onClick={() => navigate("/aluno/planejamento")}
-                  className="mt-4 px-5 py-2 rounded-xl bg-[#b2f0fb]/20 text-white text-xs font-semibold hover:bg-[#0993ae]/90 transition"
+                  className="mt-4 px-5 py-2 rounded-xl bg-white/20 text-white text-xs font-semibold hover:bg-white/30 transition"
                 >
                   Criar plano
                 </button>
@@ -1370,7 +1370,7 @@ export default function TodayPage() {
             </>
           ) : isPastDay ? (
             <>
-              <div className="w-12 h-12 rounded-full bg-[#0993ae] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#ff4c3e] flex items-center justify-center mx-auto mb-3">
                 <MdRoute size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-700">
@@ -1384,7 +1384,7 @@ export default function TodayPage() {
             </>
           ) : (
             <>
-              <div className="w-12 h-12 rounded-full bg-[#0993ae] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#ff4c3e] flex items-center justify-center mx-auto mb-3">
                 <MdSelfImprovement size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-700">Dia livre!</p>
@@ -1434,7 +1434,7 @@ export default function TodayPage() {
                       const { title: gt, subtitle: gs } = itemDisplay(gi);
                       return (
                         <div key={gi.id} className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-[#0993ae] flex items-center justify-center shrink-0">
+                          <div className="w-5 h-5 rounded-full bg-[#ff4c3e] flex items-center justify-center shrink-0">
                             <svg
                               width="10"
                               height="10"
@@ -1506,7 +1506,7 @@ export default function TodayPage() {
                           },
                         });
                       }}
-                      className="shrink-0 flex items-center justify-center px-4 bg-[#0993ae] hover:bg-[#297aa3] text-white transition transition"
+                      className="shrink-0 flex items-center justify-center px-4 bg-[#ff4c3e] hover:bg-[#f50c00] text-white transition transition"
                     >
                       <MdPlayArrow size={28} />
                     </button>
@@ -1520,7 +1520,7 @@ export default function TodayPage() {
                             className="flex items-center gap-1.5 min-w-0"
                           >
                             {gi.is_done ? (
-                              <div className="w-3.5 h-3.5 rounded-full bg-[#0993ae] flex items-center justify-center shrink-0">
+                              <div className="w-3.5 h-3.5 rounded-full bg-[#ff4c3e] flex items-center justify-center shrink-0">
                                 <svg
                                   width="7"
                                   height="7"
@@ -1589,7 +1589,7 @@ export default function TodayPage() {
                   key={item.id}
                   className="group flex items-center gap-2 rounded-xl bg-[#b2f0fb]/20 pl-3 pr-4 py-1.5"
                 >
-                  <div className="w-5 h-5 rounded-full bg-[#0993ae] flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-[#ff4c3e] flex items-center justify-center shrink-0">
                     <svg
                       width="10"
                       height="10"
@@ -1670,7 +1670,7 @@ export default function TodayPage() {
                           },
                         });
                       }}
-                      className="shrink-0 flex items-center justify-center px-4 bg-[#0993ae] hover:bg-[#297aa3] text-white transition transition"
+                      className="shrink-0 flex items-center justify-center px-4 bg-[#ff4c3e] hover:bg-[#f50c00] text-white transition transition"
                     >
                       <MdPlayArrow size={28} />
                     </button>
@@ -1756,7 +1756,7 @@ export default function TodayPage() {
                                 setOpenMenuItemId(item.id);
                               }
                             }}
-                            className={`w-7 h-7 flex items-center justify-center text-gray-400 transition hover:text-[#0993ae] ${menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                            className={`w-7 h-7 flex items-center justify-center text-gray-400 transition hover:text-[#ff4c3e] ${menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                           >
                             <MdMoreVert size={18} />
                           </button>
@@ -1769,7 +1769,7 @@ export default function TodayPage() {
                               }}
                               className="w-7 h-7 flex items-center justify-center transition hover:opacity-70"
                               style={{
-                                color: isFocusDay ? "#b2f0fb" : "#0993ae",
+                                color: isFocusDay ? "#b2f0fb" : "#ff4c3e",
                               }}
                             >
                               <MdGpsFixed size={18} />
@@ -1824,7 +1824,7 @@ export default function TodayPage() {
               key={sess.id}
               className="group flex items-center gap-2 rounded-xl bg-[#b2f0fb]/20 pl-3 pr-4 py-1.5"
             >
-              <div className="w-5 h-5 rounded-full bg-[#0993ae] flex items-center justify-center shrink-0">
+              <div className="w-5 h-5 rounded-full bg-[#ff4c3e] flex items-center justify-center shrink-0">
                 <svg
                   width="10"
                   height="10"
@@ -1853,13 +1853,13 @@ export default function TodayPage() {
 
       {/* Banner de início rápido */}
       {isToday && (
-        <div className="mt-8 bg-[#0993ae] rounded-2xl flex items-center gap-3 p-3">
+        <div className="mt-8 bg-[#ff4c3e] rounded-2xl flex items-center gap-3 p-3">
           <button
             onClick={() => { setChangeTimeMinutes(totalMinutes || 60); setShowChangeTime(true); }}
             className="group rounded-xl bg-[#f5f5f5] flex items-center justify-center shrink-0 hover:bg-[#b2f0fb] transition"
             style={{ width: 56, height: 56 }}
           >
-            <MdTimer size={24} className="text-[#0993ae] group-hover:text-[#f5f5f5] transition" />
+            <MdTimer size={24} className="text-[#ff4c3e] group-hover:text-[#f5f5f5] transition" />
           </button>
           <button
             onClick={() =>
@@ -1893,7 +1893,7 @@ export default function TodayPage() {
             className="group rounded-xl bg-[#f5f5f5] flex items-center justify-center shrink-0 hover:bg-[#b2f0fb] transition"
             style={{ width: 56, height: 56 }}
           >
-            <MdScale size={24} className="text-[#0993ae] group-hover:text-[#f5f5f5] transition" />
+            <MdScale size={24} className="text-[#ff4c3e] group-hover:text-[#f5f5f5] transition" />
           </button>
         </div>
       )}
@@ -1903,7 +1903,7 @@ export default function TodayPage() {
         <div
           className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
           style={{
-            backgroundColor: "#0993ae",
+            backgroundColor: "#ff4c3e",
             top: manualTooltip.y - 8,
             left: Math.min(manualTooltip.x, window.innerWidth - 96),
             transform: "translate(-50%, -100%)",
@@ -1923,7 +1923,7 @@ export default function TodayPage() {
         <div
           className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
           style={{
-            backgroundColor: "#0993ae",
+            backgroundColor: "#ff4c3e",
             top: maintenanceTooltip.y - 8,
             left: Math.min(maintenanceTooltip.x, window.innerWidth - 96),
             transform: "translate(-50%, -100%)",
@@ -1943,7 +1943,7 @@ export default function TodayPage() {
         <div
           className="fixed z-[9999] pointer-events-none text-white text-xs rounded-xl px-3 py-2 shadow-lg w-44"
           style={{
-            backgroundColor: "#0993ae",
+            backgroundColor: "#ff4c3e",
             top: movedTooltip.y - 8,
             left: Math.min(movedTooltip.x, window.innerWidth - 96),
             transform: "translate(-50%, -100%)",
@@ -2126,7 +2126,7 @@ export default function TodayPage() {
           >
             <p className="text-base font-bold text-gray-800 mb-2">
               Remover{" "}
-              <span className="text-[#0993ae]">
+              <span className="text-[#ff4c3e]">
                 {itemDisplay(deleteConfirmItem).title}
               </span>
               ?
@@ -2151,7 +2151,7 @@ export default function TodayPage() {
             </div>
             <button
               onClick={() => executeDelete(deleteConfirmItem, true)}
-              className="w-full py-2.5 rounded-xl bg-[#b2f0fb]/20 text-sm text-white font-semibold hover:bg-[#0993ae]/90 transition"
+              className="w-full py-2.5 rounded-xl bg-[#ff4c3e] text-sm text-white font-semibold hover:bg-[#f50c00] transition"
             >
               Sim, redistribuir
             </button>
@@ -2188,7 +2188,7 @@ export default function TodayPage() {
               <div
                 className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
                   pendingAction.dontShowAgain
-                    ? "bg-[#0993ae] border-[#0993ae]"
+                    ? "bg-[#ff4c3e] border-[#ff4c3e]"
                     : "border-gray-300 group-hover:border-[#b2f0fb]"
                 }`}
               >
@@ -2230,7 +2230,7 @@ export default function TodayPage() {
                   setPendingAction(null);
                   executeAction(type, item);
                 }}
-                className="flex-1 py-3 rounded-xl bg-[#b2f0fb]/20 text-white text-sm font-semibold hover:bg-[#0993ae]/90 transition"
+                className="flex-1 py-3 rounded-xl bg-[#ff4c3e] text-white text-sm font-semibold hover:bg-[#f50c00] transition"
               >
                 Continuar
               </button>
@@ -2245,7 +2245,7 @@ export default function TodayPage() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <p className="text-base font-bold text-gray-800 mb-2">
               Concluir{" "}
-              <span className="text-[#0993ae]">
+              <span className="text-[#ff4c3e]">
                 {pendingItem.exercise?.title ??
                   pendingItem.piece?.title ??
                   "item"}
@@ -2268,7 +2268,7 @@ export default function TodayPage() {
               <div
                 className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition ${
                   skipConfirm
-                    ? "bg-[#0993ae] border-[#0993ae]"
+                    ? "bg-[#ff4c3e] border-[#ff4c3e]"
                     : "border-gray-300 group-hover:border-[#b2f0fb]"
                 }`}
               >
@@ -2302,7 +2302,7 @@ export default function TodayPage() {
                   toggleDone(pendingItem, true);
                   setPendingItem(null);
                 }}
-                className="flex-1 py-3 rounded-xl bg-[#b2f0fb]/20 text-white text-sm font-semibold hover:bg-[#0993ae]/90 transition"
+                className="flex-1 py-3 rounded-xl bg-[#ff4c3e] text-white text-sm font-semibold hover:bg-[#f50c00] transition"
               >
                 Sim, concluir
               </button>
@@ -2315,7 +2315,7 @@ export default function TodayPage() {
       {ungroupConfirmItem && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4">
           <div className="bg-white rounded-t-2xl w-full max-w-sm pb-8 pt-5 px-6">
-            <h2 className="text-base font-bold text-[#0993ae] mb-1">Desagrupar tarefa</h2>
+            <h2 className="text-base font-bold text-[#ff4c3e] mb-1">Desagrupar tarefa</h2>
             <p className="text-xs text-gray-400 mb-4">
               A tarefa será dividida em blocos do tamanho do seu pomodoro ({pomodoroConfig?.work ?? 25} min).
             </p>
@@ -2332,7 +2332,7 @@ export default function TodayPage() {
                   <div className="flex-1 bg-[#f5f5f5] rounded-xl p-3">
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Antes</p>
                     <div className="h-7 rounded-lg bg-[#b2f0fb]/30 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-[#0993ae]">{exampleTotal} min</span>
+                      <span className="text-xs font-semibold text-[#ff4c3e]">{exampleTotal} min</span>
                     </div>
                   </div>
 
@@ -2342,7 +2342,7 @@ export default function TodayPage() {
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Depois</p>
                     <div className="space-y-1">
                       {exBlocks.map((b, i) => (
-                        <div key={i} className="h-5 rounded-md bg-[#0993ae]/50 flex items-center justify-center">
+                        <div key={i} className="h-5 rounded-md bg-[#ff4c3e]/50 flex items-center justify-center">
                           <span className="text-[10px] font-semibold text-white">{b} min</span>
                         </div>
                       ))}
@@ -2354,7 +2354,7 @@ export default function TodayPage() {
 
             <div className="flex gap-3">
               <button onClick={() => setUngroupConfirmItem(null)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#b2f0fb] transition">Cancelar</button>
-              <button onClick={() => { handleUngroup(ungroupConfirmItem); setUngroupConfirmItem(null); }} className="flex-1 py-3 rounded-xl bg-[#b2f0fb]/20 text-white text-sm font-semibold hover:bg-[#0993ae]/90 transition">Desagrupar</button>
+              <button onClick={() => { handleUngroup(ungroupConfirmItem); setUngroupConfirmItem(null); }} className="flex-1 py-3 rounded-xl bg-[#ff4c3e] text-white text-sm font-semibold hover:bg-[#f50c00] transition">Desagrupar</button>
             </div>
           </div>
         </div>
@@ -2364,7 +2364,7 @@ export default function TodayPage() {
       {showChangeTime && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4">
           <div className="bg-white rounded-t-2xl w-full max-w-sm pb-8 pt-5 px-6">
-            <h2 className="text-base font-bold text-[#0993ae] mb-1">Tempo disponível hoje</h2>
+            <h2 className="text-base font-bold text-[#ff4c3e] mb-1">Tempo disponível hoje</h2>
             <p className="text-xs text-gray-400 mb-5">As tarefas pendentes serão redistribuídas igualmente.</p>
             <div className="flex items-center gap-4 mb-6">
               <input
@@ -2374,13 +2374,13 @@ export default function TodayPage() {
                 step={5}
                 value={changeTimeMinutes}
                 onChange={(e) => setChangeTimeMinutes(Number(e.target.value))}
-                className="flex-1 accent-[#0993ae]"
+                className="flex-1 accent-[#ff4c3e]"
               />
-              <span className="text-lg font-bold text-[#0993ae] w-16 text-right">{changeTimeMinutes} min</span>
+              <span className="text-lg font-bold text-[#ff4c3e] w-16 text-right">{changeTimeMinutes} min</span>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setShowChangeTime(false)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#b2f0fb] transition">Cancelar</button>
-              <button onClick={handleChangeTimeConfirm} className="flex-1 py-3 rounded-xl bg-[#b2f0fb]/20 text-white text-sm font-semibold hover:bg-[#0993ae]/90 transition">Aplicar</button>
+              <button onClick={handleChangeTimeConfirm} className="flex-1 py-3 rounded-xl bg-[#ff4c3e] text-white text-sm font-semibold hover:bg-[#f50c00] transition">Aplicar</button>
             </div>
           </div>
         </div>
@@ -2390,7 +2390,7 @@ export default function TodayPage() {
       {showRebalanceConfirm && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4">
           <div className="bg-white rounded-t-2xl w-full max-w-sm pb-8 pt-5 px-6">
-            <h2 className="text-base font-bold text-[#0993ae] mb-1">Rebalancear dia</h2>
+            <h2 className="text-base font-bold text-[#ff4c3e] mb-1">Rebalancear dia</h2>
             <p className="text-xs text-gray-400 mb-4">O tempo restante é dividido igualmente entre as tarefas pendentes.</p>
 
             {/* Exemplo visual antes → depois */}
@@ -2414,7 +2414,7 @@ export default function TodayPage() {
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Depois</p>
                 {[22, 22, 21].map((min, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <div className="h-2 rounded-full bg-[#0993ae]/50" style={{ width: `${(min / 35) * 100}%`, minWidth: 8 }} />
+                    <div className="h-2 rounded-full bg-[#ff4c3e]/50" style={{ width: `${(min / 35) * 100}%`, minWidth: 8 }} />
                     <span className="text-[10px] text-gray-400 shrink-0">{min}m</span>
                   </div>
                 ))}
@@ -2423,7 +2423,7 @@ export default function TodayPage() {
 
             <div className="flex gap-3">
               <button onClick={() => setShowRebalanceConfirm(false)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#b2f0fb] transition">Cancelar</button>
-              <button onClick={() => { setShowRebalanceConfirm(false); handleEqualizeTime(); }} className="flex-1 py-3 rounded-xl bg-[#b2f0fb]/20 text-white text-sm font-semibold hover:bg-[#0993ae]/90 transition">Rebalancear</button>
+              <button onClick={() => { setShowRebalanceConfirm(false); handleEqualizeTime(); }} className="flex-1 py-3 rounded-xl bg-[#ff4c3e] text-white text-sm font-semibold hover:bg-[#f50c00] transition">Rebalancear</button>
             </div>
           </div>
         </div>

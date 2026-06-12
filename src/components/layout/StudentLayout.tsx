@@ -87,6 +87,9 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   const fullName = `${displayFirst} ${displayLast}`.trim();
   const avatarUrl = profile?.avatar_url ?? user?.user_metadata?.avatar_url;
 
+  const isTomatoPage = location.pathname.startsWith("/aluno/planejamento");
+  const navColor = isTomatoPage ? "#ff4c3e" : "#153b50";
+
   return (
     <div className="min-h-screen bg-[#f5f5f5] pb-20">
       <OnboardingController role="student" />
@@ -333,19 +336,18 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       )}
 
       {/* Header — só logo */}
-      <header className="bg-[#0993ae] border-b border-[#0993ae] sticky top-0 z-10">
+      <header className="sticky top-0 z-10 transition-colors duration-300" style={{ backgroundColor: navColor, borderBottom: `1px solid ${navColor}` }}>
         <div className="px-4 h-14 flex items-center justify-center">
           <img src="/estudamus_logo.png" alt="estudamus" className="h-5 brightness-0 invert" />
         </div>
       </header>
 
       {/* Conteúdo */}
-      <main className="px-4 py-5"
-      >
+      <main className="px-4 py-5">
         {children}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#0993ae] border-t border-[#0993ae] z-10">
+      <nav className="fixed bottom-0 left-0 right-0 z-10 transition-colors duration-300" style={{ backgroundColor: navColor, borderTop: `1px solid ${navColor}` }}>
         <div className="flex">
           {navItems.map(({ label, path, Icon }) => {
             const active = location.pathname.startsWith(path);
