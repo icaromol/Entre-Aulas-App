@@ -8,6 +8,8 @@ import {
   MdStop,
   MdEmojiEvents,
   MdPictureInPicture,
+  MdChevronLeft,
+  MdSettings,
 } from "react-icons/md";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -422,6 +424,7 @@ export default function PomodoroPage() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [dontAskAgain, setDontAskAgain] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
   const SKIP_SAVE_KEY = "estudamus_skip_save_pomodoro";
 
   // Carrega config salva do aluno ao montar (busca por profile_id pois é o que temos no auth)
@@ -1290,21 +1293,38 @@ export default function PomodoroPage() {
           </div>
         )}
 
+        {/* Barra superior */}
+        <div className="flex items-center justify-between mb-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-[#1E3A5F] transition"
+          >
+            <MdChevronLeft size={26} />
+          </button>
+          <div className="flex items-center gap-1">
+            {"documentPictureInPicture" in window && !pipWindowRef.current && (
+              <button
+                onClick={openPip}
+                title="Abrir mini-timer"
+                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-[#1E3A5F] opacity-50 hover:opacity-100 transition"
+              >
+                <MdPictureInPicture size={20} />
+              </button>
+            )}
+            <button
+              onClick={() => setShowConfigModal(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-[#1E3A5F] transition"
+            >
+              <MdSettings size={20} />
+            </button>
+          </div>
+        </div>
+
         {/* Cronômetro */}
         <div
           id="onboarding-pomodoro-timer"
           className="flex flex-col items-center relative"
         >
-          {/* PiP button — only show if API is available and PiP not already open */}
-          {"documentPictureInPicture" in window && !pipWindowRef.current && (
-            <button
-              onClick={openPip}
-              title="Abrir mini-timer"
-              className="absolute top-0 right-0 text-[#1E3A5F] opacity-50 hover:opacity-100 transition"
-            >
-              <MdPictureInPicture size={20} />
-            </button>
-          )}
           <div
             className={`text-xs font-semibold mb-3 px-3 py-1 rounded-full ${
               isWork
@@ -1878,6 +1898,58 @@ export default function PomodoroPage() {
             </div>,
             pipContainerRef.current,
           )}
+
+        {/* Modal de configuração inline */}
+        {showConfigModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-8"
+            onClick={() => setShowConfigModal(false)}
+          >
+            <div
+              className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-base font-bold text-[#1E3A5F] mb-5">Configurar Pomodoro</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Foco (min)</span>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setCustomWork(w => Math.max(5, w - 5))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">−</button>
+                    <span className="w-8 text-center font-semibold text-[#1E3A5F]">{customWork}</span>
+                    <button onClick={() => setCustomWork(w => Math.min(90, w + 5))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">+</button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Pausa (min)</span>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setCustomBreak(b => Math.max(1, b - 1))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">−</button>
+                    <span className="w-8 text-center font-semibold text-[#1E3A5F]">{customBreak}</span>
+                    <button onClick={() => setCustomBreak(b => Math.min(30, b + 1))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">+</button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Ciclos</span>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setCustomCycles(n => Math.max(1, n - 1))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">−</button>
+                    <span className="w-8 text-center font-semibold text-[#1E3A5F]">{customCycles}</span>
+                    <button onClick={() => setCustomCycles(n => Math.min(8, n + 1))} className="w-8 h-8 rounded-full bg-[#D6E4F0] text-[#1E3A5F] font-bold text-lg flex items-center justify-center hover:bg-[#c4d9ec] transition">+</button>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  await handleSaveConfig();
+                  setShowConfigModal(false);
+                  window.location.reload();
+                }}
+                disabled={savingConfig}
+                className="mt-6 w-full py-3 rounded-xl bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#1E3A5F]/90 transition disabled:opacity-60"
+              >
+                {savingConfig ? "Salvando..." : "Salvar e aplicar"}
+              </button>
+            </div>
+          </div>
+        )}
       </StudentLayout>
     );
   }

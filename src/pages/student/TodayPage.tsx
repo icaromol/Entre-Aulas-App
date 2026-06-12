@@ -35,7 +35,6 @@ import { ContinuityCard } from "@/components/student/ContinuityCard";
 import { FocusModal } from "@/components/student/FocusModal";
 import { MoveTaskModal } from "@/components/student/MoveTaskModal";
 import { EditDurationModal } from "@/components/student/EditDurationModal";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/Spinner";
@@ -1985,19 +1984,6 @@ export default function TodayPage() {
         </div>
       )}
 
-      {isToday && (
-        <div className="flex justify-center mt-6">
-          <Button
-            variant="text"
-            onClick={() =>
-              navigate("/aluno/pomodoro", { state: { studentId } })
-            }
-            className="text-gray-400 hover:text-gray-600 text-xs"
-          >
-            ou configure sua sessão
-          </Button>
-        </div>
-      )}
 
       {/* Tooltip conclusão manual — fora do card para evitar herança de opacidade */}
       {manualTooltip && (
