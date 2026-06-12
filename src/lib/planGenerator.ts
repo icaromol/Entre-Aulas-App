@@ -70,6 +70,7 @@ export interface PlannedTask {
   durationMinutes: number
   isMaintenance: boolean
   score: number
+  groupId: string | null   // itens com mesmo groupId compartilham uma sessão pomodoro
 }
 
 export interface GeneratedDay {
@@ -371,10 +372,60 @@ export function generatePlan(input: GeneratorInput): GeneratedPlan {
       if (existing) {
         existing.durationMinutes += task.durationMinutes
       } else {
-        merged.set(key, { ...task })
+        merged.set(key, { ...task, groupId: null })
       }
     }
     day.tasks = [...merged.values()]
+    day.minutesUsed = day.tasks.reduce((s, t) => s + t.durationMinutes, 0)
+  }
+
+  // ── 7. Agrupar tarefas curtas que cabem juntas num slot pomodoro ────────────
+  // Tarefas com durationMinutes < workMin são candidatas a compartilhar um grupo.
+  // Empacota greedy: acumula tarefas até encher o slot, atribui mesmo groupId.
+
+  let groupCounter = 0
+  function nextGroupId(): string {
+    return `g${++groupCounter}-${Math.random().toString(36).slice(2, 7)}`
+  }
+
+  for (const day of result) {
+    const candidates = day.tasks.filter(t => t.durationMinutes < pomo.work)
+    const rest       = day.tasks.filter(t => t.durationMinutes >= pomo.work)
+
+    if (candidates.length < 2) {
+      day.tasks = [...rest, ...candidates]
+      continue
+    }
+
+    const grouped: PlannedTask[] = []
+    let bucket: PlannedTask[] = []
+    let bucketMin = 0
+
+    for (const task of candidates) {
+      if (bucketMin + task.durationMinutes <= pomo.work) {
+        bucket.push(task)
+        bucketMin += task.durationMinutes
+      } else {
+        // fecha o bucket atual
+        if (bucket.length >= 2) {
+          const gid = nextGroupId()
+          bucket.forEach(t => grouped.push({ ...t, groupId: gid }))
+        } else {
+          grouped.push(...bucket)
+        }
+        bucket = [task]
+        bucketMin = task.durationMinutes
+      }
+    }
+    // fecha último bucket
+    if (bucket.length >= 2) {
+      const gid = nextGroupId()
+      bucket.forEach(t => grouped.push({ ...t, groupId: gid }))
+    } else {
+      grouped.push(...bucket)
+    }
+
+    day.tasks = [...rest, ...grouped]
     day.minutesUsed = day.tasks.reduce((s, t) => s + t.durationMinutes, 0)
   }
 

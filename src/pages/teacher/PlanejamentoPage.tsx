@@ -406,6 +406,7 @@ export default function PlanejamentoPage() {
               is_done:          false,
               position:         posOffset + pos,
               is_maintenance:   task.isMaintenance,
+              group_id:         task.groupId ?? null,
             })
           })
         }

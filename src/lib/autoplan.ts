@@ -220,6 +220,7 @@ export async function autoGeneratePlan(
       is_done:          boolean
       position:         number
       is_maintenance:   boolean
+      group_id:         string | null
     }
 
     const rows: PlanItemInsert[] = []
@@ -235,6 +236,7 @@ export async function autoGeneratePlan(
           is_done:          false,
           position:         pos,
           is_maintenance:   task.isMaintenance,
+          group_id:         task.groupId ?? null,
         })
       })
     }

@@ -817,7 +817,7 @@ export default function TodayPage() {
       .from("plan_items")
       .insert(newRows)
       .select(`id, plan_id, day_of_week, piece_id, exercise_id, program_id,
-        duration_minutes, position, is_done, done_at, is_maintenance, completed_manually, moved_from_dow,
+        duration_minutes, position, is_done, done_at, is_maintenance, completed_manually, moved_from_dow, group_id,
         piece:pieces(title, composer), exercise:exercises(title, category), programa:programas(title, type)`);
 
     setItems((prev) => {
@@ -1039,7 +1039,7 @@ export default function TodayPage() {
       .select(
         `
         id, plan_id, day_of_week, piece_id, exercise_id, program_id,
-        duration_minutes, position, is_done, done_at, is_maintenance, completed_manually, moved_from_dow,
+        duration_minutes, position, is_done, done_at, is_maintenance, completed_manually, moved_from_dow, group_id,
         piece:pieces(title, composer),
         exercise:exercises(title, category),
         programa:programas(title, type)
@@ -1285,6 +1285,30 @@ export default function TodayPage() {
     );
   }
 
+  // Agrupar visibleItems em render units
+  type RenderUnit =
+    | { kind: "single"; item: PlanItem }
+    | { kind: "group"; groupId: string; items: PlanItem[] };
+  const _groupMap = new Map<string, PlanItem[]>();
+  for (const _gi of visibleItems) {
+    if (_gi.group_id) {
+      if (!_groupMap.has(_gi.group_id)) _groupMap.set(_gi.group_id, []);
+      _groupMap.get(_gi.group_id)!.push(_gi);
+    }
+  }
+  const _seenGroups = new Set<string>();
+  const renderUnits: RenderUnit[] = [];
+  for (const _gi of visibleItems) {
+    if (_gi.group_id) {
+      if (!_seenGroups.has(_gi.group_id)) {
+        _seenGroups.add(_gi.group_id);
+        renderUnits.push({ kind: "group", groupId: _gi.group_id, items: _groupMap.get(_gi.group_id)! });
+      }
+    } else {
+      renderUnits.push({ kind: "single", item: _gi });
+    }
+  }
+
   return (
     <StudentLayout>
       {/* Modal de continuidade — primeira vez que o plano é auto-reorganizado */}
@@ -1395,8 +1419,102 @@ export default function TodayPage() {
               </span>
             </div>
           )}
-          {visibleItems.map((item) => {
-            const { title, subtitle } = itemDisplay(item);
+          {renderUnits.map((unit) => {
+              if (unit.kind === "group") {
+                const { groupId, items: gItems } = unit;
+                const allDone = gItems.every((i) => i.is_done);
+                const totalDur = gItems.reduce((s, i) => s + (i.duration_minutes ?? 0), 0);
+                const totalStudied = gItems.reduce((s, i) => s + (studiedSecs[i.id] ?? 0), 0);
+                const groupPct = totalDur > 0 ? Math.min(1, totalStudied / (totalDur * 60)) : allDone ? 1 : 0;
+
+                if (allDone) {
+                  return (
+                    <div key={groupId} className="group flex flex-col rounded-xl border border-[#B8D4E8] bg-[#D6E4F0] pl-3 pr-4 py-1.5 gap-1">
+                      {gItems.map((gi) => {
+                        const { title: gt, subtitle: gs } = itemDisplay(gi);
+                        return (
+                          <div key={gi.id} className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                              <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3.5}><path d="M5 13l4 4L19 7" /></svg>
+                            </div>
+                            <p className="text-xs text-gray-400 truncate flex-1 min-w-0">
+                              <span className="font-medium text-gray-500">{gt}</span>
+                              {gs ? ` · ${gs}` : ""}
+                              {gi.duration_minutes ? ` · ${gi.duration_minutes} min` : ""}
+                            </p>
+                            {gi.completed_manually && (
+                              <span className="cursor-default select-none shrink-0 text-gray-900"
+                                onMouseEnter={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setManualTooltip({ x: r.left + r.width / 2, y: r.top }); }}
+                                onMouseLeave={() => setManualTooltip(null)}
+                              ><MdTouchApp size={18} /></span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={groupId} className="relative rounded-2xl border border-gray-200 bg-[#F6F6F6] overflow-hidden">
+                    {/* Barra de progresso */}
+                    <div
+                      className={`absolute inset-y-0 left-0 bg-[#D6E4F0] transition-all duration-500 rounded-l-2xl ${groupPct >= 0.95 ? "rounded-r-2xl" : ""}`}
+                      style={{ width: `${groupPct * 100}%` }}
+                    />
+                    <div className="relative z-10 flex items-stretch">
+                      {/* Play — inicia todos os itens não concluídos */}
+                      <button
+                        onClick={() => {
+                          const firstPending = gItems.find((i) => !i.is_done);
+                          if (!firstPending) return;
+                          const { title: ft, subtitle: fs } = itemDisplay(firstPending);
+                          navigate("/aluno/pomodoro", {
+                            state: {
+                              planItemId: firstPending.id,
+                              title: fs ? `${ft} — ${fs}` : ft,
+                              durationMinutes: totalDur,
+                              studentId,
+                            },
+                          });
+                        }}
+                        className="shrink-0 flex items-center justify-center px-4 bg-[#D6E4F0] hover:bg-[#4A90C4] text-[#1E3A5F] hover:text-white transition"
+                      >
+                        <MdPlayArrow size={28} />
+                      </button>
+                      {/* Sub-itens */}
+                      <div className="flex-1 min-w-0 py-2 pl-3 pr-2 space-y-0.5">
+                        {gItems.map((gi) => {
+                          const { title: gt, subtitle: gs } = itemDisplay(gi);
+                          return (
+                            <div key={gi.id} className="flex items-center gap-1.5 min-w-0">
+                              {gi.is_done ? (
+                                <div className="w-3.5 h-3.5 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                                  <svg width="7" height="7" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3.5}><path d="M5 13l4 4L19 7" /></svg>
+                                </div>
+                              ) : (
+                                <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 shrink-0" />
+                              )}
+                              <p className={`text-xs truncate ${gi.is_done ? "text-gray-400 line-through" : "text-gray-700 font-medium"}`}>
+                                {gt}{gs ? <span className="font-normal text-gray-400"> · {gs}</span> : null}
+                                <span className="font-normal text-gray-400"> · {gi.duration_minutes} min</span>
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Total */}
+                      <div className="flex items-center pr-3 shrink-0">
+                        <span className="text-xs text-gray-400">{totalDur} min</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // ── item solto (lógica original) ──
+              const { item } = unit;
+              const { title, subtitle } = itemDisplay(item);
 
             const itemPct = item.duration_minutes
               ? Math.min(
@@ -1621,7 +1739,7 @@ export default function TodayPage() {
                           )}
                         </div>
                       );
-                    })()}
+                    })}
                 </div>
               </div>
             );
@@ -1816,6 +1934,7 @@ export default function TodayPage() {
                   <MdAccessTime size={16} color="#4A90C4" />
                   Editar tempo
                 </button>
+                <hr className="border-gray-100 my-1" />
                 {!menuItem.is_done && (
                   <button
                     onClick={() => {
@@ -1840,6 +1959,7 @@ export default function TodayPage() {
                   <MdCallSplit size={16} color="#4A90C4" />
                   Desagrupar
                 </button>
+                <hr className="border-gray-100 my-1" />
                 <button
                   onClick={() => {
                     setOpenMenuItemId(null);
