@@ -1,13 +1,12 @@
-import { useNavigate } from "react-router-dom";
 import { PomodoroIcon } from "@/components/ui/PomodoroIcon";
 
 interface Props {
   totalPoms: number;
   studiedPoms: number;
+  onConfig: () => void;
 }
 
-export function PomodoroStrip({ totalPoms, studiedPoms }: Props) {
-  const navigate = useNavigate();
+export function PomodoroStrip({ totalPoms, studiedPoms, onConfig }: Props) {
 
   if (totalPoms === 0) return null;
 
@@ -18,7 +17,7 @@ export function PomodoroStrip({ totalPoms, studiedPoms }: Props) {
   return (
     <div className="w-full flex flex-col items-center mt-20 gap-4">
       <button
-        onClick={() => navigate("/aluno/planejamento")}
+        onClick={onConfig}
         className="w-full flex flex-wrap justify-center cursor-pointer"
         style={{ gap: GAP }}
       >

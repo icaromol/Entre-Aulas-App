@@ -1702,7 +1702,7 @@ export default function TodayPage() {
         </div>
       )}
 
-      <PomodoroStrip totalPoms={totalPoms} studiedPoms={studiedPoms} />
+      <PomodoroStrip totalPoms={totalPoms} studiedPoms={studiedPoms} onConfig={() => setShowChangeTime(true)} />
     </StudentLayout>
   );
 }
