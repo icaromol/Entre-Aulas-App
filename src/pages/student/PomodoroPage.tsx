@@ -96,7 +96,7 @@ interface DayGroup {
 }
 
 function groupTextColor(status: string): string {
-  if (status === "completed") return "text-green-600";
+  if (status === "completed") return "text-[#0993ae]";
   if (status === "in_progress" || status === "active") return "text-gray-900";
   return "text-gray-300";
 }
@@ -173,7 +173,7 @@ function ArcSlider({
             cy="50"
             r={R}
             fill="none"
-            stroke="#E5E7EB"
+            stroke="#e5e5e5"
             strokeWidth="10"
             strokeDasharray={`${trackLen} ${trackGap}`}
             strokeLinecap="round"
@@ -209,7 +209,7 @@ function ArcSlider({
           textAnchor="middle"
           dominantBaseline="middle"
           fontSize="9"
-          fill="#9CA3AF"
+          fill="#292929"
           fontFamily="inherit"
         >
           min
@@ -222,7 +222,7 @@ function ArcSlider({
           dominantBaseline="middle"
           fontSize="9"
           fontWeight="600"
-          fill="#6B7280"
+          fill="#292929"
           fontFamily="inherit"
         >
           {label}
@@ -1253,6 +1253,10 @@ export default function PomodoroPage() {
   if (phase === "work" || phase === "break") {
     return (
       <StudentLayout>
+        {/* Fundo suave durante a pausa */}
+        {!isWork && (
+          <div className="fixed inset-0 bg-[#eff7fb] z-0 pointer-events-none transition-colors duration-700" />
+        )}
         {/* Dialog de encerramento antecipado */}
         {showEarlyDialog && (
           <div className="fixed inset-0 bg-black/40 z-20 flex items-center justify-center px-4">
@@ -1329,7 +1333,7 @@ export default function PomodoroPage() {
             className={`text-xs font-semibold mb-3 px-3 py-1 rounded-full ${
               isWork
                 ? "bg-[#f5f5f5] text-[#153b50]"
-                : "bg-green-100 text-green-600"
+                : "bg-[#eff7fb] text-[#153b50]"
             }`}
           >
             {isWork ? `Ciclo ${currentCycle} de ${c?.totalCycles}` : "Pausa"}
@@ -1346,7 +1350,7 @@ export default function PomodoroPage() {
                 cy="60"
                 r="54"
                 fill="none"
-                stroke="#F3F4F6"
+                stroke="#e5e5e5"
                 strokeWidth="5"
               />
               <circle
@@ -1354,7 +1358,7 @@ export default function PomodoroPage() {
                 cy="60"
                 r="54"
                 fill="none"
-                stroke={isWork ? "#153b50" : "#4ADE80"}
+                stroke={isWork ? "#153b50" : "#b2f0fb"}
                 strokeWidth="5"
                 strokeLinecap="round"
                 strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
@@ -1553,7 +1557,7 @@ export default function PomodoroPage() {
                             onClick={cycleGroup}
                             className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition ${
                               groupAllDone
-                                ? "bg-green-500"
+                                ? "bg-[#153b50]"
                                 : groupChecked
                                   ? "bg-[#153b50]"
                                   : groupIndeterminate
@@ -1594,7 +1598,7 @@ export default function PomodoroPage() {
                               height="14"
                               fill="none"
                               viewBox="0 0 24 24"
-                              stroke="#9CA3AF"
+                              stroke="#e5e5e5"
                               strokeWidth={2}
                               className={`shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`}
                             >
@@ -1644,7 +1648,7 @@ export default function PomodoroPage() {
                                     onClick={cycleItem}
                                     className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition ${
                                       done
-                                        ? "bg-green-500"
+                                        ? "bg-[#153b50]"
                                         : checked
                                           ? "bg-[#153b50]"
                                           : "border-2 border-gray-300"
@@ -1719,7 +1723,7 @@ export default function PomodoroPage() {
                               prev.filter((x) => x.id !== ci.id),
                             )
                           }
-                          className="shrink-0 text-gray-300 hover:text-red-400 transition text-base leading-none"
+                          className="shrink-0 text-gray-300 hover:text-[#ff4c3e] transition text-base leading-none"
                         >
                           ×
                         </button>
@@ -1867,7 +1871,7 @@ export default function PomodoroPage() {
                   fontSize: "11px",
                   fontWeight: 600,
                   marginBottom: "12px",
-                  color: isWork ? "#f5f5f5" : "#4ADE80",
+                  color: isWork ? "#f5f5f5" : "#b2f0fb",
                   letterSpacing: "0.05em",
                 }}
               >
@@ -1973,7 +1977,7 @@ export default function PomodoroPage() {
         <Button
           onClick={() => navigate("/aluno/planejamento")}
           variant="outline"
-          className="flex-1 h-12 rounded-2xl text-sm text-red-500 border-red-200 hover:bg-red-50"
+          className="flex-1 h-12 rounded-2xl text-sm text-[#ff4c3e] border-[#ffeceb] hover:bg-[#ffeceb]"
         >
           Descartar
         </Button>

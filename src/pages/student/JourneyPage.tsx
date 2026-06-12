@@ -308,7 +308,7 @@ export default function JourneyPage() {
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold text-gray-700">Missão do dia</p>
           {todayMission.completed ? (
-            <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Completa</span>
+            <span className="text-xs font-semibold text-[#153b50] bg-[#eff7fb] px-2 py-0.5 rounded-full">Completa</span>
           ) : (
             <span className="text-xs text-gray-400">+{todayMission.xpReward} XP</span>
           )}
@@ -321,7 +321,7 @@ export default function JourneyPage() {
             <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  todayMission.completed ? 'bg-green-400' : 'bg-[#b2f0fb]'
+                  todayMission.completed ? 'bg-[#153b50]' : 'bg-[#b2f0fb]'
                 }`}
                 style={{ width: `${Math.round((todayMission.done / todayMission.total) * 100)}%` }}
               />

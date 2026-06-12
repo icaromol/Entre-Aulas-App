@@ -38,9 +38,9 @@ interface Session {
 }
 
 const difficultyBadge: Record<string, { emoji: string; color: string }> = {
-  easy: { emoji: '😊', color: 'bg-green-50 text-green-700' },
-  ok:   { emoji: '😐', color: 'bg-amber-50 text-amber-700' },
-  hard: { emoji: '😓', color: 'bg-red-50 text-red-500' },
+  easy: { emoji: '😊', color: 'bg-[#eff7fb] text-[#153b50]' },
+  ok:   { emoji: '😐', color: 'bg-[#e5e5e5] text-[#292929]' },
+  hard: { emoji: '😓', color: 'bg-[#ffeceb] text-[#ff4c3e]' },
 }
 
 function fmtDuration(secs: number): string {

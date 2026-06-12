@@ -187,7 +187,7 @@ export default function StudentExerciseDetailPage() {
                       {item.is_optional && <span className="text-xs text-gray-400 ml-1">(opcional)</span>}
                     </span>
                     <button onClick={() => deleteItem(item.id)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition text-xs shrink-0">✕</button>
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-[#ff4c3e] transition text-xs shrink-0">✕</button>
                   </div>
                 ))}
               </div>
@@ -235,7 +235,7 @@ export default function StudentExerciseDetailPage() {
       )}
 
       <button onClick={deleteExercise}
-        className="w-full py-3 rounded-2xl border border-red-200 text-sm font-medium text-red-400 hover:bg-red-50 transition flex items-center justify-center gap-1.5">
+        className="w-full py-3 rounded-2xl border border-[#ffeceb] text-sm font-medium text-[#ff4c3e] hover:bg-[#ffeceb] transition flex items-center justify-center gap-1.5">
         <MdDeleteOutline size={16} />Excluir exercício
       </button>
     </StudentLayout>

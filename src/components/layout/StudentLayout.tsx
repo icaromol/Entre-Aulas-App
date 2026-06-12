@@ -135,7 +135,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               </div>
             )}
             <div className="leading-tight min-w-0">
-              <p className="text-sm font-semibold text-[#0993ae] truncate">
+              <p className="text-sm font-semibold text-[#153b50] truncate">
                 {fullName || "Aluno"}
               </p>
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
@@ -220,10 +220,10 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                 setShowMenu(false);
                 setShowLogout(true);
               }}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-red-50 transition text-left"
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#ffeceb] transition text-left"
             >
               <MdLogout size={20} className="text-[#ff4c3e] shrink-0" />
-              <span className="text-sm font-medium text-red-500">
+              <span className="text-sm font-medium text-[#ff4c3e]">
                 Sair do app
               </span>
             </button>
@@ -235,7 +235,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       {showLogout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="text-base font-bold text-[#0993ae] mb-1">
+            <h2 className="text-base font-bold text-[#153b50] mb-1">
               Quer sair?
             </h2>
             <p className="text-sm text-gray-400 mb-5">
@@ -244,7 +244,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleSignOut}
-                className="w-full py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition"
+                className="w-full py-2.5 rounded-xl bg-[#ff4c3e] text-white text-sm font-medium hover:bg-[#f50c00] transition"
               >
                 Sair e fazer logout
               </button>
@@ -263,7 +263,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       {showEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="text-base font-bold text-[#0993ae] mb-4">
+            <h2 className="text-base font-bold text-[#153b50] mb-4">
               Editar perfil
             </h2>
             <div className="space-y-3">
@@ -300,7 +300,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
               <button
                 onClick={handleSaveProfile}
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-[#0993ae] text-white text-sm font-medium hover:bg-[#0993ae]/90 transition disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-[#153b50] text-white text-sm font-medium hover:bg-[#153b50]/90 transition disabled:opacity-50"
               >
                 {saving ? "Salvando..." : "Salvar"}
               </button>
@@ -314,7 +314,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
           <div className="bg-white rounded-t-2xl w-full max-w-lg shadow-xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
-              <h2 className="text-base font-bold text-[#0993ae]">
+              <h2 className="text-base font-bold text-[#153b50]">
                 Dias disponíveis
               </h2>
               <button

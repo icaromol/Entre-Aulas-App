@@ -2051,7 +2051,7 @@ export default function TodayPage() {
                     setMenuAnchor(null);
                     handleDeleteItem(menuItem);
                   }}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#ff4c3e] hover:bg-red-50 transition"
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#ff4c3e] hover:bg-[#ffeceb] transition"
                 >
                   <MdDelete size={16} className="text-[#ff4c3e]" />
                   Deletar tarefa
@@ -2256,8 +2256,8 @@ export default function TodayPage() {
               Você não concluiu uma sessão pomodoro. Deseja marcar como
               concluído mesmo assim?
             </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
-              <p className="text-xs text-amber-700 leading-relaxed">
+            <div className="bg-[#eff7fb] border border-[#b2f0fb] rounded-xl px-4 py-3 mb-6">
+              <p className="text-xs text-[#153b50] leading-relaxed">
                 A conclusão rápida <span className="font-semibold">não conta XP, não dá medalhas e não completa missões do dia.</span> Para ganhar recompensas, conclua pelo Pomodoro.
               </p>
             </div>

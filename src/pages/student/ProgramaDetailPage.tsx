@@ -270,10 +270,10 @@ export default function StudentProgramaDetailPage() {
               <span className="text-sm text-gray-700">{formatDeadline(programa.deadline)}</span>
               {days !== null && (
                 <span className={`text-xs font-semibold ml-auto px-2 py-0.5 rounded-full ${
-                  days < 0  ? 'bg-gray-100 text-gray-400' :
-                  days < 14 ? 'bg-red-50 text-red-500' :
-                  days < 30 ? 'bg-amber-50 text-amber-600' :
-                              'bg-green-50 text-green-600'
+                  days < 0  ? 'bg-[#e5e5e5] text-[#292929]' :
+                  days < 14 ? 'bg-[#ffeceb] text-[#ff4c3e]' :
+                  days < 30 ? 'bg-[#eff7fb] text-[#153b50]' :
+                              'bg-[#eff7fb] text-[#153b50]'
                 }`}>
                   {days < 0 ? 'passou' : days === 0 ? 'hoje' : `em ${days} dias`}
                 </span>
@@ -386,7 +386,7 @@ export default function StudentProgramaDetailPage() {
           </button>
         )}
         <button onClick={deletePrograma}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-red-100 text-sm text-red-400 hover:border-red-300 hover:text-red-600 transition">
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#ffeceb] text-sm text-[#ff4c3e] hover:border-[#ff4c3e] hover:text-[#f50c00] transition">
           <MdDeleteOutline size={17} />Excluir
         </button>
       </div>

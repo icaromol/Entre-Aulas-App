@@ -407,15 +407,15 @@ export default function RepertoirePage() {
     <StudentLayout>
       <div className="mb-5 flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[#0993ae]">Repertório</h1>
+          <h1 className="text-xl font-bold text-[#153b50]">Repertório</h1>
           <p className="text-sm text-gray-400 mt-0.5">Seu material de estudo</p>
         </div>
         <button
           onClick={toggleSelectionMode}
           className={`p-2 rounded-xl transition ${
             isSelectionMode
-              ? "bg-[#0993ae] text-white"
-              : "text-gray-400 hover:text-[#0993ae] hover:bg-[#b2f0fb]/20"
+              ? "bg-[#153b50] text-white"
+              : "text-gray-400 hover:text-[#153b50] hover:bg-[#b2f0fb]/20"
           }`}
           aria-label="Selecionar itens"
         >
@@ -440,8 +440,8 @@ export default function RepertoirePage() {
             onClick={() => switchTab(tab.key)}
             className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
               activeTab === tab.key
-                ? "bg-[#0993ae] text-white shadow-sm"
-                : "text-[#0993ae]/60 hover:text-[#0993ae]"
+                ? "bg-[#153b50] text-white shadow-sm"
+                : "text-[#153b50]/60 hover:text-[#153b50]"
             }`}
           >
             {tab.label}
@@ -452,7 +452,7 @@ export default function RepertoirePage() {
       {/* Selection mode: counter + action bar */}
       {isSelectionMode && (
         <div className="mb-4 flex items-center justify-between gap-3">
-          <p className="text-xs text-[#0993ae] font-semibold shrink-0">
+          <p className="text-xs text-[#153b50] font-semibold shrink-0">
             {selectedIds.size} {selectedIds.size === 1 ? "item selecionado" : "itens selecionados"}
           </p>
           {selectedIds.size > 0 && (
@@ -462,7 +462,7 @@ export default function RepertoirePage() {
                 <button
                   onClick={() => setShowStatusMenu((v) => !v)}
                   disabled={bulkLoading}
-                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium text-gray-600 hover:border-[#0993ae] hover:text-[#0993ae] transition disabled:opacity-50 flex items-center gap-1.5 min-w-[120px] justify-between"
+                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium text-gray-600 hover:border-[#153b50] hover:text-[#153b50] transition disabled:opacity-50 flex items-center gap-1.5 min-w-[120px] justify-between"
                 >
                   <span>{selectedAction ? selectedAction.label : "Selecione"}</span>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className={`transition-transform shrink-0 ${showStatusMenu ? "rotate-180" : ""}`}>
@@ -486,7 +486,7 @@ export default function RepertoirePage() {
                       </>
                     )}
                     <div className="border-t border-gray-100 mt-1">
-                      <button onClick={() => { setSelectedAction({ type: "delete", label: "Excluir" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-[#f5f5f5] rounded-b-xl">Excluir</button>
+                      <button onClick={() => { setSelectedAction({ type: "delete", label: "Excluir" }); setShowStatusMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[#ff4c3e] hover:bg-[#ffeceb] rounded-b-xl">Excluir</button>
                     </div>
                   </div>
                 )}
@@ -500,7 +500,7 @@ export default function RepertoirePage() {
                   else setConfirmBulkAction("delete");
                 }}
                 disabled={!selectedAction || bulkLoading}
-                className="px-3 py-1.5 rounded-lg bg-[#0993ae] text-white text-xs font-medium hover:bg-[#297aa3] transition disabled:opacity-40"
+                className="px-3 py-1.5 rounded-lg bg-[#153b50] text-white text-xs font-medium hover:bg-[#297aa3] transition disabled:opacity-40"
               >
                 Aplicar ação a todos
               </button>
@@ -529,7 +529,7 @@ export default function RepertoirePage() {
         <div className="space-y-3">
           {sortedPieces.length === 0 ? (
             <div className="bg-[#f5f5f5] rounded-2xl p-12 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-              <div className="w-12 h-12 rounded-full bg-[#0993ae] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#153b50] flex items-center justify-center mx-auto mb-3">
                 <MdMusicNote size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-600">
@@ -561,7 +561,7 @@ export default function RepertoirePage() {
                   }
                   className={`rounded-2xl overflow-hidden transition shadow-[0_1px_4px_rgba(0,0,0,0.06)] ${
                     isSelectionMode && selectedIds.has(piece.id)
-                      ? "bg-[#b2f0fb]/20 ring-2 ring-[#0993ae]"
+                      ? "bg-[#b2f0fb]/20 ring-2 ring-[#153b50]"
                       : "bg-[#f5f5f5]"
                   }`}
                   onClick={isSelectionMode ? () => toggleItemSelected(piece.id) : undefined}
@@ -570,7 +570,7 @@ export default function RepertoirePage() {
                     {isSelectionMode && (
                       <div className="shrink-0">
                         {selectedIds.has(piece.id)
-                          ? <MdCheckBox size={22} className="text-[#0993ae]" />
+                          ? <MdCheckBox size={22} className="text-[#153b50]" />
                           : <MdCheckBoxOutlineBlank size={22} className="text-gray-300" />
                         }
                       </div>
@@ -602,10 +602,10 @@ export default function RepertoirePage() {
                           fill="none"
                           stroke={
                             piece.status === "paused"
-                              ? "#D1D5DB"
+                              ? "#e5e5e5"
                               : piece.status === "completed"
                                 ? "#0993ae"
-                                : "#0993ae"
+                                : "#153b50"
                           }
                           strokeWidth="3"
                           strokeDasharray={`${(piece.completion_pct / 100) * 94.2} 94.2`}
@@ -656,7 +656,7 @@ export default function RepertoirePage() {
                         e.stopPropagation();
                         if (isSelectionMode) toggleItemSelected(piece.id);
                       }}
-                      className={`shrink-0 ${piece.status === "completed" ? "data-checked:bg-[#0993ae]" : "data-checked:bg-[#0993ae]"}`}
+                      className={`shrink-0 ${piece.status === "completed" ? "data-checked:bg-[#0993ae]" : "data-checked:bg-[#153b50]"}`}
                     />
 
                     <button
@@ -702,7 +702,7 @@ export default function RepertoirePage() {
                                     <div
                                       className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
                                         completedIds.has(item.id)
-                                          ? "bg-[#0993ae] border-[#0993ae]"
+                                          ? "bg-[#153b50] border-[#153b50]"
                                           : "border-[#b2f0fb]"
                                       }`}
                                     >
@@ -745,7 +745,7 @@ export default function RepertoirePage() {
           <div className="flex flex-col items-center gap-2 pt-4 pb-2">
             <button
               onClick={() => navigate("/aluno/repertorio/pecas/nova")}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#0993ae] text-white text-sm font-semibold hover:bg-[#297aa3] transition"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#297aa3] transition"
             >
               <MdAdd size={18} />
               Nova peça
@@ -768,7 +768,7 @@ export default function RepertoirePage() {
         <div className="space-y-3">
           {sortedExercises.length === 0 ? (
             <div className="bg-[#f5f5f5] rounded-2xl p-12 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-              <div className="w-12 h-12 rounded-full bg-[#0993ae] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#153b50] flex items-center justify-center mx-auto mb-3">
                 <MdFitnessCenter size={24} color="white" />
               </div>
               <p className="text-sm font-semibold text-gray-600">
@@ -784,7 +784,7 @@ export default function RepertoirePage() {
                 key={ex.id}
                 className={`rounded-2xl px-5 py-4 flex items-center gap-4 transition shadow-[0_1px_4px_rgba(0,0,0,0.06)] ${
                   isSelectionMode && selectedIds.has(ex.id)
-                    ? "bg-[#b2f0fb]/20 ring-2 ring-[#0993ae]"
+                    ? "bg-[#b2f0fb]/20 ring-2 ring-[#153b50]"
                     : "bg-[#f5f5f5]"
                 }`}
                 onClick={isSelectionMode ? () => toggleItemSelected(ex.id) : undefined}
@@ -792,7 +792,7 @@ export default function RepertoirePage() {
                 {isSelectionMode && (
                   <div className="shrink-0">
                     {selectedIds.has(ex.id)
-                      ? <MdCheckBox size={22} className="text-[#0993ae]" />
+                      ? <MdCheckBox size={22} className="text-[#153b50]" />
                       : <MdCheckBoxOutlineBlank size={22} className="text-gray-300" />
                     }
                   </div>
@@ -827,7 +827,7 @@ export default function RepertoirePage() {
                   <p className="text-sm font-semibold text-gray-800 truncate">
                     {ex.title}
                   </p>
-                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#b2f0fb]/20 text-[#0993ae]">
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#b2f0fb]/20 text-[#153b50]">
                     {categoryLabel[ex.category] ?? ex.category}
                   </span>
                 </button>
@@ -840,7 +840,7 @@ export default function RepertoirePage() {
                     e.stopPropagation();
                     if (isSelectionMode) toggleItemSelected(ex.id);
                   }}
-                  className="shrink-0 data-checked:bg-[#0993ae]"
+                  className="shrink-0 data-checked:bg-[#153b50]"
                 />
                 <button
                   onClick={isSelectionMode
@@ -866,7 +866,7 @@ export default function RepertoirePage() {
           <div className="flex flex-col items-center gap-2 pt-4 pb-2">
             <button
               onClick={() => navigate("/aluno/repertorio/exercicios/novo")}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#0993ae] text-white text-sm font-semibold hover:bg-[#297aa3] transition"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#297aa3] transition"
             >
               <MdAdd size={18} />
               Novo exercício
@@ -895,7 +895,7 @@ export default function RepertoirePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-3">
-              <h3 className="text-xl font-bold text-[#0993ae]">
+              <h3 className="text-xl font-bold text-[#153b50]">
                 Controle de estudo
               </h3>
               {pendingToggle?.context === "piece_maintenance" ? (
@@ -931,7 +931,7 @@ export default function RepertoirePage() {
                 type="checkbox"
                 checked={dontShowAgain}
                 onChange={(e) => setDontShowAgain(e.target.checked)}
-                className="w-4 h-4 rounded accent-[#0993ae] cursor-pointer"
+                className="w-4 h-4 rounded accent-[#153b50] cursor-pointer"
               />
               <span className="text-xs text-gray-500">
                 Não mostrar novamente
@@ -946,7 +946,7 @@ export default function RepertoirePage() {
               </button>
               <button
                 onClick={confirmToggle}
-                className="flex-1 py-2.5 rounded-xl bg-[#0993ae] text-white text-sm font-semibold hover:bg-[#297aa3] transition"
+                className="flex-1 py-2.5 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#297aa3] transition"
               >
                 Entendi, continuar
               </button>
@@ -1004,7 +1004,7 @@ export default function RepertoirePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div>
-              <h3 className="text-base font-bold text-[#0993ae]">
+              <h3 className="text-base font-bold text-[#153b50]">
                 Importar {importMode === "pieces" ? "peças" : "exercícios"} em
                 lote
               </h3>
@@ -1022,12 +1022,12 @@ export default function RepertoirePage() {
                   : "Escala de Dó maior\nArpejo de Sol\nHanon nº1"
               }
               rows={6}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#0993ae] focus:ring-2 focus:ring-[#0993ae]/20 transition resize-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#153b50] focus:ring-2 focus:ring-[#153b50]/20 transition resize-none"
             />
             <button
               onClick={handleImport}
               disabled={importing || !importText.trim()}
-              className="w-full py-3 rounded-xl bg-[#0993ae] text-white text-sm font-semibold hover:bg-[#297aa3] transition disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-[#153b50] text-white text-sm font-semibold hover:bg-[#297aa3] transition disabled:opacity-50"
             >
               {importing
                 ? "Criando..."

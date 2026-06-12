@@ -318,7 +318,7 @@ export default function StudentPieceDetailPage() {
           <span className="text-xl font-bold text-[#153b50]">{piece.completion_pct}%</span>
         </div>
         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full transition-all duration-500 ${piece.completion_pct === 100 ? 'bg-green-500' : 'bg-[#b2f0fb]'}`}
+          <div className={`h-full rounded-full transition-all duration-500 ${piece.completion_pct === 100 ? 'bg-[#0993ae]' : 'bg-[#153b50]'}`}
             style={{ width: `${piece.completion_pct}%` }} />
         </div>
         <div className="mt-4 space-y-1">
@@ -379,7 +379,7 @@ export default function StudentPieceDetailPage() {
                           supabase.from('checklist_items').delete().eq('id', item.id)
                             .then(() => setChecklist(prev => prev.filter(c => c.id !== item.id)))
                         }}
-                        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition text-xs shrink-0">✕</button>
+                        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-[#ff4c3e] transition text-xs shrink-0">✕</button>
                     </div>
                   ))}
                 </div>
@@ -489,7 +489,7 @@ export default function StudentPieceDetailPage() {
       )}
 
       <button onClick={deletePiece}
-        className="w-full py-3 rounded-2xl border border-red-200 text-sm font-medium text-red-400 hover:bg-red-50 transition flex items-center justify-center gap-1.5">
+        className="w-full py-3 rounded-2xl border border-[#ffeceb] text-sm font-medium text-[#ff4c3e] hover:bg-[#ffeceb] transition flex items-center justify-center gap-1.5">
         <MdDeleteOutline size={16} />Excluir peça
       </button>
     </StudentLayout>
