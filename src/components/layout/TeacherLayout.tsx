@@ -170,9 +170,9 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
           {/* Logo — coluna esquerda */}
           <Link to="/professor/jornada" className="flex items-center">
             <img
-              src="/estudamus_logo.png"
+              src="/logo_estudamus_horizontal_dark_blue.svg"
               alt="estudamus"
-              className="h-[22px]"
+              className="h-[35px]"
             />
           </Link>
 

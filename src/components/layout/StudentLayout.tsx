@@ -336,18 +336,32 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       )}
 
       {/* Header — só logo */}
-      <header className="sticky top-0 z-10 transition-colors duration-300" style={{ backgroundColor: navColor, borderBottom: `1px solid ${navColor}` }}>
+      <header
+        className="sticky top-0 z-10 transition-colors duration-300"
+        style={{
+          backgroundColor: navColor,
+          borderBottom: `1px solid ${navColor}`,
+        }}
+      >
         <div className="px-4 h-14 flex items-center justify-center">
-          <img src="/estudamus_logo.png" alt="estudamus" className="h-5 brightness-0 invert" />
+          <img
+            src="/logo_estudamus_horizontal_dark_blue.svg"
+            alt="estudamus"
+            className="h-[35px] brightness-0 invert"
+          />
         </div>
       </header>
 
       {/* Conteúdo */}
-      <main className="px-4 py-5">
-        {children}
-      </main>
+      <main className="px-4 py-5">{children}</main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-10 transition-colors duration-300" style={{ backgroundColor: navColor, borderTop: `1px solid ${navColor}` }}>
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-10 transition-colors duration-300"
+        style={{
+          backgroundColor: navColor,
+          borderTop: `1px solid ${navColor}`,
+        }}
+      >
         <div className="flex">
           {navItems.map(({ label, path, Icon }) => {
             const active = location.pathname.startsWith(path);
@@ -357,28 +371,34 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                 to={path}
                 className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
               >
-                <Icon size={22} color={active ? "#FFFFFF" : "rgba(255,255,255,0.5)"} />
+                <Icon
+                  size={22}
+                  color={active ? "#FFFFFF" : "rgba(255,255,255,0.5)"}
+                />
                 <span
                   className={`text-[10px] font-medium ${active ? "text-white" : "text-white/50"}`}
                 >
                   {label}
-                  </span>
-                </Link>
-              );
-            })}
-            <button
-              onClick={() => setShowMenu(true)}
-              className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
+                </span>
+              </Link>
+            );
+          })}
+          <button
+            onClick={() => setShowMenu(true)}
+            className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
+          >
+            <MdMenu
+              size={22}
+              color={showMenu ? "#FFFFFF" : "rgba(255,255,255,0.5)"}
+            />
+            <span
+              className={`text-[10px] font-medium ${showMenu ? "text-white" : "text-white/50"}`}
             >
-              <MdMenu size={22} color={showMenu ? "#FFFFFF" : "rgba(255,255,255,0.5)"} />
-              <span
-                className={`text-[10px] font-medium ${showMenu ? "text-white" : "text-white/50"}`}
-              >
-                Menu
-              </span>
-            </button>
-          </div>
-        </nav>
+              Menu
+            </span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

@@ -23,7 +23,7 @@ export function WelcomeModal({ onStart }: Props) {
         {/* Content */}
         <div className="flex-1 flex flex-col items-center justify-center text-center px-10">
           <img
-            src="/estudamus_logo_dark.png"
+            src="/logo_estudamus_horizontal_dark_blue@3x.png"
             alt="Estudamus"
             className="h-7 object-contain mb-7"
           />

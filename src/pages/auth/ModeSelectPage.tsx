@@ -56,7 +56,7 @@ export default function ModeSelectPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
-      <img src="/estudamus_logo.png" alt="estudamus" className="h-8 mb-10 opacity-90" />
+      <img src="/logo_estudamus_horizontal_dark_blue@3x.png" alt="estudamus" className="h-8 mb-10 opacity-90" />
 
       <div className="w-full max-w-sm">
         <h1 className="text-xl font-bold text-[#153b50] text-center mb-1">

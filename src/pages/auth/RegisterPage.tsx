@@ -234,11 +234,11 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-24">
+        <div className="text-center">
           <img
-            src="/estudamus_logo.png"
+            src="/logo_estudamus_horizontal_dark_blue.svg"
             alt="estudamus"
-            className="h-10 mx-auto"
+            className="h-[50px] mx-auto mb-6"
           />
         </div>
 
