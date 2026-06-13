@@ -23,11 +23,10 @@ export const COLORS = {
 export type ColorName = keyof typeof COLORS;
 
 export const AVATAR_COLORS = [
-  COLORS.yale,
-  COLORS.pacificCyan,
-  COLORS.frosted,
-  COLORS.whiteSmoke,
-  COLORS.white,
+  COLORS.yale,        // Yale Blue — obrigatório
+  COLORS.tomato,      // Tomato — obrigatório
+  COLORS.frosted,     // Frosted Blue — opcional
+  COLORS.white,       // Branco — opcional
 ] as const;
 
 export const PALETTE = [
