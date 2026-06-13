@@ -22,11 +22,11 @@ export const COLORS = {
 
 export type ColorName = keyof typeof COLORS;
 
-export const AVATAR_COLORS = [
+export const AVATAR_COLORS: string[] = [
   COLORS.yale,    // Yale Blue #153b50
   COLORS.tomato,  // Tomato #ff4c3e
   COLORS.frosted, // Frosted Blue #b2f0fb
-] as const;
+];
 
 export const PALETTE = [
   { name: "Tomato",          hex: "#ff4c3e", rgb: [255, 76,  62]  as const },

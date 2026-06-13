@@ -1330,7 +1330,7 @@ export default function PomodoroPage() {
           className="flex flex-col items-center relative"
         >
           <div
-            className={`text-xs font-semibold mb-3 px-3 py-1 rounded-full ${
+            className={`text-xs font-semibold mb-3 px-3 py-1 rounded-md ${
               isWork
                 ? "bg-[#f5f5f5] text-[#153b50]"
                 : "bg-[#eff7fb] text-[#153b50]"

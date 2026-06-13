@@ -831,7 +831,7 @@ export default function RepertoirePage() {
                   <p className="text-sm font-semibold text-gray-800 truncate">
                     {ex.title}
                   </p>
-                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#b2f0fb]/20 text-[#153b50]">
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#b2f0fb]/20 text-[#153b50]">
                     {categoryLabel[ex.category] ?? ex.category}
                   </span>
                 </button>

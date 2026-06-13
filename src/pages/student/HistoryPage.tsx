@@ -242,13 +242,13 @@ export default function HistoryPage() {
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {sessionXp != null && (
-                              <span className="flex items-center gap-0.5 text-xs font-semibold text-[#b2f0fb] bg-[#f5f5f5] px-1.5 py-0.5 rounded-full">
+                              <span className="flex items-center gap-0.5 text-xs font-semibold text-[#b2f0fb] bg-[#f5f5f5] px-1.5 py-0.5 rounded-md">
                                 <MdStar size={11} />
                                 +{sessionXp} XP
                               </span>
                             )}
                             {badge && (
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.color}`}>
+                              <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${badge.color}`}>
                                 {badge.emoji}
                               </span>
                             )}

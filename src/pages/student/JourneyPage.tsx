@@ -308,7 +308,7 @@ export default function JourneyPage() {
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold text-gray-700">Missão do dia</p>
           {todayMission.completed ? (
-            <span className="text-xs font-semibold text-[#153b50] bg-[#eff7fb] px-2 py-0.5 rounded-full">Completa</span>
+            <span className="text-xs font-semibold text-[#153b50] bg-[#eff7fb] px-2 py-0.5 rounded-md">Completa</span>
           ) : (
             <span className="text-xs text-gray-400">+{todayMission.xpReward} XP</span>
           )}

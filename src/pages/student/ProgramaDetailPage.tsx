@@ -269,7 +269,7 @@ export default function StudentProgramaDetailPage() {
               <MdCalendarMonth size={16} className="text-[#b2f0fb] shrink-0" />
               <span className="text-sm text-gray-700">{formatDeadline(programa.deadline)}</span>
               {days !== null && (
-                <span className={`text-xs font-semibold ml-auto px-2 py-0.5 rounded-full ${
+                <span className={`text-xs font-semibold ml-auto px-2 py-0.5 rounded-md ${
                   days < 0  ? 'bg-[#e5e5e5] text-[#292929]' :
                   days < 14 ? 'bg-[#ffeceb] text-[#ff4c3e]' :
                   days < 30 ? 'bg-[#eff7fb] text-[#153b50]' :

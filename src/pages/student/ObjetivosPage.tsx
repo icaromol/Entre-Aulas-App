@@ -218,7 +218,7 @@ export default function ObjetivosPage() {
                 </div>
 
                 {days !== null && (
-                  <span className={`hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                  <span className={`hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-md shrink-0 ${
                     days < 0  ? 'bg-gray-100 text-gray-400' :
                     days < 14 ? 'bg-[#ffeceb] text-[#ff4c3e]' :
                     days < 30 ? 'bg-[#eff7fb] text-[#153b50]' :

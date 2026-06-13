@@ -102,8 +102,8 @@ const levelLabel: Record<string, string> = {
   advanced: "Avançado",
 };
 
-function instrumentIcon(instrument: string) {
-  const s = instrument.toLowerCase();
+function instrumentIcon(instrument: string | null) {
+  const s = (instrument ?? "").toLowerCase();
   if (
     ["piano", "teclado", "órgão", "orgao", "cravo"].some((k) => s.includes(k))
   )
