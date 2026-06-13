@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Avatar from "boring-avatars";
-import { MdAdd, MdMusicNote, MdFitnessCenter, MdSettings, MdCheckBox, MdCheckBoxOutlineBlank, MdPowerSettingsNew } from "react-icons/md";
+import { MdAdd, MdMusicNote, MdFitnessCenter, MdSettings, MdCheckBox, MdCheckBoxOutlineBlank, MdPause } from "react-icons/md";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -614,8 +614,8 @@ export default function RepertoirePage() {
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
                         {piece.status === "paused" ? (
-                          <div className="w-6 h-6 rounded-full bg-[#c0c0c0] flex items-center justify-center">
-                            <MdPowerSettingsNew size={13} color="#f5f5f5" />
+                          <div className="w-6 h-6 rounded-full bg-[#e5e5e5] flex items-center justify-center">
+                            <MdPause size={11} color="#c8c8c8" />
                           </div>
                         ) : (
                           <div className="rounded-full overflow-hidden">
@@ -807,8 +807,8 @@ export default function RepertoirePage() {
                   className="shrink-0"
                 >
                   {ex.status === "inactive" ? (
-                    <div className="w-9 h-9 rounded-full bg-[#c0c0c0] flex items-center justify-center">
-                      <MdPowerSettingsNew size={18} color="#f5f5f5" />
+                    <div className="w-9 h-9 rounded-full bg-[#e5e5e5] flex items-center justify-center">
+                      <MdPause size={16} color="#c8c8c8" />
                     </div>
                   ) : (
                     <div className="rounded-lg overflow-hidden">
