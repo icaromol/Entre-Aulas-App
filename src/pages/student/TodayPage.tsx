@@ -27,7 +27,12 @@ import {
   MdSwapHoriz,
   MdCallSplit,
   MdTimer,
-  MdScale,
+  MdSettings,
+  MdBalance,
+  MdEditCalendar,
+  MdAdd,
+  MdClose,
+  MdSync,
 } from "react-icons/md";
 import { ContinuityCard } from "@/components/student/ContinuityCard";
 import { FocusModal } from "@/components/student/FocusModal";
@@ -284,6 +289,24 @@ export default function TodayPage() {
   const [changeTimeMinutes, setChangeTimeMinutes] = useState(60);
   const [showRebalanceConfirm, setShowRebalanceConfirm] = useState(false);
   const [ungroupConfirmItem, setUngroupConfirmItem] = useState<PlanItem | null>(null);
+
+  // Menu de configurações do banner
+  const [showBannerMenu, setShowBannerMenu] = useState(false);
+
+  // Modal Editar Plano (Kanban semanal)
+  const [showEditPlanModal, setShowEditPlanModal] = useState(false);
+  type WeekKanbanItem = { id: string; title: string; subtitle: string; durationMinutes: number; isDone: boolean; dayOfWeek: number; planId: string; isMaintenance: boolean };
+  const [weekKanbanItems, setWeekKanbanItems] = useState<WeekKanbanItem[]>([]);
+  const [kanbanLoading, setKanbanLoading] = useState(false);
+  const [editingKanbanItem, setEditingKanbanItem] = useState<WeekKanbanItem | null>(null);
+  const [editingKanbanDuration, setEditingKanbanDuration] = useState(25);
+
+  // Modal Adicionar Tarefa
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [addTaskTab, setAddTaskTab] = useState<"pieces" | "exercises">("pieces");
+  const [addTaskSelected, setAddTaskSelected] = useState<{ id: string; title: string; type: "piece" | "exercise" } | null>(null);
+  const [addTaskDuration, setAddTaskDuration] = useState(25);
+  const [addTaskMode, setAddTaskMode] = useState<"sum" | "redistribute">("sum");
 
   const monday = useMemo(() => getMonday(new Date()), []);
   const weekStart = useMemo(() => formatWeekStart(monday), [monday]);
@@ -1228,6 +1251,116 @@ export default function TodayPage() {
     setFreeSessions((prev) => prev.filter((s) => s.id !== sessionId));
   }
 
+  async function fetchWeekKanban() {
+    if (!studentId) return;
+    setKanbanLoading(true);
+    const { data: plan } = await supabase
+      .from("weekly_plans")
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("week_start", weekStart)
+      .maybeSingle();
+    if (!plan) { setWeekKanbanItems([]); setKanbanLoading(false); return; }
+
+    const { data: rows } = await supabase
+      .from("plan_items")
+      .select(`id, plan_id, day_of_week, piece_id, exercise_id, program_id, duration_minutes, is_done, is_maintenance,
+        piece:pieces(title, composer), exercise:exercises(title, category), programa:programas(title, type)`)
+      .eq("plan_id", plan.id)
+      .order("position");
+
+    const mapped: WeekKanbanItem[] = ((rows ?? []) as unknown as PlanItem[]).map((i) => {
+      const d = itemDisplay(i);
+      return {
+        id: i.id,
+        title: d.title,
+        subtitle: d.subtitle,
+        durationMinutes: i.duration_minutes ?? 0,
+        isDone: i.is_done,
+        dayOfWeek: i.day_of_week,
+        planId: i.plan_id,
+        isMaintenance: !!i.is_maintenance,
+      };
+    });
+    setWeekKanbanItems(mapped);
+    setKanbanLoading(false);
+  }
+
+  async function handleKanbanUpdateDuration(item: WeekKanbanItem, newDuration: number) {
+    await supabase.from("plan_items").update({ duration_minutes: newDuration }).eq("id", item.id);
+    setWeekKanbanItems((prev) => prev.map((k) => k.id === item.id ? { ...k, durationMinutes: newDuration } : k));
+    if (item.dayOfWeek === viewDay) {
+      setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, duration_minutes: newDuration } : i));
+    }
+    toast.success("Tempo atualizado.");
+  }
+
+  async function handleKanbanDelete(item: WeekKanbanItem) {
+    await supabase.from("plan_items").delete().eq("id", item.id);
+    setWeekKanbanItems((prev) => prev.filter((k) => k.id !== item.id));
+    if (item.dayOfWeek === viewDay) {
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
+    }
+    setEditingKanbanItem(null);
+    toast.success("Tarefa removida.");
+  }
+
+  async function handleAddTask() {
+    if (!addTaskSelected || !studentId) return;
+    const { data: plan } = await supabase
+      .from("weekly_plans")
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("week_start", weekStart)
+      .maybeSingle();
+    if (!plan) { toast.error("Sem planejamento esta semana."); return; }
+
+    const maxPos = items.reduce((m, i) => Math.max(m, i.position ?? 0), 0);
+    const newRow = {
+      plan_id: plan.id,
+      day_of_week: viewDay,
+      piece_id: addTaskSelected.type === "piece" ? addTaskSelected.id : null,
+      exercise_id: addTaskSelected.type === "exercise" ? addTaskSelected.id : null,
+      duration_minutes: addTaskDuration,
+      position: maxPos + 1,
+      is_done: false,
+      is_maintenance: false,
+    };
+
+    const { data: inserted } = await supabase.from("plan_items").insert(newRow)
+      .select(`id, plan_id, day_of_week, piece_id, exercise_id, program_id,
+        duration_minutes, position, is_done, done_at, is_maintenance, completed_manually, moved_from_dow, group_id,
+        piece:pieces(title, composer), exercise:exercises(title, category), programa:programas(title, type)`);
+
+    if (addTaskMode === "redistribute" && inserted && inserted.length > 0) {
+      const newItem = (inserted[0] as unknown as PlanItem);
+      const undone = items.filter((i) => i.day_of_week === viewDay && !i.is_done);
+      const freed = addTaskDuration;
+      if (undone.length > 0 && freed > 0) {
+        const reduction = Math.round(freed / undone.length);
+        await Promise.all(
+          undone.map((i) =>
+            supabase.from("plan_items").update({ duration_minutes: Math.max(5, (i.duration_minutes ?? 0) - reduction) }).eq("id", i.id)
+          )
+        );
+        setItems((prev) => [
+          ...prev.map((i) => undone.find((u) => u.id === i.id) ? { ...i, duration_minutes: Math.max(5, (i.duration_minutes ?? 0) - reduction) } : i),
+          newItem,
+        ]);
+      } else {
+        setItems((prev) => [...prev, newItem]);
+      }
+    } else if (inserted && inserted.length > 0) {
+      setItems((prev) => [...prev, inserted[0] as unknown as PlanItem]);
+    }
+
+    setShowAddTaskModal(false);
+    setAddTaskSelected(null);
+    setAddTaskDuration(25);
+    setAddTaskMode("sum");
+    toast.success(`"${addTaskSelected.title}" adicionada ao dia.`);
+  }
+
   // Itens com duration_minutes=0 foram descartados pela Sessão Essencial — ocultá-los (salvo se já concluídos)
   const visibleItems = [
     ...items.filter((i) => i.duration_minutes !== 0 || i.is_done),
@@ -1856,10 +1989,10 @@ export default function TodayPage() {
         <div className="mt-8 bg-[#ff4c3e] rounded-2xl flex items-center gap-3 p-3">
           <button
             onClick={() => { setChangeTimeMinutes(totalMinutes || 60); setShowChangeTime(true); }}
-            className="group rounded-xl bg-[#f5f5f5] flex items-center justify-center shrink-0 hover:bg-[#b2f0fb] transition"
+            className="group rounded-xl bg-[#f5f5f5] flex items-center justify-center shrink-0 hover:bg-[#1E3A5F] transition"
             style={{ width: 56, height: 56 }}
           >
-            <MdTimer size={24} className="text-[#ff4c3e] group-hover:text-[#f5f5f5] transition" />
+            <MdTimer size={24} className="text-[#ff4c3e] group-hover:text-white transition" />
           </button>
           <button
             onClick={() =>
@@ -1888,13 +2021,47 @@ export default function TodayPage() {
               </p>
             </div>
           </button>
-          <button
-            onClick={() => setShowRebalanceConfirm(true)}
-            className="group rounded-xl bg-[#f5f5f5] flex items-center justify-center shrink-0 hover:bg-[#b2f0fb] transition"
-            style={{ width: 56, height: 56 }}
-          >
-            <MdScale size={24} className="text-[#ff4c3e] group-hover:text-[#f5f5f5] transition" />
-          </button>
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setShowBannerMenu((v) => !v)}
+              className="group rounded-xl bg-[#f5f5f5] flex items-center justify-center hover:bg-[#1E3A5F] transition"
+              style={{ width: 56, height: 56 }}
+            >
+              <MdSettings size={24} className="text-[#ff4c3e] group-hover:text-white transition" />
+            </button>
+            {showBannerMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowBannerMenu(false)} />
+                <div className="absolute right-0 bottom-full mb-2 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 py-1 w-52">
+                  <button
+                    onClick={() => { setShowBannerMenu(false); setShowRebalanceConfirm(true); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-[#f5f5f5] transition"
+                  >
+                    <MdBalance size={18} className="text-[#ff4c3e] shrink-0" />
+                    Rebalancear dia
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowBannerMenu(false);
+                      setShowEditPlanModal(true);
+                      fetchWeekKanban();
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-[#f5f5f5] transition"
+                  >
+                    <MdEditCalendar size={18} className="text-[#ff4c3e] shrink-0" />
+                    Editar meu plano
+                  </button>
+                  <button
+                    onClick={() => { setShowBannerMenu(false); setShowAddTaskModal(true); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-[#f5f5f5] transition"
+                  >
+                    <MdAdd size={18} className="text-[#ff4c3e] shrink-0" />
+                    Adicionar tarefa
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -2424,6 +2591,210 @@ export default function TodayPage() {
             <div className="flex gap-3">
               <button onClick={() => setShowRebalanceConfirm(false)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#b2f0fb] transition">Cancelar</button>
               <button onClick={() => { setShowRebalanceConfirm(false); handleEqualizeTime(); }} className="flex-1 py-3 rounded-xl bg-[#ff4c3e] text-white text-sm font-semibold hover:bg-[#f50c00] transition">Rebalancear</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — Editar meu plano (Kanban semanal) */}
+      {showEditPlanModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex flex-col">
+          <div className="flex-1 overflow-y-auto bg-white rounded-t-2xl mt-16 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 shrink-0">
+              <p className="text-base font-bold text-gray-800">Editar plano da semana</p>
+              <button onClick={() => { setShowEditPlanModal(false); setEditingKanbanItem(null); }} className="text-gray-400 hover:text-gray-600 transition">
+                <MdClose size={22} />
+              </button>
+            </div>
+
+            {kanbanLoading ? (
+              <div className="flex-1 flex items-center justify-center py-12">
+                <div className="w-6 h-6 rounded-full border-2 border-[#ff4c3e] border-t-transparent animate-spin" />
+              </div>
+            ) : (() => {
+              const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+              const DAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+              return (
+                <div className="flex-1 overflow-x-auto px-4 py-4">
+                  <div className="flex gap-3 min-w-max">
+                    {DAY_ORDER.map((dow, di) => {
+                      const dayItems = weekKanbanItems.filter((k) => k.dayOfWeek === dow);
+                      const totalMin = dayItems.reduce((s, k) => s + k.durationMinutes, 0);
+                      const isCurrentDay = dow === viewDay;
+                      const hasItems = dayItems.length > 0;
+                      const allDone = hasItems && dayItems.every((k) => k.isDone);
+                      return (
+                        <div key={dow} className={`w-64 rounded-2xl border flex flex-col ${isCurrentDay ? "bg-[#fff5f5] border-[#ff4c3e]/30" : "bg-white border-gray-100"}`}>
+                          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                            <div>
+                              <p className={`text-sm font-bold ${isCurrentDay ? "text-[#ff4c3e]" : "text-gray-700"}`}>{DAY_LABELS[di]}</p>
+                              {isCurrentDay && <p className="text-[10px] text-[#ff4c3e]/60">hoje</p>}
+                            </div>
+                            {totalMin > 0 && <span className="text-xs font-semibold text-gray-400">{totalMin} min</span>}
+                          </div>
+                          <div className="flex-1 p-3 space-y-2">
+                            {!hasItems && (
+                              <p className="text-xs text-gray-300 text-center py-4">Folga</p>
+                            )}
+                            {hasItems && allDone && (
+                              <div className="flex flex-col items-center gap-1 py-3">
+                                <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center">
+                                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#22c55e" strokeWidth={3}>
+                                    <path d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                                <p className="text-[10px] text-green-500 font-semibold">Dia concluído</p>
+                              </div>
+                            )}
+                            {dayItems.map((k) => (
+                              <button
+                                key={k.id}
+                                onClick={() => { setEditingKanbanItem(k); setEditingKanbanDuration(k.durationMinutes); }}
+                                className={`w-full text-left rounded-xl p-3 transition group ${k.isDone ? "bg-gray-50 opacity-50" : k.isMaintenance ? "bg-gray-100 hover:bg-gray-200/70" : "bg-[#f5f5f5] hover:bg-gray-200/60"}`}
+                              >
+                                <div className="flex items-start gap-2">
+                                  {k.isDone && (
+                                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#22c55e" strokeWidth={3} className="shrink-0 mt-0.5">
+                                      <path d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                  {!k.isDone && k.isMaintenance && <MdSync size={12} className="shrink-0 mt-0.5 text-gray-400" />}
+                                  <p className={`text-xs font-medium flex-1 leading-snug line-clamp-2 ${k.isDone ? "text-gray-400 line-through" : "text-gray-700"}`}>{k.title}</p>
+                                </div>
+                                {k.subtitle && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{k.subtitle}</p>}
+                                <p className={`text-[10px] font-semibold mt-1 ${k.isDone ? "text-gray-300" : "text-[#ff4c3e]"}`}>{k.durationMinutes} min</p>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Edit-task sheet dentro do modal */}
+          {editingKanbanItem && (
+            <div className="fixed inset-0 z-[60] bg-black/40 flex items-end" onClick={() => setEditingKanbanItem(null)}>
+              <div className="bg-white rounded-t-2xl px-6 pt-6 pb-8 w-full max-w-lg mx-auto" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0 pr-3">
+                    <p className="text-base font-bold text-gray-800 line-clamp-2">{editingKanbanItem.isMaintenance ? `Manutenção · ${editingKanbanItem.title}` : editingKanbanItem.title}</p>
+                    {editingKanbanItem.subtitle && <p className="text-sm text-gray-400 mt-1 truncate">{editingKanbanItem.subtitle}</p>}
+                  </div>
+                  <button onClick={() => setEditingKanbanItem(null)} className="text-gray-400"><MdClose size={22} /></button>
+                </div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-6 mb-3">Duração</p>
+                <div className="flex items-center gap-4 mb-8">
+                  <input
+                    type="number" min={5} max={180} value={editingKanbanDuration}
+                    onChange={(e) => setEditingKanbanDuration(Number(e.target.value))}
+                    className="w-20 text-center border border-gray-200 rounded-xl px-2 py-2.5 text-base font-semibold text-gray-800 outline-none focus:border-[#ff4c3e]"
+                  />
+                  <span className="text-sm text-gray-400">min</span>
+                  <input type="range" min={5} max={180} step={5} value={editingKanbanDuration}
+                    onChange={(e) => setEditingKanbanDuration(Number(e.target.value))}
+                    className="flex-1 accent-[#ff4c3e] h-2"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleKanbanDelete(editingKanbanItem)}
+                    className="flex-1 py-3 rounded-xl border border-red-100 text-red-400 text-sm font-semibold hover:bg-red-50 transition"
+                  >
+                    Excluir
+                  </button>
+                  <button
+                    onClick={() => { handleKanbanUpdateDuration(editingKanbanItem, editingKanbanDuration); setEditingKanbanItem(null); }}
+                    className="flex-1 py-3 rounded-xl bg-[#ff4c3e] text-white text-sm font-semibold hover:bg-[#f50c00] transition"
+                  >
+                    Salvar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal — Adicionar tarefa */}
+      {showAddTaskModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end" onClick={() => setShowAddTaskModal(false)}>
+          <div className="bg-white rounded-t-2xl w-full max-w-lg mx-auto max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+              <p className="text-sm font-bold text-gray-800">Adicionar tarefa</p>
+              <button onClick={() => setShowAddTaskModal(false)} className="text-gray-400"><MdClose size={20} /></button>
+            </div>
+
+            {/* Tabs peça / exercício */}
+            <div className="flex gap-1 px-5 pb-3 shrink-0">
+              {(["pieces", "exercises"] as const).map((tab) => (
+                <button key={tab} onClick={() => { setAddTaskTab(tab); setAddTaskSelected(null); }}
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${addTaskTab === tab ? "bg-[#ff4c3e] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                  {tab === "pieces" ? "Peças" : "Exercícios"}
+                </button>
+              ))}
+            </div>
+
+            {/* Lista */}
+            <div className="overflow-y-auto flex-1 px-5 pb-3">
+              {(addTaskTab === "pieces" ? activePieces : activeExercises).length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-8">Nenhum item disponível.</p>
+              ) : addTaskTab === "pieces" ? activePieces.map((p) => (
+                <button key={p.id} onClick={() => setAddTaskSelected({ id: p.id, title: p.title, type: "piece" })}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl transition mb-1 ${addTaskSelected?.id === p.id ? "bg-[#ff4c3e]/10 border border-[#ff4c3e]/30" : "hover:bg-[#f5f5f5]"}`}>
+                  <p className="text-sm font-medium text-gray-800">{p.title}</p>
+                  {p.composer && <p className="text-xs text-gray-400">{p.composer}</p>}
+                </button>
+              )) : activeExercises.map((ex) => (
+                <button key={ex.id} onClick={() => setAddTaskSelected({ id: ex.id, title: ex.title, type: "exercise" })}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl transition mb-1 ${addTaskSelected?.id === ex.id ? "bg-[#ff4c3e]/10 border border-[#ff4c3e]/30" : "hover:bg-[#f5f5f5]"}`}>
+                  <p className="text-sm font-medium text-gray-800">{ex.title}</p>
+                  <p className="text-xs text-gray-400 capitalize">{ex.category}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Configurações de duração e modo */}
+            <div className="px-5 pt-3 pb-3 border-t border-gray-100 shrink-0 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-2">
+                  Duração: <span className="text-[#ff4c3e]">{addTaskDuration} min</span>
+                </label>
+                <input type="range" min={5} max={120} step={5} value={addTaskDuration}
+                  onChange={(e) => setAddTaskDuration(Number(e.target.value))}
+                  className="w-full accent-[#ff4c3e] h-2" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-2">Tempo do dia</label>
+                <div className="flex gap-2">
+                  {([
+                    { value: "sum", label: "Somar ao dia" },
+                    { value: "redistribute", label: "Redistribuir" },
+                  ] as const).map((opt) => (
+                    <button key={opt.value} onClick={() => setAddTaskMode(opt.value)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition ${addTaskMode === opt.value ? "bg-[#ff4c3e] text-white border-[#ff4c3e]" : "bg-white text-gray-600 border-gray-200 hover:border-[#ff4c3e]/40"}`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1.5">
+                  {addTaskMode === "sum" ? "Os " + addTaskDuration + " min são adicionados ao total do dia." : "Os " + addTaskDuration + " min são descontados das outras tarefas pendentes."}
+                </p>
+              </div>
+            </div>
+
+            <div className="px-5 pb-8 shrink-0">
+              <button
+                disabled={!addTaskSelected}
+                onClick={handleAddTask}
+                className="w-full py-3 rounded-xl bg-[#ff4c3e] text-white text-sm font-semibold hover:bg-[#f50c00] transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {addTaskSelected ? `Adicionar "${addTaskSelected.title}"` : "Selecione uma tarefa"}
+              </button>
             </div>
           </div>
         </div>
