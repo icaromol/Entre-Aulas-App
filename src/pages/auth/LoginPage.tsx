@@ -27,7 +27,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
 
         <div className="text-center mb-8">
-          <img src="/logo_estudamus_horizontal_dark_blue.svg" alt="estudamus" className="h-[50px] mx-auto mb-6" />
+          <img src="/logo_estudamus_vertical_dark_blue.svg" alt="estudamus" className="w-[150px] mx-auto mb-6" />
           <p className="text-sm text-gray-500">Acesse sua conta</p>
         </div>
 

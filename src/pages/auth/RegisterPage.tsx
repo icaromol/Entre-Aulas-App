@@ -236,9 +236,9 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm">
         <div className="text-center">
           <img
-            src="/logo_estudamus_horizontal_dark_blue.svg"
+            src="/logo_estudamus_vertical_dark_blue.svg"
             alt="estudamus"
-            className="h-[50px] mx-auto mb-6"
+            className="w-[150px] mx-auto mb-6"
           />
         </div>
 

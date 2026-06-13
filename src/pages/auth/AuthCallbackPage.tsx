@@ -108,7 +108,7 @@ export default function AuthCallbackPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
-      <img src="/logo_estudamus_horizontal_dark_blue@3x.png" alt="estudamus" className="h-10 opacity-80" />
+      <img src="/logo_estudamus_vertical_dark_blue.svg" alt="estudamus" className="w-[150px] opacity-80" />
       <div className="w-6 h-6 border-2 border-[#153b50] border-t-transparent rounded-full animate-spin" />
     </div>
   )
